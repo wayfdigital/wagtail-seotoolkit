@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: bakerydemo
+      POSTGRES_USER: bakerydemo
+      POSTGRES_PASSWORD: bakerydemo
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      # Mount package metadata files
+      - ./pyproject.toml:/app/pyproject.toml
+      - ./setup.py:/app/setup.py
+      - ./MANIFEST.in:/app/MANIFEST.in
+      # Mount package code for live reloading
+      - ./src:/app/src
+      # Mount testproject for development
+      - ./testproject:/app/testproject
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgres://bakerydemo:bakerydemo@db:5432/bakerydemo
+      - DJANGO_SETTINGS_MODULE=bakerydemo.settings.dev
+      - SECRET_KEY=changeme
+    depends_on:
+      - db
+    stdin_open: true
+    tty: true
+
+volumes:
+  postgres_data:

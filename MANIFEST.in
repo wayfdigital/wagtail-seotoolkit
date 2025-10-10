@@ -1,0 +1,15 @@
+# Include documentation
+include README.md
+include LICENSE
+
+# Include all template files
+recursive-include src/wagtail_seotoolkit/templates *
+
+# Include all static files
+recursive-include src/wagtail_seotoolkit/static *
+
+# Exclude Python cache and compiled files
+global-exclude __pycache__
+global-exclude *.py[co]
+global-exclude .DS_Store
+

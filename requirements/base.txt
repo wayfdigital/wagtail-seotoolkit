@@ -1,0 +1,4 @@
+# Core package dependencies
+wagtail>=5.0
+Django>=3.2
+

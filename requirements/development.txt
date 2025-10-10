@@ -1,0 +1,23 @@
+# Include base requirements
+-r base.txt
+
+# Include bakerydemo requirements
+-r ../testproject/requirements/base.txt
+-r ../testproject/requirements/development.txt
+
+# Development tools
+black>=22.3.0
+ruff>=0.0.290
+
+# Testing
+pytest>=7.0
+pytest-django>=4.5
+coverage>=7.0
+
+# Package building and publishing
+build>=0.10
+twine>=4.0
+
+# Install the package in editable mode
+-e ..
+

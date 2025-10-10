@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wagtail-seotoolkit"
+version = "0.0.1"
+description = "A comprehensive SEO toolkit for Wagtail CMS"
+readme = "README.md"
+authors = [
+    {name = "WAYF", email = "hello@wayfdigital.com"}
+]
+license = {text = "BSD-3-Clause"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: Django",
+    "Framework :: Wagtail",
+    "Framework :: Wagtail :: 5",
+    "Framework :: Wagtail :: 6",
+    "Framework :: Wagtail :: 7",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+]
+keywords = ["wagtail", "django", "seo", "cms"]
+requires-python = ">=3.8"
+dependencies = [
+    "wagtail>=5.0",
+    "Django>=3.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=22.3.0",
+    "ruff>=0.0.290",
+    "pytest>=7.0",
+    "pytest-django>=4.5",
+]
+
+[project.urls]
+Homepage = "https://github.com/wayfdigital/wagtail-seotoolkit"
+Documentation = "https://github.com/wayfdigital/wagtail-seotoolkit#readme"
+Repository = "https://github.com/wayfdigital/wagtail-seotoolkit"
+Issues = "https://github.com/wayfdigital/wagtail-seotoolkit/issues"
+
+[tool.setuptools]
+packages = ["wagtail_seotoolkit"]
+package-dir = {"" = "src"}
+
+[tool.setuptools.package-data]
+wagtail_seotoolkit = [
+    "templates/**/*",
+    "static/**/*",
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312', 'py313']
+include = '\.pyi?$'
+
+[tool.ruff]
+line-length = 88
+target-version = "py38"
+

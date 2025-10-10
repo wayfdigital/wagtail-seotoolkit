@@ -1,0 +1,13 @@
+# Include base requirements
+-r base.txt
+
+# Testing frameworks
+pytest>=7.0
+pytest-django>=4.5
+pytest-cov>=4.0
+coverage>=7.0
+
+# Code quality
+ruff>=0.0.290
+black>=22.3.0
+
