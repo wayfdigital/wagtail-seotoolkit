@@ -4,7 +4,7 @@ set -e
 # Install the package in editable mode (now that volumes are mounted)
 echo "Installing wagtail-seotoolkit in editable mode..."
 cd /app
-pip install -e . --no-deps
+pip install -e .
 
 # Go back to testproject directory
 cd /app/testproject

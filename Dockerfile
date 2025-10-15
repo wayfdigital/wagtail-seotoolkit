@@ -20,8 +20,8 @@ COPY testproject/requirements/ /app/testproject/requirements/
 
 # Install Python dependencies (excluding our package for now)
 RUN pip install --upgrade pip && \
-    pip install -r /app/testproject/requirements/base.txt && \
-    pip install psycopg2-binary black ruff curlylint djhtml 
+    pip install -r /app/testproject/requirements/base.txt
+
 # Copy entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh

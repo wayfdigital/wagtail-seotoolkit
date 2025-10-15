@@ -1,4 +1,5 @@
 # Core package dependencies
 wagtail>=5.0
 Django>=3.2
-
+beautifulsoup4>=4.9.0
+tqdm>=4.65.0
