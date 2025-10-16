@@ -12,6 +12,8 @@ from django.contrib.auth.models import AnonymousUser
 from django.http import HttpRequest
 from tqdm import tqdm
 
+from wagtail_seotoolkit.models import SEOAuditIssueSeverity, SEOAuditIssueType
+
 # ==================== Constants ====================
 
 # Title tag constraints
@@ -123,9 +125,11 @@ class SEOAuditor:
         
         if not title_tag or not title_tag.string:
             self.add_issue(
-                'title_missing',
-                'high',
-                'Page is missing a title tag. This is critical for SEO as title tags are the #1 on-page SEO factor.'
+                SEOAuditIssueType.TITLE_MISSING,
+                SEOAuditIssueSeverity.HIGH,
+                SEOAuditIssueType.get_description_template(
+                    SEOAuditIssueType.TITLE_MISSING
+                ),
             )
             return
         
@@ -134,15 +138,28 @@ class SEOAuditor:
         
         if title_length < TITLE_MIN_LENGTH:
             self.add_issue(
-                'title_too_short',
-                'medium',
-                f'Title tag is too short ({title_length} chars). Recommended: {TITLE_MIN_LENGTH}-{TITLE_MAX_LENGTH} characters. Current title: "{title_text}"'
+                SEOAuditIssueType.TITLE_TOO_SHORT,
+                SEOAuditIssueSeverity.MEDIUM,
+                SEOAuditIssueType.get_description_template(
+                    SEOAuditIssueType.TITLE_TOO_SHORT
+                ).format(
+                    length=title_length,
+                    min_length=TITLE_MIN_LENGTH,
+                    max_length=TITLE_MAX_LENGTH,
+                    title=title_text,
+                ),
             )
         elif title_length > TITLE_MAX_LENGTH:
             self.add_issue(
-                'title_too_long',
-                'medium',
-                f'Title tag is too long ({title_length} chars). It may be truncated in search results. Recommended: {TITLE_MIN_LENGTH}-{TITLE_MAX_LENGTH} characters.'
+                SEOAuditIssueType.TITLE_TOO_LONG,
+                SEOAuditIssueSeverity.MEDIUM,
+                SEOAuditIssueType.get_description_template(
+                    SEOAuditIssueType.TITLE_TOO_LONG
+                ).format(
+                    length=title_length,
+                    min_length=TITLE_MIN_LENGTH,
+                    max_length=TITLE_MAX_LENGTH,
+                ),
             )
     
     # ==================== Meta Description Quality ====================
@@ -153,9 +170,11 @@ class SEOAuditor:
         
         if not meta_desc or not meta_desc.get('content'):
             self.add_issue(
-                'meta_description_missing',
-                'high',
-                'Page is missing a meta description. This impacts click-through rate in search results and AI Overviews context.'
+                SEOAuditIssueType.META_DESCRIPTION_MISSING,
+                SEOAuditIssueSeverity.HIGH,
+                SEOAuditIssueType.get_description_template(
+                    SEOAuditIssueType.META_DESCRIPTION_MISSING
+                ),
             )
             return
         
@@ -164,23 +183,37 @@ class SEOAuditor:
         
         if desc_length < META_DESC_MIN_LENGTH:
             self.add_issue(
-                'meta_description_too_short',
-                'medium',
-                f'Meta description is too short ({desc_length} chars). Recommended: {META_DESC_MIN_LENGTH}-{META_DESC_MAX_LENGTH} characters.'
+                SEOAuditIssueType.META_DESCRIPTION_TOO_SHORT,
+                SEOAuditIssueSeverity.MEDIUM,
+                SEOAuditIssueType.get_description_template(
+                    SEOAuditIssueType.META_DESCRIPTION_TOO_SHORT
+                ).format(
+                    length=desc_length,
+                    min_length=META_DESC_MIN_LENGTH,
+                    max_length=META_DESC_MAX_LENGTH,
+                ),
             )
         elif desc_length > META_DESC_MAX_LENGTH:
             self.add_issue(
-                'meta_description_too_long',
-                'medium',
-                f'Meta description is too long ({desc_length} chars). It may be truncated in search results. Recommended: {META_DESC_MIN_LENGTH}-{META_DESC_MAX_LENGTH} characters.'
+                SEOAuditIssueType.META_DESCRIPTION_TOO_LONG,
+                SEOAuditIssueSeverity.MEDIUM,
+                SEOAuditIssueType.get_description_template(
+                    SEOAuditIssueType.META_DESCRIPTION_TOO_LONG
+                ).format(
+                    length=desc_length,
+                    min_length=META_DESC_MIN_LENGTH,
+                    max_length=META_DESC_MAX_LENGTH,
+                ),
             )
         
         # Check for CTA words
         if not any(word in desc_text.lower() for word in CTA_KEYWORDS):
             self.add_issue(
-                'meta_description_no_cta',
-                'low',
-                f'Meta description lacks call-to-action words (e.g., {", ".join(CTA_KEYWORDS[:5])}). Adding CTAs can improve click-through rates.'
+                SEOAuditIssueType.META_DESCRIPTION_NO_CTA,
+                SEOAuditIssueSeverity.LOW,
+                SEOAuditIssueType.get_description_template(
+                    SEOAuditIssueType.META_DESCRIPTION_NO_CTA
+                ).format(cta_examples=", ".join(CTA_KEYWORDS[:5])),
             )
     
     # ==================== Content Depth Analysis ====================
@@ -192,9 +225,11 @@ class SEOAuditor:
         
         if not main_content:
             self.add_issue(
-                'content_empty',
-                'high',
-                'Page has no discernible content. Empty pages rarely rank in search results.'
+                SEOAuditIssueType.CONTENT_EMPTY,
+                SEOAuditIssueSeverity.HIGH,
+                SEOAuditIssueType.get_description_template(
+                    SEOAuditIssueType.CONTENT_EMPTY
+                ).format(content_type="discernible"),
             )
             return
         
@@ -209,26 +244,32 @@ class SEOAuditor:
         
         if word_count == 0:
             self.add_issue(
-                'content_empty',
-                'high',
-                'Page has no text content. Empty pages rarely rank in search results.'
+                SEOAuditIssueType.CONTENT_EMPTY,
+                SEOAuditIssueSeverity.HIGH,
+                SEOAuditIssueType.get_description_template(
+                    SEOAuditIssueType.CONTENT_EMPTY
+                ).format(content_type="text"),
             )
             return
         
         if word_count < MIN_WORD_COUNT:
             self.add_issue(
-                'content_thin',
-                'medium',
-                f'Page has thin content ({word_count} words). Recommended: at least {MIN_WORD_COUNT} words. AI Overviews favor comprehensive content.'
+                SEOAuditIssueType.CONTENT_THIN,
+                SEOAuditIssueSeverity.MEDIUM,
+                SEOAuditIssueType.get_description_template(
+                    SEOAuditIssueType.CONTENT_THIN
+                ).format(word_count=word_count, min_words=MIN_WORD_COUNT),
             )
         
         # Check for paragraphs
         paragraphs = content_copy.find_all('p')
         if word_count > MIN_WORDS_FOR_PARAGRAPHS and len(paragraphs) == 0:
             self.add_issue(
-                'content_no_paragraphs',
-                'low',
-                'Content lacks paragraph structure. Breaking content into paragraphs improves readability and user experience.'
+                SEOAuditIssueType.CONTENT_NO_PARAGRAPHS,
+                SEOAuditIssueSeverity.LOW,
+                SEOAuditIssueType.get_description_template(
+                    SEOAuditIssueType.CONTENT_NO_PARAGRAPHS
+                ),
             )
     
     # ==================== Header Structure ====================
@@ -239,15 +280,19 @@ class SEOAuditor:
         
         if len(h1_tags) == 0:
             self.add_issue(
-                'header_no_h1',
-                'high',
-                'Page is missing an H1 tag. H1 tags are critical for SEO and help search engines understand page content.'
+                SEOAuditIssueType.HEADER_NO_H1,
+                SEOAuditIssueSeverity.HIGH,
+                SEOAuditIssueType.get_description_template(
+                    SEOAuditIssueType.HEADER_NO_H1
+                ),
             )
         elif len(h1_tags) > 1:
             self.add_issue(
-                'header_multiple_h1',
-                'medium',
-                f'Page has {len(h1_tags)} H1 tags. Best practice is to have exactly one H1 per page.'
+                SEOAuditIssueType.HEADER_MULTIPLE_H1,
+                SEOAuditIssueSeverity.MEDIUM,
+                SEOAuditIssueType.get_description_template(
+                    SEOAuditIssueType.HEADER_MULTIPLE_H1
+                ).format(count=len(h1_tags)),
             )
         
         # Check for subheadings on content pages
@@ -259,9 +304,11 @@ class SEOAuditor:
                 body = self.soup.find('body')
                 word_count = count_words(body.get_text(separator=' ', strip=True)) if body else 0
                 self.add_issue(
-                    'header_no_subheadings',
-                    'medium',
-                    f'Page has {word_count} words but no H2 or H3 subheadings. Headers help structure content for users and search engines.'
+                    SEOAuditIssueType.HEADER_NO_SUBHEADINGS,
+                    SEOAuditIssueSeverity.MEDIUM,
+                    SEOAuditIssueType.get_description_template(
+                        SEOAuditIssueType.HEADER_NO_SUBHEADINGS
+                    ).format(word_count=word_count),
                 )
         
         # Check header hierarchy
@@ -278,9 +325,11 @@ class SEOAuditor:
             current_level = int(header.name[1])
             if prev_level > 0 and current_level > prev_level + 1:
                 self.add_issue(
-                    'header_broken_hierarchy',
-                    'low',
-                    f'Header hierarchy is broken: found {header.name.upper()} after H{prev_level}. Headers should follow sequential order (H1→H2→H3).'
+                    SEOAuditIssueType.HEADER_BROKEN_HIERARCHY,
+                    SEOAuditIssueSeverity.LOW,
+                    SEOAuditIssueType.get_description_template(
+                        SEOAuditIssueType.HEADER_BROKEN_HIERARCHY
+                    ).format(current=header.name.upper(), previous=f"H{prev_level}"),
                 )
                 break
             prev_level = current_level
@@ -301,24 +350,30 @@ class SEOAuditor:
                 # Check for generic alt
                 if alt_text.lower() in GENERIC_ALT_TEXTS:
                     self.add_issue(
-                        'image_alt_generic',
-                        'low',
-                        f'Image has generic alt text: "{alt_text}". Alt text should be descriptive and meaningful.'
+                        SEOAuditIssueType.IMAGE_ALT_GENERIC,
+                        SEOAuditIssueSeverity.LOW,
+                        SEOAuditIssueType.get_description_template(
+                            SEOAuditIssueType.IMAGE_ALT_GENERIC
+                        ).format(alt_text=alt_text),
                     )
                 
                 # Check for too long alt
                 if len(alt_text) > MAX_ALT_LENGTH:
                     self.add_issue(
-                        'image_alt_too_long',
-                        'low',
-                        f'Image alt text is too long ({len(alt_text)} chars). Recommended: under {MAX_ALT_LENGTH} characters.'
+                        SEOAuditIssueType.IMAGE_ALT_TOO_LONG,
+                        SEOAuditIssueSeverity.LOW,
+                        SEOAuditIssueType.get_description_template(
+                            SEOAuditIssueType.IMAGE_ALT_TOO_LONG
+                        ).format(length=len(alt_text), max_length=MAX_ALT_LENGTH),
                     )
         
         if images_without_alt > 0:
             self.add_issue(
-                'image_no_alt',
-                'medium',
-                f'{images_without_alt} image(s) are missing alt text. Alt text is critical for accessibility and helps images rank in Google Images.'
+                SEOAuditIssueType.IMAGE_NO_ALT,
+                SEOAuditIssueSeverity.MEDIUM,
+                SEOAuditIssueType.get_description_template(
+                    SEOAuditIssueType.IMAGE_NO_ALT
+                ).format(count=images_without_alt),
             )
     
     # ==================== Structured Data Presence ====================
@@ -329,9 +384,11 @@ class SEOAuditor:
         
         if len(json_ld_scripts) == 0:
             self.add_issue(
-                'schema_missing',
-                'high',
-                'Page has no Schema markup (JSON-LD). AI Overviews and Google rely on structured data to understand content.'
+                SEOAuditIssueType.SCHEMA_MISSING,
+                SEOAuditIssueSeverity.HIGH,
+                SEOAuditIssueType.get_description_template(
+                    SEOAuditIssueType.SCHEMA_MISSING
+                ),
             )
             return
         
@@ -340,17 +397,21 @@ class SEOAuditor:
         # Check for Organization/Person
         if not schema_types.intersection(ORGANIZATION_SCHEMA_TYPES):
             self.add_issue(
-                'schema_no_organization',
-                'medium',
-                'Page is missing Organization/Person schema. This helps establish entity relationships and trust signals.'
+                SEOAuditIssueType.SCHEMA_NO_ORGANIZATION,
+                SEOAuditIssueSeverity.MEDIUM,
+                SEOAuditIssueType.get_description_template(
+                    SEOAuditIssueType.SCHEMA_NO_ORGANIZATION
+                ),
             )
         
         # Check for Article/BlogPosting on content pages
         if is_content_page(self.soup) and not schema_types.intersection(ARTICLE_SCHEMA_TYPES):
             self.add_issue(
-                'schema_no_article',
-                'medium',
-                'Content page is missing Article/BlogPosting schema. This helps with rich results and AI Overview citations.'
+                SEOAuditIssueType.SCHEMA_NO_ARTICLE,
+                SEOAuditIssueSeverity.MEDIUM,
+                SEOAuditIssueType.get_description_template(
+                    SEOAuditIssueType.SCHEMA_NO_ARTICLE
+                ),
             )
     
     def _parse_schema_types(self, json_ld_scripts) -> set:
@@ -374,9 +435,11 @@ class SEOAuditor:
                             schema_types.add(schema_type)
             except (json.JSONDecodeError, AttributeError):
                 self.add_issue(
-                    'schema_invalid',
-                    'high',
-                    'Page has invalid JSON-LD structured data. Fix syntax errors to ensure search engines can parse your schema.'
+                    SEOAuditIssueType.SCHEMA_INVALID,
+                    SEOAuditIssueSeverity.HIGH,
+                    SEOAuditIssueType.get_description_template(
+                        SEOAuditIssueType.SCHEMA_INVALID
+                    ),
                 )
         
         return schema_types
@@ -390,9 +453,11 @@ class SEOAuditor:
         
         if not viewport:
             self.add_issue(
-                'mobile_no_viewport',
-                'high',
-                'Page is missing viewport meta tag. This is essential for mobile-first indexing. Add: <meta name="viewport" content="width=device-width, initial-scale=1">'
+                SEOAuditIssueType.MOBILE_NO_VIEWPORT,
+                SEOAuditIssueSeverity.HIGH,
+                SEOAuditIssueType.get_description_template(
+                    SEOAuditIssueType.MOBILE_NO_VIEWPORT
+                ),
             )
         
         # Check for fixed-width layouts
@@ -415,9 +480,11 @@ class SEOAuditor:
             if container and container.get('style'):
                 if fixed_width_pattern.search(container.get('style', '')):
                     self.add_issue(
-                        'mobile_fixed_width',
-                        'medium',
-                        'Page appears to use fixed-width layout. Use responsive design with relative units (%, em, rem) for better mobile experience.'
+                        SEOAuditIssueType.MOBILE_FIXED_WIDTH,
+                        SEOAuditIssueSeverity.MEDIUM,
+                        SEOAuditIssueType.get_description_template(
+                            SEOAuditIssueType.MOBILE_FIXED_WIDTH
+                        ),
                     )
                     break
     
@@ -437,21 +504,27 @@ class SEOAuditor:
         if len(internal_links) == 0:
             if len(external_links) > 0:
                 self.add_issue(
-                    'internal_links_all_external',
-                    'medium',
-                    f'Page has {len(external_links)} external links but no internal links. Internal links help Google understand site structure.'
+                    SEOAuditIssueType.INTERNAL_LINKS_ALL_EXTERNAL,
+                    SEOAuditIssueSeverity.MEDIUM,
+                    SEOAuditIssueType.get_description_template(
+                        SEOAuditIssueType.INTERNAL_LINKS_ALL_EXTERNAL
+                    ).format(external_count=len(external_links)),
                 )
             else:
                 self.add_issue(
-                    'internal_links_none',
-                    'medium',
-                    'Page has no internal links. Internal linking is critical for topical authority and helping users navigate your site.'
+                    SEOAuditIssueType.INTERNAL_LINKS_NONE,
+                    SEOAuditIssueSeverity.MEDIUM,
+                    SEOAuditIssueType.get_description_template(
+                        SEOAuditIssueType.INTERNAL_LINKS_NONE
+                    ),
                 )
         elif len(internal_links) < MIN_INTERNAL_LINKS and is_content_page(self.soup):
             self.add_issue(
-                'internal_links_few',
-                'low',
-                f'Content page has only {len(internal_links)} internal link(s). Recommended: at least {MIN_INTERNAL_LINKS} internal links for better site structure.'
+                SEOAuditIssueType.INTERNAL_LINKS_FEW,
+                SEOAuditIssueSeverity.LOW,
+                SEOAuditIssueType.get_description_template(
+                    SEOAuditIssueType.INTERNAL_LINKS_FEW
+                ).format(count=len(internal_links), min_links=MIN_INTERNAL_LINKS),
             )
     
     def _categorize_links(self, links) -> tuple:
@@ -486,9 +559,11 @@ class SEOAuditor:
         
         if not published_meta and not has_published_schema:
             self.add_issue(
-                'content_no_publish_date',
-                'low',
-                'Content page is missing published date metadata. Add article:published_time meta tag or datePublished in schema.'
+                SEOAuditIssueType.CONTENT_NO_PUBLISH_DATE,
+                SEOAuditIssueSeverity.LOW,
+                SEOAuditIssueType.get_description_template(
+                    SEOAuditIssueType.CONTENT_NO_PUBLISH_DATE
+                ),
             )
         
         # Check for modified date
@@ -497,9 +572,11 @@ class SEOAuditor:
         
         if not modified_meta and not has_modified_schema:
             self.add_issue(
-                'content_no_modified_date',
-                'low',
-                'Content page is missing last modified date. Add article:modified_time meta tag or dateModified in schema for time-sensitive content.'
+                SEOAuditIssueType.CONTENT_NO_MODIFIED_DATE,
+                SEOAuditIssueSeverity.LOW,
+                SEOAuditIssueType.get_description_template(
+                    SEOAuditIssueType.CONTENT_NO_MODIFIED_DATE
+                ),
             )
         
         # Check if content is old
@@ -507,9 +584,11 @@ class SEOAuditor:
             days_old = (datetime.now(published_date.tzinfo) - published_date).days
             if days_old > MAX_CONTENT_AGE_DAYS:
                 self.add_issue(
-                    'content_not_updated',
-                    'low',
-                    f'Content was published {days_old} days ago and may need updating. Google favors fresh content for time-sensitive queries.'
+                    SEOAuditIssueType.CONTENT_NOT_UPDATED,
+                    SEOAuditIssueSeverity.LOW,
+                    SEOAuditIssueType.get_description_template(
+                        SEOAuditIssueType.CONTENT_NOT_UPDATED
+                    ).format(days_old=days_old),
                 )
     
     def _find_published_date_meta(self):
@@ -635,11 +714,12 @@ def audit_single_page(page, audit_run) -> List[Dict[str, Any]]:
     for issue_data in issues:
         SEOAuditIssue.objects.create(
             audit_run=audit_run,
-            issue_type=issue_data['issue_type'],
-            issue_severity=issue_data['issue_severity'],
-            page_url=issue_data.get('page_url', ''),
+            page=page,  # Link to the actual page object
+            issue_type=issue_data["issue_type"],
+            issue_severity=issue_data["issue_severity"],
+            page_url=issue_data.get("page_url", ""),
             page_title=page.title,
-            description=issue_data['description']
+            description=issue_data["description"],
         )
     
     return issues
@@ -677,12 +757,18 @@ def run_audit_on_pages(pages: List, audit_run, show_progress: bool = True) -> Di
     
     # Get breakdown by severity
     return {
-        'total_pages': total_pages,
-        'total_issues': total_issues,
-        'overall_score': overall_score,
-        'high_issues': audit_run.issues.filter(issue_severity='high').count(),
-        'medium_issues': audit_run.issues.filter(issue_severity='medium').count(),
-        'low_issues': audit_run.issues.filter(issue_severity='low').count(),
+        "total_pages": total_pages,
+        "total_issues": total_issues,
+        "overall_score": overall_score,
+        "high_issues": audit_run.issues.filter(
+            issue_severity=SEOAuditIssueSeverity.HIGH
+        ).count(),
+        "medium_issues": audit_run.issues.filter(
+            issue_severity=SEOAuditIssueSeverity.MEDIUM
+        ).count(),
+        "low_issues": audit_run.issues.filter(
+            issue_severity=SEOAuditIssueSeverity.LOW
+        ).count(),
     }
 
 

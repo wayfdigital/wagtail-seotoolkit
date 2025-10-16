@@ -1,0 +1,105 @@
+{% extends "wagtailadmin/base.html" %}
+{% load i18n static wagtailadmin_tags %}
+
+{% block titletag %}{% trans "SEO Dashboard" %}{% endblock %}
+{% block bodyclass %}seo-dashboard{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/seo_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+    {% trans "SEO Dashboard" as title_str %}
+    {% include "wagtailadmin/shared/header.html" with title=title_str icon="chart-bar" %}
+    
+    <div class="seo-dashboard nice-padding">
+        {% if latest_audit %}
+            <!-- Main Health Score Card -->
+            <div class="seo-dashboard__main-card">
+                <!-- Header Section -->
+                <div class="seo-dashboard__header">
+                    <div class="seo-dashboard__score-section">
+                        <h2 class="seo-dashboard__title">{% trans "SEO Health Score" %}</h2>
+                        <div class="seo-dashboard__score {% if health_score >= 80 %}seo-dashboard__score--good{% elif health_score >= 50 %}seo-dashboard__score--warning{% else %}seo-dashboard__score--critical{% endif %}">
+                            {{ health_score }}/100
+                            {% if health_score >= 80 %}🟢{% elif health_score >= 50 %}🟡{% else %}🔴{% endif %}
+                        </div>
+                        <div class="seo-dashboard__meta">
+                            <div>
+                                <strong>{% trans "Last audit:" %}</strong> 
+                                {{ latest_audit.created_at|timesince }} {% trans "ago" %}
+                            </div>
+                            <div>
+                                <strong>{% trans "Pages analyzed:" %}</strong> 
+                                {{ pages_analyzed }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Issues Breakdown -->
+                    <div class="seo-dashboard__breakdown">
+                        <h3 class="seo-dashboard__breakdown-title">{% trans "Issues Breakdown" %}</h3>
+                        <div class="seo-dashboard__stats">
+                            <div class="seo-dashboard__stat seo-dashboard__stat--critical">
+                                <span class="seo-dashboard__stat-label">🔴 {% trans "Critical Issues" %}</span>
+                                <span class="seo-dashboard__stat-value">{{ critical_count }}</span>
+                            </div>
+                            <div class="seo-dashboard__stat seo-dashboard__stat--warning">
+                                <span class="seo-dashboard__stat-label">🟡 {% trans "Warnings" %}</span>
+                                <span class="seo-dashboard__stat-value">{{ warnings_count }}</span>
+                            </div>
+                            <div class="seo-dashboard__stat seo-dashboard__stat--info">
+                                <span class="seo-dashboard__stat-label">🔵 {% trans "Suggestions" %}</span>
+                                <span class="seo-dashboard__stat-value">{{ suggestions_count }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr class="seo-dashboard__divider">
+                
+                <!-- Top Issues -->
+                {% if top_issues %}
+                    <h3 class="seo-dashboard__section-title">{% trans "Top Issues" %}</h3>
+                    <ul class="seo-dashboard__issues-list">
+                        {% for issue in top_issues %}
+                            <li class="seo-dashboard__issue">
+                                <span class="seo-dashboard__issue-icon">
+                                    {% if issue.severity == SEVERITY_HIGH %}🔴{% elif issue.severity == SEVERITY_MEDIUM %}🟡{% else %}🔵{% endif %}
+                                </span>
+                                <span class="seo-dashboard__issue-text">
+                                    <strong>{{ issue.count }}</strong> {{ issue.label }}
+                                </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                
+                <!-- Action Buttons -->
+                <div class="seo-dashboard__actions">
+                    <a href="{% url 'seo_issues_report' %}" class="button button-primary">
+                        {% trans "View All Issues" %}
+                    </a>
+                    <a href="{% url 'wagtailadmin_home' %}" class="button button-secondary">
+                        {% trans "Run New Audit" %}
+                    </a>
+                </div>
+            </div>
+        {% else %}
+            <!-- No Audit Available -->
+            <div class="seo-dashboard__no-data">
+                <h2 class="seo-dashboard__no-data-title">
+                    {% trans "No SEO audit data available" %}
+                </h2>
+                <p class="seo-dashboard__no-data-text">
+                    {% trans "Run your first SEO audit to see the health score and issues for your site." %}
+                </p>
+                <p class="seo-dashboard__no-data-text">
+                    {% trans "To run an audit, use the following management command:" %}
+                </p>
+                <pre class="seo-dashboard__code">python manage.py seoaudit</pre>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+

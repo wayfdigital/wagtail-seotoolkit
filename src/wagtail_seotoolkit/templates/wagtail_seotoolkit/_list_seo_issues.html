@@ -1,0 +1,80 @@
+{% load i18n l10n wagtailadmin_tags %}
+
+<div class="seo-issues-container">
+    {% for issue in seo_issues_list %}
+        {% with page=issue.page %}
+            {% if page %}
+                {% page_permissions page as page_perms %}
+            {% endif %}
+            <div class="seo-issue-card {% if page and not page.live %}unpublished{% endif %}">
+                <div class="issue-header">
+                    <span class="issue-severity">
+                        {% if issue.issue_severity == SEVERITY_HIGH %}
+                            <span class="issue-severity--critical" title="{% trans 'Critical' %}">🔴</span>
+                        {% elif issue.issue_severity == SEVERITY_MEDIUM %}
+                            <span class="issue-severity--warning" title="{% trans 'Warning' %}">🟡</span>
+                        {% else %}
+                            <span class="issue-severity--info" title="{% trans 'Suggestion' %}">🔵</span>
+                        {% endif %}
+                    </span>
+                    <div class="issue-type-and-page">
+                        <span class="issue-type">{{ issue.get_issue_type_display }}</span>
+                        <span class="issue-separator">-</span>
+                        <div class="issue-page-name">
+                            {% if page %}
+                                {% page_permissions page as page_perms %}
+                                {% if page_perms.can_edit %}
+                                    <a href="{% url 'wagtailadmin_pages:edit' page.id %}" title="{% trans 'Edit this page' %}" class="issue-page-link">
+                                        {{ page.get_admin_display_title }}
+                                    </a>
+                                {% else %}
+                                    <span class="issue-page-text">{{ page.get_admin_display_title }}</span>
+                                {% endif %}
+                            {% else %}
+                                {% if issue.page_title %}
+                                    <span class="issue-page-text">{{ issue.page_title }}</span>
+                                {% else %}
+                                    <em class="issue-page-text--empty">{% trans "No page" %}</em>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if page %}
+                        <div class="issue-meta-group">
+                            {% i18n_enabled as show_locale_labels %}
+                            {% if show_locale_labels %}
+                                <span class="w-status w-status--label issue-locale-label">{{ page.locale.get_display_name }}</span>
+                            {% endif %}
+                            <span class="issue-status">
+                                {% include "wagtailadmin/shared/page_status_tag.html" with page=page %}
+                            </span>
+                            <ul class="actions issue-actions">
+                                {% page_listing_buttons page request.user %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                {% if issue.description %}
+                    <p class="issue-description">{{ issue.description }}</p>
+                {% endif %}
+            </div>
+        {% endwith %}
+    {% empty %}
+        <div class="empty-state">
+            {% if request.GET.issue_severity %}
+                <p class="empty-state__title">
+                    {% trans "No results found matching the selected filters." %}
+                </p>
+                <p class="empty-state__subtitle">
+                    {% trans "Try adjusting or clearing your filters to see more results." %}
+                </p>
+            {% else %}
+                <p class="empty-state__title">
+                    {% trans "No issues found! Your site is in great shape." %} ✅
+                </p>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+

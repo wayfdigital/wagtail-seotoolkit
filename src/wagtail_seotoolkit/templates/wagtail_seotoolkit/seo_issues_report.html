@@ -1,0 +1,42 @@
+{% extends 'wagtailadmin/reports/base_report_results.html' %}
+{% load i18n %}
+
+{% block before_results %}
+<div class="nice-padding">
+    {% if latest_audit %}
+        <div class="seo-issues-report__audit-meta">
+            <strong>{% trans "Last audit:" %}</strong> {{ latest_audit.created_at|date:"Y-m-d H:i" }}
+            ({{ latest_audit.created_at|timesince }} {% trans "ago" %})
+            <span class="seo-issues-report__separator">•</span>
+            <strong>{% trans "Pages analyzed:" %}</strong> {{ latest_audit.pages_analyzed }}
+            <span class="seo-issues-report__separator">•</span>
+            <strong>{% trans "Overall score:" %}</strong> {{ latest_audit.overall_score }}/100
+        </div>
+    {% else %}
+        <div class="seo-issues-report__no-audit">
+            <p class="seo-issues-report__no-audit-text">
+                {% trans "No audit data available. Please run an SEO audit first using the management command:" %}
+            </p>
+            <pre class="seo-issues-report__no-audit-code">python manage.py seoaudit</pre>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block results %}
+    <div class="nice-padding">
+        {% if request.GET.issue_severity %}
+            <div class="seo-issues-report__clear-filters">
+                <a href="{% url 'seo_issues_report' %}" class="button button-small button-secondary">
+                    {% trans "Clear filters" %}
+                </a>
+            </div>
+        {% endif %}
+        {% include 'wagtail_seotoolkit/_list_seo_issues.html' %}
+    </div>
+{% endblock %}
+
+{% block no_results_message %}
+    <p>{% trans "No SEO issues found! Your site is in great shape." %} ✅</p>
+{% endblock %}
+

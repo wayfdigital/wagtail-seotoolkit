@@ -1,0 +1,53 @@
+/* SEO Issues Report Styles */
+
+.seo-issues-report__notes-title {
+    color: var(--w-color-text-label);
+    margin-bottom: 1rem;
+}
+
+.seo-issues-report__notes-text {
+    color: var(--w-color-text-label);
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+.seo-issues-report__audit-meta {
+    color: var(--w-color-text-meta);
+    font-size: 0.875rem;
+    padding: 0.75rem 0;
+    border-top: 1px solid var(--w-color-border-furniture);
+    border-bottom: 1px solid var(--w-color-border-furniture);
+    margin-bottom: 1.5rem;
+}
+
+.seo-issues-report__separator {
+    margin: 0 0.5rem;
+}
+
+.seo-issues-report__no-audit {
+    background: var(--w-color-warning-50);
+    border: 1px solid var(--w-color-warning-100);
+    border-radius: 0.25rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.seo-issues-report__no-audit-text {
+    color: var(--w-color-text-label);
+    margin: 0 0 0.75rem 0;
+}
+
+.seo-issues-report__no-audit-code {
+    background: var(--w-color-surface-field);
+    border: 1px solid var(--w-color-border-field-default);
+    color: var(--w-color-text-label);
+    padding: 0.75rem;
+    margin: 0;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.seo-issues-report__clear-filters {
+    margin-bottom: 1.5rem;
+}
+
