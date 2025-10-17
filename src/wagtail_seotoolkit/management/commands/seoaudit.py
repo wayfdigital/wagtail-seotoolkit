@@ -43,10 +43,14 @@ class Command(BaseCommand):
             total_pages = len(pages)
             
             self.stdout.write(f"Found {total_pages} page(s) to audit\n")
-            
+
             # Run the audit
             show_progress = not options.get('no_progress', False)
-            results = run_audit_on_pages(pages, audit_run, show_progress=show_progress)
+            results = run_audit_on_pages(
+                pages,
+                audit_run,
+                show_progress=show_progress,
+            )
             
             # Display summary
             self.display_summary(results)

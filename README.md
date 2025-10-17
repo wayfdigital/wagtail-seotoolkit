@@ -49,6 +49,42 @@ Once you see `"Starting development server at http://0.0.0.0:8000/"`, visit:
 
 You'll see the **"SEO Toolkit"** menu item (with cog icon) in the Wagtail admin sidebar!
 
+## Features
+
+### SEO Audit
+
+Run comprehensive SEO audits on your Wagtail pages to identify and fix SEO issues:
+
+- **Title Tag Optimization** - Check for missing, too short, or too long titles
+- **Meta Description Quality** - Validate descriptions and check for CTAs
+- **Content Depth Analysis** - Ensure adequate word count and paragraph structure
+- **Header Structure** - Validate H1 usage and heading hierarchy
+- **Image Alt Text** - Check for missing or generic alt text
+- **Structured Data** - Verify JSON-LD schema markup presence
+- **Mobile Responsiveness** - Check viewport meta tag and fixed-width layouts
+- **Internal Linking** - Analyze internal link structure
+- **Content Freshness** - Check for publish and modified dates
+
+### Running SEO Audits
+
+#### Command Line
+
+Run an SEO audit using the management command:
+
+```bash
+# Audit all pages
+python manage.py seoaudit
+
+# Audit a specific page
+python manage.py seoaudit --page-id 123
+
+# Limit number of pages
+python manage.py seoaudit --pages 10
+
+# Disable progress bar
+python manage.py seoaudit --no-progress
+```
+
 ### Development Workflow
 
 The development environment is configured with **live code reloading**:
