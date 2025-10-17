@@ -310,38 +310,38 @@ def calculate_audit_score(total_issues: int, total_pages: int) -> int:
 def execute_audit_run(audit_run, pages=None, show_progress=True):
     """
     Execute an audit run on the provided pages.
-    
+
     This is the core audit execution function that can be called by both
     the CLI command and the scheduled audit command.
-    
+
     Args:
         audit_run: The SEOAuditRun instance to execute
         pages: List of pages to audit (if None, will audit all live pages)
         show_progress: Whether to show progress bar (default: True)
-        
+
     Returns:
         Dictionary with audit results summary
     """
     from wagtail.models import Page
-    
+
     # Get pages to audit if not provided
     if pages is None:
         pages = Page.objects.live().public().specific()
         # Exclude root and system pages
         pages = pages.exclude(depth__lte=2)
         pages = list(pages)
-    
+
     # Update audit run status to running
-    audit_run.status = 'running'
+    audit_run.status = "running"
     audit_run.save()
-    
+
     try:
         # Run the audit
         results = run_audit_on_pages(pages, audit_run, show_progress=show_progress)
         return results
-        
+
     except Exception as e:
         # Mark audit as failed
-        audit_run.status = 'failed'
+        audit_run.status = "failed"
         audit_run.save()
         raise e
