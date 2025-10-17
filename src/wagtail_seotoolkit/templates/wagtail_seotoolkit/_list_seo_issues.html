@@ -6,17 +6,8 @@
             {% if page %}
                 {% page_permissions page as page_perms %}
             {% endif %}
-            <div class="seo-issue-card {% if page and not page.live %}unpublished{% endif %}">
+            <div class="seo-issue-card {% if issue.issue_severity == 3 %}seo-issue-card--critical{% elif issue.issue_severity == 2 %}seo-issue-card--warning{% else %}seo-issue-card--info{% endif %} {% if page and not page.live %}unpublished{% endif %}">
                 <div class="issue-header">
-                    <span class="issue-severity">
-                        {% if issue.issue_severity == SEVERITY_HIGH %}
-                            <span class="issue-severity--critical" title="{% trans 'Critical' %}">🔴</span>
-                        {% elif issue.issue_severity == SEVERITY_MEDIUM %}
-                            <span class="issue-severity--warning" title="{% trans 'Warning' %}">🟡</span>
-                        {% else %}
-                            <span class="issue-severity--info" title="{% trans 'Suggestion' %}">🔵</span>
-                        {% endif %}
-                    </span>
                     <div class="issue-type-and-page">
                         <span class="issue-type">{{ issue.get_issue_type_display }}</span>
                         <span class="issue-separator">-</span>

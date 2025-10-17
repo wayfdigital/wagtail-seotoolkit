@@ -1,0 +1,173 @@
+{% load i18n wagtailadmin_tags static %}
+
+{% block result_template %}
+    <template id="w-a11y-result-row-template">
+        <div class="w-a11y-result__row" data-a11y-result-row>
+            <div>
+                <h3 class="w-a11y-result__header">
+                    <span class="w-a11y-result__name" data-a11y-result-name></span>
+                </h3>
+                <div class="w-a11y-result__help" data-a11y-result-help></div>
+            </div>
+            <button
+                class="w-a11y-result__selector"
+                data-a11y-result-selector
+                aria-label="{% trans 'Show issue' %}"
+                type="button"
+            >
+                <span class="w-a11y-result__selector-text" data-a11y-result-selector-text></span>
+                {% icon name="link-external" classname="w-a11y-result__icon" %}
+            </button>
+        </div>
+    </template>
+{% endblock %}
+
+{% block content %}
+    <div class="w-divide-y w-divide-border-furniture w-py-6 w-pl-2 lg:w-pl-8 w-gap-3">
+        {% block metrics_section %}
+            <div>
+                <h2 class="w-my-5 w-text-16 w-font-bold w-text-text-label">
+                    {% trans 'Content metrics' %}
+                </h2>
+                <div class="w-flex w-flex-wrap w-gap-x-10 w-gap-y-4">
+                    {% block metrics %}
+                        <div>
+                            <h3 class="w-my-2 w-text-14 w-text-text-placeholder">{% trans 'Words' %}</h3>
+                            <p class="w-font-semibold w-text-text-label" data-content-word-count>-</p>
+                        </div>
+                        <div>
+                            <h3 class="w-my-2 w-text-14 w-text-text-placeholder">{% trans 'Reading time' %}</h3>
+                            <p class="w-font-semibold w-text-text-label" data-content-reading-time>-</p>
+                        </div>
+                    {% endblock %}
+                </div>
+            </div>
+        {% endblock %}
+        {% block issues_section %}
+            <div>
+                <h2 class="w-flex w-items-center w-gap-2 w-my-5 w-text-16 w-font-bold">
+                    <span>{% trans 'Issues found' %}</span><span class="w-a11y-result__count" data-a11y-result-count>0</span>
+                </h2>
+                {% block issues %}
+                    <div class="w-flex w-flex-col w-gap-2.5" data-checks-panel></div>
+                {% endblock %}
+            </div>
+        {% endblock %}
+
+        <!-- SEO Insights Section -->
+        {% if seo_insights %}
+            <div class="seo-sidepanel">
+                <div class="seo-sidepanel__header">
+                    <h2 class="seo-sidepanel__title">
+                        {% trans "SEO Insights" %}
+                    </h2>
+                    <p class="seo-sidepanel__subtitle">
+                        <a href="{% url 'seo_dashboard' %}" class="seo-sidepanel__audit-link">
+                            {% trans "Last audit:" %} {{ seo_insights.latest_audit.created_at|timesince }} {% trans "ago" %}
+                        </a>
+                    </p>
+                </div>
+
+                <div class="seo-sidepanel__summary">
+                    <div class="seo-sidepanel__summary-item">
+                        <span class="seo-sidepanel__summary-label">{% trans "Issues Found" %}</span>
+                        <span class="seo-sidepanel__summary-value">{{ seo_insights.total_issues }}</span>
+                    </div>
+                </div>
+
+                {% if seo_insights.total_issues > 0 %}
+                    <!-- Critical Issues -->
+                    {% if seo_insights.critical_issues %}
+                        <details class="seo-sidepanel__issues-group" open>
+                            <summary class="seo-sidepanel__severity-header seo-sidepanel__severity-header--critical">
+                                <span class="seo-sidepanel__severity-label">{% trans "CRITICAL" %}</span>
+                                <span class="seo-sidepanel__severity-count">{{ seo_insights.critical_issues|length }}</span>
+                            </summary>
+                            <div class="seo-sidepanel__issues-list">
+                                {% for issue in seo_insights.critical_issues %}
+                                    <div class="seo-sidepanel__issue-card seo-sidepanel__issue-card--critical">
+                                        <div class="seo-sidepanel__issue-type">
+                                            {{ issue.type }}
+                                        </div>
+                                        <div class="seo-sidepanel__issue-description">
+                                            {{ issue.description }}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </details>
+                    {% endif %}
+
+                    <!-- Warning Issues -->
+                    {% if seo_insights.warning_issues %}
+                        <details class="seo-sidepanel__issues-group" open>
+                            <summary class="seo-sidepanel__severity-header seo-sidepanel__severity-header--warning">
+                                <span class="seo-sidepanel__severity-label">{% trans "WARNINGS" %}</span>
+                                <span class="seo-sidepanel__severity-count">{{ seo_insights.warning_issues|length }}</span>
+                            </summary>
+                            <div class="seo-sidepanel__issues-list">
+                                {% for issue in seo_insights.warning_issues %}
+                                    <div class="seo-sidepanel__issue-card seo-sidepanel__issue-card--warning">
+                                        <div class="seo-sidepanel__issue-type">
+                                            {{ issue.type }}
+                                        </div>
+                                        <div class="seo-sidepanel__issue-description">
+                                            {{ issue.description }}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </details>
+                    {% endif %}
+
+                    <!-- Suggestion Issues -->
+                    {% if seo_insights.suggestion_issues %}
+                        <details class="seo-sidepanel__issues-group" open>
+                            <summary class="seo-sidepanel__severity-header seo-sidepanel__severity-header--suggestion">
+                                <span class="seo-sidepanel__severity-label">{% trans "SUGGESTIONS" %}</span>
+                                <span class="seo-sidepanel__severity-count">{{ seo_insights.suggestion_issues|length }}</span>
+                            </summary>
+                            <div class="seo-sidepanel__issues-list">
+                                {% for issue in seo_insights.suggestion_issues %}
+                                    <div class="seo-sidepanel__issue-card seo-sidepanel__issue-card--suggestion">
+                                        <div class="seo-sidepanel__issue-type">
+                                            {{ issue.type }}
+                                        </div>
+                                        <div class="seo-sidepanel__issue-description">
+                                            {{ issue.description }}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </details>
+                    {% endif %}
+                {% else %}
+                    <div class="seo-sidepanel__no-issues">
+                        <p class="seo-sidepanel__no-issues-text">
+                            {% trans "Great! No SEO issues found for this page." %}
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="seo-sidepanel">
+                <div class="seo-sidepanel__header">
+                    <h2 class="seo-sidepanel__title">
+                        {% trans "SEO Insights" %}
+                    </h2>
+                </div>
+                <div class="seo-sidepanel__no-data">
+                    <p class="seo-sidepanel__no-data-text">
+                        {% trans "No audit data available. Run an SEO audit to see insights for this page." %}
+                    </p>
+                    <pre class="seo-sidepanel__no-data-code">python manage.py seoaudit</pre>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+{% endblock %}
+
+{% block axe_config %}
+    {{ axe_configuration|json_script:"accessibility-axe-configuration" }}
+{% endblock %}

@@ -22,7 +22,6 @@
                         <h2 class="seo-dashboard__title">{% trans "SEO Health Score" %}</h2>
                         <div class="seo-dashboard__score {% if health_score >= 80 %}seo-dashboard__score--good{% elif health_score >= 50 %}seo-dashboard__score--warning{% else %}seo-dashboard__score--critical{% endif %}">
                             {{ health_score }}/100
-                            {% if health_score >= 80 %}🟢{% elif health_score >= 50 %}🟡{% else %}🔴{% endif %}
                         </div>
                         <div class="seo-dashboard__meta">
                             <div>
@@ -41,15 +40,15 @@
                         <h3 class="seo-dashboard__breakdown-title">{% trans "Issues Breakdown" %}</h3>
                         <div class="seo-dashboard__stats">
                             <div class="seo-dashboard__stat seo-dashboard__stat--critical">
-                                <span class="seo-dashboard__stat-label">🔴 {% trans "Critical Issues" %}</span>
+                                <span class="seo-dashboard__stat-label">{% trans "Critical Issues" %}</span>
                                 <span class="seo-dashboard__stat-value">{{ critical_count }}</span>
                             </div>
                             <div class="seo-dashboard__stat seo-dashboard__stat--warning">
-                                <span class="seo-dashboard__stat-label">🟡 {% trans "Warnings" %}</span>
+                                <span class="seo-dashboard__stat-label">{% trans "Warnings" %}</span>
                                 <span class="seo-dashboard__stat-value">{{ warnings_count }}</span>
                             </div>
                             <div class="seo-dashboard__stat seo-dashboard__stat--info">
-                                <span class="seo-dashboard__stat-label">🔵 {% trans "Suggestions" %}</span>
+                                <span class="seo-dashboard__stat-label">{% trans "Suggestions" %}</span>
                                 <span class="seo-dashboard__stat-value">{{ suggestions_count }}</span>
                             </div>
                         </div>
@@ -61,18 +60,16 @@
                 <!-- Top Issues -->
                 {% if top_issues %}
                     <h3 class="seo-dashboard__section-title">{% trans "Top Issues" %}</h3>
-                    <ul class="seo-dashboard__issues-list">
+                    <div class="seo-dashboard__issues-list">
                         {% for issue in top_issues %}
-                            <li class="seo-dashboard__issue">
-                                <span class="seo-dashboard__issue-icon">
-                                    {% if issue.severity == SEVERITY_HIGH %}🔴{% elif issue.severity == SEVERITY_MEDIUM %}🟡{% else %}🔵{% endif %}
-                                </span>
-                                <span class="seo-dashboard__issue-text">
-                                    <strong>{{ issue.count }}</strong> {{ issue.label }}
-                                </span>
-                            </li>
+                            <div class="seo-dashboard__issue-card {% if issue.severity == 3 %}seo-dashboard__issue-card--critical{% elif issue.severity == 2 %}seo-dashboard__issue-card--warning{% else %}seo-dashboard__issue-card--info{% endif %}">
+                                <div class="seo-dashboard__issue-content">
+                                    <span class="seo-dashboard__issue-label">{{ issue.label|title }}</span>
+                                </div>
+                                <span class="seo-dashboard__issue-count">{{ issue.count }}</span>
+                            </div>
                         {% endfor %}
-                    </ul>
+                    </div>
                 {% endif %}
                 
                 <!-- Action Buttons -->

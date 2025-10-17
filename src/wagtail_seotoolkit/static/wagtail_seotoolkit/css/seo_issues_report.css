@@ -25,26 +25,29 @@
 }
 
 .seo-issues-report__no-audit {
-    background: var(--w-color-warning-50);
-    border: 1px solid var(--w-color-warning-100);
-    border-radius: 0.25rem;
-    padding: 1rem;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.03) 100%);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    border-radius: 0.5rem;
+    padding: 1.5rem 1.25rem;
     margin-bottom: 1rem;
 }
 
 .seo-issues-report__no-audit-text {
     color: var(--w-color-text-label);
-    margin: 0 0 0.75rem 0;
+    margin: 0 0 1rem 0;
+    line-height: 1.5;
 }
 
 .seo-issues-report__no-audit-code {
-    background: var(--w-color-surface-field);
-    border: 1px solid var(--w-color-border-field-default);
+    background: var(--w-color-surface-menus);
+    border: 1px solid var(--w-color-border-furniture);
     color: var(--w-color-text-label);
-    padding: 0.75rem;
+    padding: 0.875rem 1rem;
     margin: 0;
-    border-radius: 0.25rem;
-    font-size: 0.875rem;
+    border-radius: 0.375rem;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    font-size: 0.8125rem;
+    overflow-x: auto;
 }
 
 .seo-issues-report__clear-filters {
