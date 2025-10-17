@@ -3,8 +3,9 @@ Views for SEO Toolkit
 """
 import django_filters
 from django.db.models import Count
+from django.http import JsonResponse
 from django.utils.translation import gettext_lazy as _
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, View
 from wagtail.admin.filters import WagtailFilterSet
 from wagtail.admin.views.reports import ReportView
 
@@ -26,6 +27,17 @@ class SEODashboardView(TemplateView):
         
         # Get the latest completed audit run
         latest_audit = SEOAuditRun.objects.filter(status='completed').order_by('-created_at').first()
+        
+        # Check for scheduled or running audits
+        scheduled_audit = SEOAuditRun.objects.filter(status='scheduled').first()
+        running_audit = SEOAuditRun.objects.filter(status='running').first()
+        
+        context.update({
+            'has_scheduled_audit': scheduled_audit is not None,
+            'has_running_audit': running_audit is not None,
+            'scheduled_audit': scheduled_audit,
+            'running_audit': running_audit,
+        })
         
         if latest_audit:
             # Get issue counts by severity
@@ -191,4 +203,47 @@ class SEOIssuesReportView(ReportView):
         })
         
         return context
+
+
+class RequestAuditView(View):
+    """
+    API endpoint to request a new SEO audit.
+    
+    Creates a scheduled audit run that will be picked up by the 
+    run_scheduled_audits management command.
+    """
+    
+    def post(self, request):
+        # Check for existing scheduled or running audits
+        existing_audit = SEOAuditRun.objects.filter(
+            status__in=['scheduled', 'running']
+        ).first()
+        
+        if existing_audit:
+            return JsonResponse({
+                'success': False,
+                'error': f'Audit is already {existing_audit.status}. Please wait for it to complete.',
+                'status': existing_audit.status
+            }, status=409)
+        
+        # Create new scheduled audit
+        try:
+            audit_run = SEOAuditRun.objects.create(
+                overall_score=0,
+                pages_analyzed=0,
+                status='scheduled'
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Audit has been scheduled successfully.',
+                'audit_id': audit_run.id,
+                'status': 'scheduled'
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'Failed to schedule audit: {str(e)}'
+            }, status=500)
 

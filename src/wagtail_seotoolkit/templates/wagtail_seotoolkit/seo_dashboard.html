@@ -12,6 +12,7 @@
     {% trans "SEO Dashboard" as title_str %}
     {% include "wagtailadmin/shared/header.html" with title=title_str icon="chart-bar" %}
     
+    {% csrf_token %}
     <div class="seo-dashboard nice-padding">
         {% if latest_audit %}
             <!-- Main Health Score Card -->
@@ -77,9 +78,16 @@
                     <a href="{% url 'seo_issues_report' %}" class="button button-primary">
                         {% trans "View All Issues" %}
                     </a>
-                    <a href="{% url 'wagtailadmin_home' %}" class="button button-secondary">
-                        {% trans "Run New Audit" %}
-                    </a>
+                    <button id="request-audit-btn" class="button button-secondary" 
+                            {% if has_scheduled_audit or has_running_audit %}disabled{% endif %}>
+                        {% if has_scheduled_audit %}
+                            {% trans "Audit Scheduled..." %}
+                        {% elif has_running_audit %}
+                            {% trans "Audit Running..." %}
+                        {% else %}
+                            {% trans "Request an Audit" %}
+                        {% endif %}
+                    </button>
                 </div>
             </div>
         {% else %}
@@ -98,5 +106,53 @@
             </div>
         {% endif %}
     </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const requestBtn = document.getElementById('request-audit-btn');
+            
+            if (requestBtn && !requestBtn.disabled) {
+                requestBtn.addEventListener('click', function() {
+                    // Disable button and show loading state
+                    requestBtn.disabled = true;
+                    requestBtn.textContent = '{% trans "Scheduling..." %}';
+                    
+                    // Get CSRF token
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                    
+                    // Make AJAX request
+                    fetch('{% url "request_audit" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({})
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            requestBtn.textContent = '{% trans "Audit Scheduled..." %}';
+                            // Optionally show a success message
+                            console.log('Audit scheduled successfully');
+                        } else {
+                            // Re-enable button and show error
+                            requestBtn.disabled = false;
+                            requestBtn.textContent = '{% trans "Request an Audit" %}';
+                            alert('Error: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        // Re-enable button and show error
+                        requestBtn.disabled = false;
+                        requestBtn.textContent = '{% trans "Request an Audit" %}';
+                        alert('Error: ' + error.message);
+                    });
+                });
+            }
+        });
+    </script>
 {% endblock %}
 

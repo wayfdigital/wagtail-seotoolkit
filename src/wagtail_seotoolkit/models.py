@@ -1,7 +1,7 @@
 from django.db import models
 
 SEO_AUDIT_RUN_STATUSES = [
-    ("pending", "Pending"),
+    ("scheduled", "Scheduled"),
     ("running", "Running"),
     ("completed", "Completed"),
     ("failed", "Failed"),

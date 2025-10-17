@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
 from wagtail.admin.menu import MenuItem
 
-from .views import SEODashboardView, SEOIssuesReportView
+from .views import SEODashboardView, SEOIssuesReportView, RequestAuditView
 
 
 @hooks.register("register_admin_urls")
@@ -20,6 +20,11 @@ def register_seo_admin_urls():
             "seo-dashboard/",
             SEODashboardView.as_view(),
             name="seo_dashboard",
+        ),
+        path(
+            "seo-dashboard/request-audit/",
+            RequestAuditView.as_view(),
+            name="request_audit",
         ),
         path(
             "reports/seo-issues/",

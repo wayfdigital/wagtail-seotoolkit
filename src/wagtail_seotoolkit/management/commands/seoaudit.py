@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand, CommandError
 from wagtail.models import Page
 
 from wagtail_seotoolkit.models import SEOAuditRun
-from wagtail_seotoolkit.utils.seo_audit import run_audit_on_pages
+from wagtail_seotoolkit.utils.seo_audit import execute_audit_run
 
 
 class Command(BaseCommand):
@@ -44,13 +44,9 @@ class Command(BaseCommand):
             
             self.stdout.write(f"Found {total_pages} page(s) to audit\n")
 
-            # Run the audit
+            # Run the audit using the new reusable function
             show_progress = not options.get('no_progress', False)
-            results = run_audit_on_pages(
-                pages,
-                audit_run,
-                show_progress=show_progress,
-            )
+            results = execute_audit_run(audit_run, pages=pages, show_progress=show_progress)
             
             # Display summary
             self.display_summary(results)
