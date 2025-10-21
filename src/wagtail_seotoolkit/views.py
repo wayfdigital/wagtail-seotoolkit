@@ -12,6 +12,7 @@ from wagtail.admin.views.reports import ReportView
 from .models import (
     SEOAuditIssue,
     SEOAuditIssueSeverity,
+    SEOAuditIssueType,
     SEOAuditRun,
 )
 
@@ -58,21 +59,30 @@ class SEODashboardView(TemplateView):
                     suggestions_count = item['count']
             
             # Get top issues by type
-            top_issues = latest_audit.issues.values(
-                'issue_severity','issue_type', 
-            ).annotate(
-                count=Count('id')
-            ).order_by('-issue_severity', '-count')[:5]
+            top_issues = (
+                latest_audit.issues.values(
+                    "issue_severity", "issue_type", "requires_dev_fix"
+                )
+                .annotate(count=Count("id"))
+                .order_by("-issue_severity", "-count")[:5]
+            )
             
             # Format top issues with human-readable labels
             formatted_top_issues = []
             for issue in top_issues:
-                formatted_top_issues.append({
-                    'type': issue['issue_type'],
-                    'label': self._get_issue_label(issue['issue_type']),
-                    'count': issue['count'],
-                    'severity': issue['issue_severity']
-                })
+                # Get the display value for the issue type
+                issue_type_display = dict(SEOAuditIssueType.choices).get(
+                    issue["issue_type"], issue["issue_type"]
+                )
+
+                formatted_top_issues.append(
+                    {
+                        "type": issue_type_display,
+                        "count": issue["count"],
+                        "severity": issue["issue_severity"],
+                        "requires_dev_fix": issue["requires_dev_fix"],
+                    }
+                )
             
             context.update({
                 'latest_audit': latest_audit,
@@ -102,27 +112,8 @@ class SEODashboardView(TemplateView):
             'SEVERITY_MEDIUM': SEOAuditIssueSeverity.MEDIUM,
             'SEVERITY_HIGH': SEOAuditIssueSeverity.HIGH,
         })
-        
-        return context
-    
-    def _get_issue_label(self, issue_type):
-        """Convert issue type to human-readable label"""
-        labels = {
-            'meta_description_missing': 'pages missing meta descriptions',
-            'schema_missing': 'pages have no structured data',
-            'image_no_alt': 'images missing alt text',
-            'content_thin': 'pages with thin content (<300 words)',
-            'title_missing': 'pages missing title tags',
-            'title_too_short': 'pages with too short titles',
-            'title_too_long': 'pages with too long titles',
-            'meta_description_too_short': 'meta descriptions too short',
-            'meta_description_too_long': 'meta descriptions too long',
-            'header_no_h1': 'pages missing H1 tags',
-            'header_multiple_h1': 'pages with multiple H1 tags',
-            'content_empty': 'pages with empty content',
-        }
-        return labels.get(issue_type, issue_type.replace('_', ' '))
 
+        return context
 
 class SEOIssuesFilterSet(WagtailFilterSet):
     """FilterSet for SEO Issues Report"""

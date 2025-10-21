@@ -5,7 +5,7 @@ Checks for title tag presence, length, and SEO best practices.
 """
 from typing import Any, Dict, List
 
-from wagtail_seotoolkit.models import SEOAuditIssueSeverity, SEOAuditIssueType
+from wagtail_seotoolkit.models import SEOAuditIssueType
 
 from .base import BaseChecker
 
@@ -26,7 +26,7 @@ class TitleChecker(BaseChecker):
         if not title_tag or not title_tag.string:
             self.add_issue(
                 SEOAuditIssueType.TITLE_MISSING,
-                SEOAuditIssueSeverity.HIGH,
+                SEOAuditIssueType.get_severity(SEOAuditIssueType.TITLE_MISSING),
                 SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.TITLE_MISSING
                 ),
@@ -39,7 +39,7 @@ class TitleChecker(BaseChecker):
         if title_length < TITLE_MIN_LENGTH:
             self.add_issue(
                 SEOAuditIssueType.TITLE_TOO_SHORT,
-                SEOAuditIssueSeverity.MEDIUM,
+                SEOAuditIssueType.get_severity(SEOAuditIssueType.TITLE_TOO_SHORT),
                 SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.TITLE_TOO_SHORT
                 ).format(
@@ -52,7 +52,7 @@ class TitleChecker(BaseChecker):
         elif title_length > TITLE_MAX_LENGTH:
             self.add_issue(
                 SEOAuditIssueType.TITLE_TOO_LONG,
-                SEOAuditIssueSeverity.MEDIUM,
+                SEOAuditIssueType.get_severity(SEOAuditIssueType.TITLE_TOO_LONG),
                 SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.TITLE_TOO_LONG
                 ).format(

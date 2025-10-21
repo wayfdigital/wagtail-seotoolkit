@@ -29,7 +29,7 @@ class FreshnessChecker(BaseChecker):
         if not published_meta and not has_published_schema:
             self.add_issue(
                 SEOAuditIssueType.CONTENT_NO_PUBLISH_DATE,
-                SEOAuditIssueSeverity.LOW,
+                SEOAuditIssueType.get_severity(SEOAuditIssueType.CONTENT_NO_PUBLISH_DATE),
                 SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.CONTENT_NO_PUBLISH_DATE
                 ),
@@ -42,7 +42,7 @@ class FreshnessChecker(BaseChecker):
         if not modified_meta and not has_modified_schema:
             self.add_issue(
                 SEOAuditIssueType.CONTENT_NO_MODIFIED_DATE,
-                SEOAuditIssueSeverity.LOW,
+                SEOAuditIssueType.get_severity(SEOAuditIssueType.CONTENT_NO_MODIFIED_DATE),
                 SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.CONTENT_NO_MODIFIED_DATE
                 ),
@@ -54,7 +54,7 @@ class FreshnessChecker(BaseChecker):
             if days_old > MAX_CONTENT_AGE_DAYS:
                 self.add_issue(
                     SEOAuditIssueType.CONTENT_NOT_UPDATED,
-                    SEOAuditIssueSeverity.LOW,
+                    SEOAuditIssueType.get_severity(SEOAuditIssueType.CONTENT_NOT_UPDATED),
                     SEOAuditIssueType.get_description_template(
                         SEOAuditIssueType.CONTENT_NOT_UPDATED
                     ).format(days_old=days_old),

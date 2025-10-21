@@ -165,6 +165,9 @@
 }
 
 .seo-sidepanel__issue-type {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     font-size: 0.9375rem;
     font-weight: 600;
     color: var(--w-color-text-label);

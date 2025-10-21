@@ -44,7 +44,7 @@ class SchemaChecker(BaseChecker):
         if len(json_ld_scripts) == 0:
             self.add_issue(
                 SEOAuditIssueType.SCHEMA_MISSING,
-                SEOAuditIssueSeverity.HIGH,
+                SEOAuditIssueType.get_severity(SEOAuditIssueType.SCHEMA_MISSING),
                 SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.SCHEMA_MISSING
                 ),
@@ -57,7 +57,7 @@ class SchemaChecker(BaseChecker):
         if not schema_types.intersection(ORGANIZATION_SCHEMA_TYPES):
             self.add_issue(
                 SEOAuditIssueType.SCHEMA_NO_ORGANIZATION,
-                SEOAuditIssueSeverity.MEDIUM,
+                SEOAuditIssueType.get_severity(SEOAuditIssueType.SCHEMA_NO_ORGANIZATION),
                 SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.SCHEMA_NO_ORGANIZATION
                 ),
@@ -69,7 +69,7 @@ class SchemaChecker(BaseChecker):
         ):
             self.add_issue(
                 SEOAuditIssueType.SCHEMA_NO_ARTICLE,
-                SEOAuditIssueSeverity.MEDIUM,
+                SEOAuditIssueType.get_severity(SEOAuditIssueType.SCHEMA_NO_ARTICLE),
                 SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.SCHEMA_NO_ARTICLE
                 ),
@@ -99,7 +99,7 @@ class SchemaChecker(BaseChecker):
             except (json.JSONDecodeError, AttributeError):
                 self.add_issue(
                     SEOAuditIssueType.SCHEMA_INVALID,
-                    SEOAuditIssueSeverity.HIGH,
+                    SEOAuditIssueType.get_severity(SEOAuditIssueType.SCHEMA_INVALID),
                     SEOAuditIssueType.get_description_template(
                         SEOAuditIssueType.SCHEMA_INVALID
                     ),

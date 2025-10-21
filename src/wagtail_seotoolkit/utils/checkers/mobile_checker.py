@@ -24,7 +24,7 @@ class MobileChecker(BaseChecker):
         if not viewport:
             self.add_issue(
                 SEOAuditIssueType.MOBILE_NO_VIEWPORT,
-                SEOAuditIssueSeverity.HIGH,
+                SEOAuditIssueType.get_severity(SEOAuditIssueType.MOBILE_NO_VIEWPORT),
                 SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.MOBILE_NO_VIEWPORT
                 ),
@@ -52,7 +52,7 @@ class MobileChecker(BaseChecker):
                 if fixed_width_pattern.search(container.get("style", "")):
                     self.add_issue(
                         SEOAuditIssueType.MOBILE_FIXED_WIDTH,
-                        SEOAuditIssueSeverity.MEDIUM,
+                        SEOAuditIssueType.get_severity(SEOAuditIssueType.MOBILE_FIXED_WIDTH),
                         SEOAuditIssueType.get_description_template(
                             SEOAuditIssueType.MOBILE_FIXED_WIDTH
                         ),

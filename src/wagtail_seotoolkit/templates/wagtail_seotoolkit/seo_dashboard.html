@@ -6,6 +6,7 @@
 
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/seo_dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/dev_badge.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -65,7 +66,18 @@
                         {% for issue in top_issues %}
                             <div class="seo-dashboard__issue-card {% if issue.severity == 3 %}seo-dashboard__issue-card--critical{% elif issue.severity == 2 %}seo-dashboard__issue-card--warning{% else %}seo-dashboard__issue-card--info{% endif %}">
                                 <div class="seo-dashboard__issue-content">
-                                    <span class="seo-dashboard__issue-label">{{ issue.label|title }}</span>
+                                    <div class="seo-dashboard__issue-header">
+                                        <span class="seo-dashboard__issue-label">{{ issue.type|title }}</span>
+                                        {% if issue.requires_dev_fix %}
+                                            <span class="dev-badge dev-badge--dashboard">
+                                                <svg class="dev-badge__icon" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
+                                                </svg>
+                                                Dev needed
+                                                <span class="dev-badge__tooltip">This issue requires code changes</span>
+                                            </span>
+                                        {% endif %}
+                                    </div>
                                 </div>
                                 <span class="seo-dashboard__issue-count">{{ issue.count }}</span>
                             </div>

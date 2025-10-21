@@ -163,12 +163,18 @@
     min-width: 0;
 }
 
+.seo-dashboard__issue-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
 .seo-dashboard__issue-label {
     font-size: 0.875rem;
     font-weight: 500;
     color: var(--w-color-text-label);
     line-height: 1.4;
-    display: block;
 }
 
 .seo-dashboard__issue-count {

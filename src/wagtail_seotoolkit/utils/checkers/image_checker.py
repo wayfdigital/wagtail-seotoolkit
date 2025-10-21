@@ -34,7 +34,7 @@ class ImageChecker(BaseChecker):
                 if alt_text.lower() in GENERIC_ALT_TEXTS:
                     self.add_issue(
                         SEOAuditIssueType.IMAGE_ALT_GENERIC,
-                        SEOAuditIssueSeverity.LOW,
+                        SEOAuditIssueType.get_severity(SEOAuditIssueType.IMAGE_ALT_GENERIC),
                         SEOAuditIssueType.get_description_template(
                             SEOAuditIssueType.IMAGE_ALT_GENERIC
                         ).format(alt_text=alt_text),
@@ -44,7 +44,7 @@ class ImageChecker(BaseChecker):
                 if len(alt_text) > MAX_ALT_LENGTH:
                     self.add_issue(
                         SEOAuditIssueType.IMAGE_ALT_TOO_LONG,
-                        SEOAuditIssueSeverity.LOW,
+                        SEOAuditIssueType.get_severity(SEOAuditIssueType.IMAGE_ALT_TOO_LONG),
                         SEOAuditIssueType.get_description_template(
                             SEOAuditIssueType.IMAGE_ALT_TOO_LONG
                         ).format(length=len(alt_text), max_length=MAX_ALT_LENGTH),
@@ -53,7 +53,7 @@ class ImageChecker(BaseChecker):
         if images_without_alt > 0:
             self.add_issue(
                 SEOAuditIssueType.IMAGE_NO_ALT,
-                SEOAuditIssueSeverity.MEDIUM,
+                SEOAuditIssueType.get_severity(SEOAuditIssueType.IMAGE_NO_ALT),
                 SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.IMAGE_NO_ALT
                 ).format(count=images_without_alt),

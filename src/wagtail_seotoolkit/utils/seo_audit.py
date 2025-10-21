@@ -186,7 +186,7 @@ def audit_single_page(page, audit_run) -> List[Dict[str, Any]]:
     Returns:
         List of issues found
     """
-    from wagtail_seotoolkit.models import SEOAuditIssue
+    from wagtail_seotoolkit.models import SEOAuditIssue, SEOAuditIssueType
 
     # Get HTML content
     html = get_page_html(page)
@@ -201,14 +201,18 @@ def audit_single_page(page, audit_run) -> List[Dict[str, Any]]:
 
     # Create issue records
     for issue_data in issues:
+        requires_dev_fix = SEOAuditIssueType.requires_dev_fix(issue_data["issue_type"])
+        severity = SEOAuditIssueType.get_severity(issue_data["issue_type"])
+
         SEOAuditIssue.objects.create(
             audit_run=audit_run,
             page=page,  # Link to the actual page object
             issue_type=issue_data["issue_type"],
-            issue_severity=issue_data["issue_severity"],
+            issue_severity=severity,
             page_url=issue_data.get("page_url", ""),
             page_title=page.title,
             description=issue_data["description"],
+            requires_dev_fix=requires_dev_fix,
         )
 
     return issues

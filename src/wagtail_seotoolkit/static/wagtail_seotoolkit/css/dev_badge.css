@@ -1,0 +1,68 @@
+/* Dev Badge Styles */
+.dev-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+    font-size: 0.8em;
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    color: var(--w-color-text-label);
+    border-radius: 0.25rem;
+    border: 1px solid var(--w-color-border-furniture);
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    position: relative;
+    cursor: help;
+}
+
+.dev-badge__icon {
+    width: 0.75rem;
+    height: 0.75rem;
+    fill: currentColor;
+}
+
+/* Tooltip */
+.dev-badge__tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: #000000;
+    color: #ffffff;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: normal;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dev-badge__tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #000000;
+}
+
+.dev-badge:hover .dev-badge__tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Dashboard-specific badge styling */
+.dev-badge--dashboard {
+    vertical-align: middle;
+}
+
+
+

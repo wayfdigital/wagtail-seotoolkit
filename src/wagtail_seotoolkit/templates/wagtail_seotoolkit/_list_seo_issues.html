@@ -32,6 +32,15 @@
                     </div>
                     {% if page %}
                         <div class="issue-meta-group">
+                            {% if issue.requires_dev_fix %}
+                                <span class="dev-badge">
+                                    <svg class="dev-badge__icon" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
+                                    </svg>
+                                    Dev needed
+                                    <span class="dev-badge__tooltip">This issue requires code changes</span>
+                                </span>
+                            {% endif %}
                             {% i18n_enabled as show_locale_labels %}
                             {% if show_locale_labels %}
                                 <span class="w-status w-status--label issue-locale-label">{{ page.locale.get_display_name }}</span>

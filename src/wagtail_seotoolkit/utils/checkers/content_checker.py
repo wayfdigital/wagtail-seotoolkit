@@ -36,7 +36,7 @@ class ContentChecker(BaseChecker):
         if not main_content:
             self.add_issue(
                 SEOAuditIssueType.CONTENT_EMPTY,
-                SEOAuditIssueSeverity.HIGH,
+                SEOAuditIssueType.get_severity(SEOAuditIssueType.CONTENT_EMPTY),
                 SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.CONTENT_EMPTY
                 ).format(content_type="discernible"),
@@ -57,7 +57,7 @@ class ContentChecker(BaseChecker):
         if word_count == 0:
             self.add_issue(
                 SEOAuditIssueType.CONTENT_EMPTY,
-                SEOAuditIssueSeverity.HIGH,
+                SEOAuditIssueType.get_severity(SEOAuditIssueType.CONTENT_EMPTY),
                 SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.CONTENT_EMPTY
                 ).format(content_type="text"),
@@ -67,7 +67,7 @@ class ContentChecker(BaseChecker):
         if word_count < MIN_WORD_COUNT:
             self.add_issue(
                 SEOAuditIssueType.CONTENT_THIN,
-                SEOAuditIssueSeverity.MEDIUM,
+                SEOAuditIssueType.get_severity(SEOAuditIssueType.CONTENT_THIN),
                 SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.CONTENT_THIN
                 ).format(word_count=word_count, min_words=MIN_WORD_COUNT),
@@ -78,7 +78,7 @@ class ContentChecker(BaseChecker):
         if word_count > MIN_WORDS_FOR_PARAGRAPHS and len(paragraphs) == 0:
             self.add_issue(
                 SEOAuditIssueType.CONTENT_NO_PARAGRAPHS,
-                SEOAuditIssueSeverity.LOW,
+                SEOAuditIssueType.get_severity(SEOAuditIssueType.CONTENT_NO_PARAGRAPHS),
                 SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.CONTENT_NO_PARAGRAPHS
                 ),

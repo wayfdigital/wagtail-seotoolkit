@@ -109,6 +109,69 @@ class SEOAuditIssueType(models.TextChoices):
         }
         return descriptions.get(issue_type, "")
 
+    @classmethod
+    def requires_dev_fix(cls, issue_type):
+        """Check if an issue type requires developer attention"""
+        dev_required_issues = {
+            cls.SCHEMA_MISSING,
+            cls.SCHEMA_NO_ORGANIZATION,
+            cls.SCHEMA_NO_ARTICLE,
+            cls.SCHEMA_INVALID,
+            cls.MOBILE_NO_VIEWPORT,
+            cls.MOBILE_FIXED_WIDTH,
+            cls.MOBILE_TEXT_SMALL,
+            cls.CONTENT_NO_PUBLISH_DATE,
+            cls.CONTENT_NO_MODIFIED_DATE,
+        }
+        return issue_type in dev_required_issues
+
+    @classmethod
+    def get_severity(cls, issue_type):
+        """Get the severity level for an issue type"""
+        severity_mapping = {
+            # Title issues
+            cls.TITLE_MISSING: SEOAuditIssueSeverity.HIGH,
+            cls.TITLE_TOO_SHORT: SEOAuditIssueSeverity.MEDIUM,
+            cls.TITLE_TOO_LONG: SEOAuditIssueSeverity.MEDIUM,
+            # Meta description issues
+            cls.META_DESCRIPTION_MISSING: SEOAuditIssueSeverity.MEDIUM,
+            cls.META_DESCRIPTION_TOO_SHORT: SEOAuditIssueSeverity.MEDIUM,
+            cls.META_DESCRIPTION_TOO_LONG: SEOAuditIssueSeverity.MEDIUM,
+            cls.META_DESCRIPTION_DUPLICATE: SEOAuditIssueSeverity.LOW,
+            cls.META_DESCRIPTION_NO_CTA: SEOAuditIssueSeverity.LOW,
+            # Content issues
+            cls.CONTENT_EMPTY: SEOAuditIssueSeverity.HIGH,
+            cls.CONTENT_THIN: SEOAuditIssueSeverity.MEDIUM,
+            cls.CONTENT_NO_PARAGRAPHS: SEOAuditIssueSeverity.LOW,
+            # Header issues
+            cls.HEADER_NO_H1: SEOAuditIssueSeverity.HIGH,
+            cls.HEADER_MULTIPLE_H1: SEOAuditIssueSeverity.MEDIUM,
+            cls.HEADER_NO_SUBHEADINGS: SEOAuditIssueSeverity.MEDIUM,
+            cls.HEADER_BROKEN_HIERARCHY: SEOAuditIssueSeverity.MEDIUM,
+            # Image issues
+            cls.IMAGE_NO_ALT: SEOAuditIssueSeverity.MEDIUM,
+            cls.IMAGE_ALT_GENERIC: SEOAuditIssueSeverity.LOW,
+            cls.IMAGE_ALT_TOO_LONG: SEOAuditIssueSeverity.LOW,
+            # Schema issues
+            cls.SCHEMA_MISSING: SEOAuditIssueSeverity.HIGH,
+            cls.SCHEMA_NO_ORGANIZATION: SEOAuditIssueSeverity.MEDIUM,
+            cls.SCHEMA_NO_ARTICLE: SEOAuditIssueSeverity.MEDIUM,
+            cls.SCHEMA_INVALID: SEOAuditIssueSeverity.HIGH,
+            # Mobile issues
+            cls.MOBILE_NO_VIEWPORT: SEOAuditIssueSeverity.HIGH,
+            cls.MOBILE_FIXED_WIDTH: SEOAuditIssueSeverity.MEDIUM,
+            cls.MOBILE_TEXT_SMALL: SEOAuditIssueSeverity.MEDIUM,
+            # Internal linking issues
+            cls.INTERNAL_LINKS_NONE: SEOAuditIssueSeverity.MEDIUM,
+            cls.INTERNAL_LINKS_FEW: SEOAuditIssueSeverity.LOW,
+            cls.INTERNAL_LINKS_ALL_EXTERNAL: SEOAuditIssueSeverity.LOW,
+            # Content freshness issues
+            cls.CONTENT_NOT_UPDATED: SEOAuditIssueSeverity.LOW,
+            cls.CONTENT_NO_PUBLISH_DATE: SEOAuditIssueSeverity.LOW,
+            cls.CONTENT_NO_MODIFIED_DATE: SEOAuditIssueSeverity.LOW,
+        }
+        return severity_mapping.get(issue_type, SEOAuditIssueSeverity.MEDIUM)
+
 
 class SEOAuditRun(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -136,6 +199,10 @@ class SEOAuditIssue(models.Model):
     page_url = models.CharField(max_length=512, blank=True)
     page_title = models.CharField(max_length=512, blank=True)
     description = models.TextField(blank=True)
+    requires_dev_fix = models.BooleanField(
+        default=False,
+        help_text="Whether this issue requires developer attention and cannot be fixed by content editors",
+    )
     
     class Meta:
         ordering = ['-issue_severity', 'issue_type']

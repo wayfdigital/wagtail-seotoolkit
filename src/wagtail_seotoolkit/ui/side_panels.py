@@ -18,7 +18,10 @@ class CustomChecksSidePanel(BaseSidePanel):
 
     class Media:
         css = {
-            "all": ["wagtail_seotoolkit/css/checks_sidepanel.css"]
+            "all": [
+                "wagtail_seotoolkit/css/checks_sidepanel.css",
+                "wagtail_seotoolkit/css/dev_badge.css",
+            ]
         }
 
     def get_axe_configuration(self):
@@ -57,8 +60,9 @@ class CustomChecksSidePanel(BaseSidePanel):
         
         for issue in issues:
             issue_data = {
-                'type': issue.get_issue_type_display(),
-                'description': issue.description,
+                "type": issue.get_issue_type_display(),
+                "description": issue.description,
+                "requires_dev_fix": issue.requires_dev_fix,
             }
             
             if issue.issue_severity == SEOAuditIssueSeverity.HIGH:

@@ -38,7 +38,7 @@ class MetaChecker(BaseChecker):
         if not meta_desc or not meta_desc.get("content"):
             self.add_issue(
                 SEOAuditIssueType.META_DESCRIPTION_MISSING,
-                SEOAuditIssueSeverity.HIGH,
+                SEOAuditIssueType.get_severity(SEOAuditIssueType.META_DESCRIPTION_MISSING),
                 SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.META_DESCRIPTION_MISSING
                 ),
@@ -51,7 +51,7 @@ class MetaChecker(BaseChecker):
         if desc_length < META_DESC_MIN_LENGTH:
             self.add_issue(
                 SEOAuditIssueType.META_DESCRIPTION_TOO_SHORT,
-                SEOAuditIssueSeverity.MEDIUM,
+                SEOAuditIssueType.get_severity(SEOAuditIssueType.META_DESCRIPTION_TOO_SHORT),
                 SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.META_DESCRIPTION_TOO_SHORT
                 ).format(
@@ -63,7 +63,7 @@ class MetaChecker(BaseChecker):
         elif desc_length > META_DESC_MAX_LENGTH:
             self.add_issue(
                 SEOAuditIssueType.META_DESCRIPTION_TOO_LONG,
-                SEOAuditIssueSeverity.MEDIUM,
+                SEOAuditIssueType.get_severity(SEOAuditIssueType.META_DESCRIPTION_TOO_LONG),
                 SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.META_DESCRIPTION_TOO_LONG
                 ).format(
@@ -77,7 +77,7 @@ class MetaChecker(BaseChecker):
         if not any(word in desc_text.lower() for word in CTA_KEYWORDS):
             self.add_issue(
                 SEOAuditIssueType.META_DESCRIPTION_NO_CTA,
-                SEOAuditIssueSeverity.LOW,
+                SEOAuditIssueType.get_severity(SEOAuditIssueType.META_DESCRIPTION_NO_CTA),
                 SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.META_DESCRIPTION_NO_CTA
                 ).format(cta_examples=", ".join(CTA_KEYWORDS[:5])),

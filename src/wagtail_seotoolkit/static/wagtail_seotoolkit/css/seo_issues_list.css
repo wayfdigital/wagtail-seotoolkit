@@ -99,27 +99,26 @@
 }
 
 .issue-locale-label {
-    font-size: 0.75rem;
+    margin: 0;
 }
 
-.issue-status {
-    display: flex;
-    align-items: center;
+.issue-status .w-status {
+    margin: 0;
+}
+
+.issue-actions .w-dropdown__togle{
+    margin: 0;
 }
 
 .issue-actions {
-    display: flex;
-    align-items: center;
     list-style: none;
     padding: 0;
     margin: 0;
 }
 
-.issue-actions ul,
-.issue-actions li {
-    list-style: none;
+.issue-actions button {
+    border: 0;
     padding: 0;
-    margin: 0;
 }
 
 .issue-description {

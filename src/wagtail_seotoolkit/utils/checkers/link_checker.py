@@ -49,7 +49,7 @@ class LinkChecker(BaseChecker):
             if len(external_links) > 0:
                 self.add_issue(
                     SEOAuditIssueType.INTERNAL_LINKS_ALL_EXTERNAL,
-                    SEOAuditIssueSeverity.MEDIUM,
+                    SEOAuditIssueType.get_severity(SEOAuditIssueType.INTERNAL_LINKS_ALL_EXTERNAL),
                     SEOAuditIssueType.get_description_template(
                         SEOAuditIssueType.INTERNAL_LINKS_ALL_EXTERNAL
                     ).format(external_count=len(external_links)),
@@ -57,7 +57,7 @@ class LinkChecker(BaseChecker):
             else:
                 self.add_issue(
                     SEOAuditIssueType.INTERNAL_LINKS_NONE,
-                    SEOAuditIssueSeverity.MEDIUM,
+                    SEOAuditIssueType.get_severity(SEOAuditIssueType.INTERNAL_LINKS_NONE),
                     SEOAuditIssueType.get_description_template(
                         SEOAuditIssueType.INTERNAL_LINKS_NONE
                     ),
@@ -65,7 +65,7 @@ class LinkChecker(BaseChecker):
         elif len(internal_links) < MIN_INTERNAL_LINKS and is_content_page(self.soup):
             self.add_issue(
                 SEOAuditIssueType.INTERNAL_LINKS_FEW,
-                SEOAuditIssueSeverity.LOW,
+                SEOAuditIssueType.get_severity(SEOAuditIssueType.INTERNAL_LINKS_FEW),
                 SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.INTERNAL_LINKS_FEW
                 ).format(count=len(internal_links), min_links=MIN_INTERNAL_LINKS),

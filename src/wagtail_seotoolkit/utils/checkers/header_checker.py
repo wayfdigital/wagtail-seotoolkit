@@ -39,7 +39,7 @@ class HeaderChecker(BaseChecker):
         if len(h1_tags) == 0:
             self.add_issue(
                 SEOAuditIssueType.HEADER_NO_H1,
-                SEOAuditIssueSeverity.HIGH,
+                SEOAuditIssueType.get_severity(SEOAuditIssueType.HEADER_NO_H1),
                 SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.HEADER_NO_H1
                 ),
@@ -47,7 +47,7 @@ class HeaderChecker(BaseChecker):
         elif len(h1_tags) > 1:
             self.add_issue(
                 SEOAuditIssueType.HEADER_MULTIPLE_H1,
-                SEOAuditIssueSeverity.MEDIUM,
+                SEOAuditIssueType.get_severity(SEOAuditIssueType.HEADER_MULTIPLE_H1),
                 SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.HEADER_MULTIPLE_H1
                 ).format(count=len(h1_tags)),
@@ -67,7 +67,7 @@ class HeaderChecker(BaseChecker):
                 )
                 self.add_issue(
                     SEOAuditIssueType.HEADER_NO_SUBHEADINGS,
-                    SEOAuditIssueSeverity.MEDIUM,
+                    SEOAuditIssueType.get_severity(SEOAuditIssueType.HEADER_NO_SUBHEADINGS),
                     SEOAuditIssueType.get_description_template(
                         SEOAuditIssueType.HEADER_NO_SUBHEADINGS
                     ).format(word_count=word_count),
@@ -90,7 +90,7 @@ class HeaderChecker(BaseChecker):
             if prev_level > 0 and current_level > prev_level + 1:
                 self.add_issue(
                     SEOAuditIssueType.HEADER_BROKEN_HIERARCHY,
-                    SEOAuditIssueSeverity.LOW,
+                    SEOAuditIssueType.get_severity(SEOAuditIssueType.HEADER_BROKEN_HIERARCHY),
                     SEOAuditIssueType.get_description_template(
                         SEOAuditIssueType.HEADER_BROKEN_HIERARCHY
                     ).format(current=header.name.upper(), previous=f"H{prev_level}"),
