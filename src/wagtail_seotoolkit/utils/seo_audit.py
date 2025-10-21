@@ -27,8 +27,10 @@ from wagtail_seotoolkit.utils.checkers import (
 
 # ==================== Constants ====================
 
-# Scoring
-SCORE_PENALTY_PER_ISSUE = 5
+# Scoring - Weighted penalties by severity
+SCORE_PENALTY_HIGH = 10    # Critical SEO issues (missing titles, H1, viewport)
+SCORE_PENALTY_MEDIUM = 4   # Important issues (thin content, missing meta descriptions)
+SCORE_PENALTY_LOW = 1      # Minor issues (generic alt text, no CTAs)
 
 
 # ==================== Helper Functions ====================
@@ -243,27 +245,31 @@ def run_audit_on_pages(
             issues = audit_single_page(page, audit_run)
             total_issues += len(issues)
 
-    # Calculate and save results
-    overall_score = calculate_audit_score(total_issues, total_pages)
+    # Get breakdown by severity
+    high_issues = audit_run.issues.filter(
+        issue_severity=SEOAuditIssueSeverity.HIGH
+    ).count()
+    medium_issues = audit_run.issues.filter(
+        issue_severity=SEOAuditIssueSeverity.MEDIUM
+    ).count()
+    low_issues = audit_run.issues.filter(
+        issue_severity=SEOAuditIssueSeverity.LOW
+    ).count()
+
+    # Calculate and save results using severity-weighted scoring
+    overall_score = calculate_audit_score(high_issues, medium_issues, low_issues, total_pages)
     audit_run.status = "completed"
     audit_run.overall_score = overall_score
     audit_run.pages_analyzed = total_pages
     audit_run.save()
 
-    # Get breakdown by severity
     return {
         "total_pages": total_pages,
         "total_issues": total_issues,
         "overall_score": overall_score,
-        "high_issues": audit_run.issues.filter(
-            issue_severity=SEOAuditIssueSeverity.HIGH
-        ).count(),
-        "medium_issues": audit_run.issues.filter(
-            issue_severity=SEOAuditIssueSeverity.MEDIUM
-        ).count(),
-        "low_issues": audit_run.issues.filter(
-            issue_severity=SEOAuditIssueSeverity.LOW
-        ).count(),
+        "high_issues": high_issues,
+        "medium_issues": medium_issues,
+        "low_issues": low_issues,
     }
 
 
@@ -284,19 +290,25 @@ def _audit_with_progress(pages: List, audit_run) -> int:
     return total_issues
 
 
-def calculate_audit_score(total_issues: int, total_pages: int) -> int:
+def calculate_audit_score(high_issues: int, medium_issues: int, low_issues: int, total_pages: int) -> int:
     """
-    Calculate an overall SEO score based on issues found.
+    Calculate an overall SEO score based on issues found, weighted by severity.
 
-    Score calculation:
-    - 0 issues = 100
-    - 1 issue per page = 95
-    - 5 issues per page = 75
-    - 10 issues per page = 50
-    - 20+ issues per page = 0
+    Score calculation uses weighted penalties:
+    - HIGH severity issues: 10 points penalty per issue per page
+    - MEDIUM severity issues: 4 points penalty per issue per page  
+    - LOW severity issues: 1 point penalty per issue per page
+
+    Score calibration (moderate difficulty):
+    - 0 issues/page = 100
+    - Mix of 1 HIGH + 2 MEDIUM + 3 LOW per page = 71 points (good target)
+    - 2 HIGH + 3 MEDIUM + 5 LOW per page = 53 points (needs work)
+    - 5+ HIGH per page = <50 points (critical issues)
 
     Args:
-        total_issues: Total number of issues found
+        high_issues: Number of HIGH severity issues found
+        medium_issues: Number of MEDIUM severity issues found
+        low_issues: Number of LOW severity issues found
         total_pages: Total number of pages audited
 
     Returns:
@@ -305,8 +317,13 @@ def calculate_audit_score(total_issues: int, total_pages: int) -> int:
     if total_pages == 0:
         return 100
 
-    avg_issues = total_issues / total_pages
-    score = max(0, 100 - (avg_issues * SCORE_PENALTY_PER_ISSUE))
+    # Calculate weighted penalty per page
+    avg_high_penalty = (high_issues / total_pages) * SCORE_PENALTY_HIGH
+    avg_medium_penalty = (medium_issues / total_pages) * SCORE_PENALTY_MEDIUM
+    avg_low_penalty = (low_issues / total_pages) * SCORE_PENALTY_LOW
+    
+    total_penalty = avg_high_penalty + avg_medium_penalty + avg_low_penalty
+    score = max(0, 100 - total_penalty)
 
     return int(score)
 
