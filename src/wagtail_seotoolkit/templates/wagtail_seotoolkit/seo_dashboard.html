@@ -90,16 +90,18 @@
                     <a href="{% url 'seo_issues_report' %}" class="button button-primary">
                         {% trans "View All Issues" %}
                     </a>
-                    <button id="request-audit-btn" class="button button-secondary" 
-                            {% if has_scheduled_audit or has_running_audit %}disabled{% endif %}>
-                        {% if has_scheduled_audit %}
-                            {% trans "Audit Scheduled..." %}
-                        {% elif has_running_audit %}
-                            {% trans "Audit Running..." %}
-                        {% else %}
-                            {% trans "Request an Audit" %}
-                        {% endif %}
-                    </button>
+                    {% if show_audit_button %}
+                        <button id="request-audit-btn" class="button button-secondary" 
+                                {% if has_scheduled_audit or has_running_audit %}disabled{% endif %}>
+                            {% if has_scheduled_audit %}
+                                {% trans "Audit Scheduled..." %}
+                            {% elif has_running_audit %}
+                                {% trans "Audit Running..." %}
+                            {% else %}
+                                {% trans "Request an Audit" %}
+                            {% endif %}
+                        </button>
+                    {% endif %}
                 </div>
             </div>
         {% else %}

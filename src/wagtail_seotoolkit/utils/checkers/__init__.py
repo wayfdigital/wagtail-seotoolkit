@@ -12,6 +12,7 @@ from .image_checker import ImageChecker
 from .link_checker import LinkChecker
 from .meta_checker import MetaChecker
 from .mobile_checker import MobileChecker
+from .pagespeed_checker import PageSpeedChecker
 from .schema_checker import SchemaChecker
 from .title_checker import TitleChecker
 
@@ -26,5 +27,6 @@ __all__ = [
     "MobileChecker",
     "LinkChecker",
     "FreshnessChecker",
+    "PageSpeedChecker",
 ]
 

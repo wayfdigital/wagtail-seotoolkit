@@ -73,6 +73,46 @@ class SEOAuditIssueType(models.TextChoices):
     CONTENT_NO_PUBLISH_DATE = "content_no_publish_date", "Content No Publish Date"
     CONTENT_NO_MODIFIED_DATE = "content_no_modified_date", "Content No Modified Date"
 
+    # PageSpeed Insights Performance issues
+    PAGESPEED_PERFORMANCE_SCORE_LOW = (
+        "pagespeed_performance_score_low",
+        "PageSpeed Insights: Performance Score Low",
+    )
+    PAGESPEED_PERFORMANCE_SCORE_CRITICAL = (
+        "pagespeed_performance_score_critical",
+        "PageSpeed Insights: Performance Score Critical",
+    )
+    PAGESPEED_ACCESSIBILITY_SCORE_LOW = (
+        "pagespeed_accessibility_score_low",
+        "PageSpeed Insights: Accessibility Score Low",
+    )
+    PAGESPEED_ACCESSIBILITY_SCORE_CRITICAL = (
+        "pagespeed_accessibility_score_critical",
+        "PageSpeed Insights: Accessibility Score Critical",
+    )
+    PAGESPEED_BEST_PRACTICES_SCORE_LOW = (
+        "pagespeed_best_practices_score_low",
+        "PageSpeed Insights: Best Practices Score Low",
+    )
+    PAGESPEED_BEST_PRACTICES_SCORE_CRITICAL = (
+        "pagespeed_best_practices_score_critical",
+        "PageSpeed Insights: Best Practices Score Critical",
+    )
+    PAGESPEED_SEO_SCORE_LOW = (
+        "pagespeed_seo_score_low",
+        "PageSpeed Insights: SEO Score Low",
+    )
+    PAGESPEED_SEO_SCORE_CRITICAL = (
+        "pagespeed_seo_score_critical",
+        "PageSpeed Insights: SEO Score Critical",
+    )
+
+    # Individual Lighthouse audit failures
+    PAGESPEED_LIGHTHOUSE_AUDIT_FAILED = (
+        "pagespeed_lighthouse_audit_failed",
+        "PageSpeed Insights: Lighthouse Audit Failed",
+    )
+
     @classmethod
     def get_description_template(cls, issue_type):
         """Get the description template for an issue type"""
@@ -106,6 +146,16 @@ class SEOAuditIssueType(models.TextChoices):
             cls.CONTENT_NOT_UPDATED: "Content was published {days_old} days ago and may need updating. Google favors fresh content for time-sensitive queries.",
             cls.CONTENT_NO_PUBLISH_DATE: "Content page is missing published date metadata. Add article:published_time meta tag or datePublished in schema.",
             cls.CONTENT_NO_MODIFIED_DATE: "Content page is missing last modified date. Add article:modified_time meta tag or dateModified in schema for time-sensitive content.",
+            # PageSpeed Insights issues
+            cls.PAGESPEED_PERFORMANCE_SCORE_LOW: "Performance score is {score}/100. Consider optimizing images, reducing JavaScript, and improving server response times.",
+            cls.PAGESPEED_PERFORMANCE_SCORE_CRITICAL: "Performance score is critically low ({score}/100). This significantly impacts user experience and SEO rankings.",
+            cls.PAGESPEED_ACCESSIBILITY_SCORE_LOW: "Accessibility score is {score}/100. Improve keyboard navigation, color contrast, and screen reader compatibility.",
+            cls.PAGESPEED_ACCESSIBILITY_SCORE_CRITICAL: "Accessibility score is critically low ({score}/100). This creates barriers for users with disabilities.",
+            cls.PAGESPEED_BEST_PRACTICES_SCORE_LOW: "Best practices score is {score}/100. Address security vulnerabilities, deprecated APIs, and modern web standards.",
+            cls.PAGESPEED_BEST_PRACTICES_SCORE_CRITICAL: "Best practices score is critically low ({score}/100). Critical security or compatibility issues detected.",
+            cls.PAGESPEED_SEO_SCORE_LOW: "SEO score is {score}/100. Improve meta tags, structured data, and content optimization.",
+            cls.PAGESPEED_SEO_SCORE_CRITICAL: "SEO score is critically low ({score}/100). Major SEO issues affecting search visibility.",
+            cls.PAGESPEED_LIGHTHOUSE_AUDIT_FAILED: "Lighthouse audit failed: {audit_title}. {audit_description}",
         }
         return descriptions.get(issue_type, "")
 
@@ -122,6 +172,16 @@ class SEOAuditIssueType(models.TextChoices):
             cls.MOBILE_TEXT_SMALL,
             cls.CONTENT_NO_PUBLISH_DATE,
             cls.CONTENT_NO_MODIFIED_DATE,
+            # PageSpeed Insights issues require dev fixes
+            cls.PAGESPEED_PERFORMANCE_SCORE_LOW,
+            cls.PAGESPEED_PERFORMANCE_SCORE_CRITICAL,
+            cls.PAGESPEED_ACCESSIBILITY_SCORE_LOW,
+            cls.PAGESPEED_ACCESSIBILITY_SCORE_CRITICAL,
+            cls.PAGESPEED_BEST_PRACTICES_SCORE_LOW,
+            cls.PAGESPEED_BEST_PRACTICES_SCORE_CRITICAL,
+            cls.PAGESPEED_SEO_SCORE_LOW,
+            cls.PAGESPEED_SEO_SCORE_CRITICAL,
+            cls.PAGESPEED_LIGHTHOUSE_AUDIT_FAILED,
         }
         return issue_type in dev_required_issues
 
@@ -169,6 +229,16 @@ class SEOAuditIssueType(models.TextChoices):
             cls.CONTENT_NOT_UPDATED: SEOAuditIssueSeverity.LOW,
             cls.CONTENT_NO_PUBLISH_DATE: SEOAuditIssueSeverity.LOW,
             cls.CONTENT_NO_MODIFIED_DATE: SEOAuditIssueSeverity.LOW,
+            # PageSpeed Insights issues
+            cls.PAGESPEED_PERFORMANCE_SCORE_LOW: SEOAuditIssueSeverity.MEDIUM,
+            cls.PAGESPEED_PERFORMANCE_SCORE_CRITICAL: SEOAuditIssueSeverity.HIGH,
+            cls.PAGESPEED_ACCESSIBILITY_SCORE_LOW: SEOAuditIssueSeverity.MEDIUM,
+            cls.PAGESPEED_ACCESSIBILITY_SCORE_CRITICAL: SEOAuditIssueSeverity.HIGH,
+            cls.PAGESPEED_BEST_PRACTICES_SCORE_LOW: SEOAuditIssueSeverity.MEDIUM,
+            cls.PAGESPEED_BEST_PRACTICES_SCORE_CRITICAL: SEOAuditIssueSeverity.HIGH,
+            cls.PAGESPEED_SEO_SCORE_LOW: SEOAuditIssueSeverity.MEDIUM,
+            cls.PAGESPEED_SEO_SCORE_CRITICAL: SEOAuditIssueSeverity.HIGH,
+            cls.PAGESPEED_LIGHTHOUSE_AUDIT_FAILED: SEOAuditIssueSeverity.MEDIUM,
         }
         return severity_mapping.get(issue_type, SEOAuditIssueSeverity.MEDIUM)
 

@@ -26,35 +26,93 @@ class Command(BaseCommand):
             action='store_true',
             help='Disable progress bar'
         )
+        parser.add_argument(
+            "--skip-pagespeed",
+            action="store_true",
+            help="Skip PageSpeed Insights checks",
+        )
+        parser.add_argument(
+            "--debug",
+            action="store_true",
+            help="Enable debug output showing API calls and responses",
+        )
+        parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="Use mock PageSpeed data instead of real API calls",
+        )
 
     def handle(self, *args, **options):
         self.stdout.write(self.style.SUCCESS('Starting SEO audit...'))
-        
+
+        # Handle dry-run mode by updating settings temporarily
+        if options.get("dry_run"):
+            from django.conf import settings
+
+            settings.WAGTAIL_SEOTOOLKIT_PAGESPEED_DRY_RUN = True
+            self.stdout.write(
+                self.style.WARNING("DRY RUN MODE: Using mock PageSpeed data")
+            )
+
+        # Safety mechanism: Mark all other running audits as failed
+        running_audits = SEOAuditRun.objects.filter(status="running")
+        if running_audits.exists():
+            count = running_audits.count()
+            running_audits.update(status="failed")
+            self.stdout.write(
+                self.style.WARNING(
+                    f"SAFETY: Marked {count} previously running audit(s) as failed"
+                )
+            )
+
         # Create audit run
         audit_run = SEOAuditRun.objects.create(
-            overall_score=0,
-            pages_analyzed=0,
-            status='running'
+            overall_score=0, pages_analyzed=0, status="running"
         )
-        
+
         try:
             # Get pages to audit
             pages = self.get_pages_to_audit(options)
             total_pages = len(pages)
-            
+
             self.stdout.write(f"Found {total_pages} page(s) to audit\n")
 
             # Run the audit using the new reusable function
-            show_progress = not options.get('no_progress', False)
-            results = execute_audit_run(audit_run, pages=pages, show_progress=show_progress)
-            
+            show_progress = not options.get("no_progress", False)
+            debug = options.get("debug", False)
+            skip_pagespeed = options.get("skip_pagespeed", False)
+
+            if debug:
+                self.stdout.write(
+                    self.style.WARNING("DEBUG MODE: Showing API calls and responses")
+                )
+
+            if skip_pagespeed:
+                self.stdout.write(self.style.WARNING("SKIPPING PageSpeed checks"))
+
+            results = execute_audit_run(
+                audit_run,
+                pages=pages,
+                show_progress=show_progress,
+                debug=debug,
+                skip_pagespeed=skip_pagespeed,
+            )
+
             # Display summary
             self.display_summary(results)
-            
-        except Exception as e:
-            audit_run.status = 'failed'
+
+        except KeyboardInterrupt:
+            # Handle user cancellation (Ctrl+C)
+            audit_run.status = "failed"
             audit_run.save()
-            raise CommandError(f'Audit failed: {str(e)}')
+            self.stdout.write(self.style.ERROR("\n\nAudit cancelled by user (Ctrl+C)"))
+            self.stdout.write(self.style.ERROR("Audit marked as failed."))
+            raise CommandError("Audit cancelled by user")
+
+        except Exception as e:
+            audit_run.status = "failed"
+            audit_run.save()
+            raise CommandError(f"Audit failed: {str(e)}")
     
     def get_pages_to_audit(self, options):
         """Get the list of pages to audit based on command options."""

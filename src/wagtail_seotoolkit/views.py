@@ -32,32 +32,42 @@ class SEODashboardView(TemplateView):
         # Check for scheduled or running audits
         scheduled_audit = SEOAuditRun.objects.filter(status='scheduled').first()
         running_audit = SEOAuditRun.objects.filter(status='running').first()
-        
-        context.update({
-            'has_scheduled_audit': scheduled_audit is not None,
-            'has_running_audit': running_audit is not None,
-            'scheduled_audit': scheduled_audit,
-            'running_audit': running_audit,
-        })
-        
+
+        # Check if audit button should be shown
+        from django.conf import settings
+
+        show_audit_button = getattr(
+            settings, "WAGTAIL_SEOTOOLKIT_SHOW_AUDIT_BUTTON", False
+        )
+
+        context.update(
+            {
+                "has_scheduled_audit": scheduled_audit is not None,
+                "has_running_audit": running_audit is not None,
+                "scheduled_audit": scheduled_audit,
+                "running_audit": running_audit,
+                "show_audit_button": show_audit_button,
+            }
+        )
+
         if latest_audit:
             # Get issue counts by severity
-            issues_by_severity = latest_audit.issues.values('issue_severity').annotate(
-                count=Count('id')
+            issues_by_severity = latest_audit.issues.values("issue_severity").annotate(
+                count=Count("id")
             )
-            
+
             critical_count = 0
             warnings_count = 0
             suggestions_count = 0
-            
+
             for item in issues_by_severity:
-                if item['issue_severity'] == SEOAuditIssueSeverity.HIGH:
-                    critical_count = item['count']
-                elif item['issue_severity'] == SEOAuditIssueSeverity.MEDIUM:
-                    warnings_count = item['count']
-                elif item['issue_severity'] == SEOAuditIssueSeverity.LOW:
-                    suggestions_count = item['count']
-            
+                if item["issue_severity"] == SEOAuditIssueSeverity.HIGH:
+                    critical_count = item["count"]
+                elif item["issue_severity"] == SEOAuditIssueSeverity.MEDIUM:
+                    warnings_count = item["count"]
+                elif item["issue_severity"] == SEOAuditIssueSeverity.LOW:
+                    suggestions_count = item["count"]
+
             # Get top issues by type
             top_issues = (
                 latest_audit.issues.values(
@@ -66,7 +76,7 @@ class SEODashboardView(TemplateView):
                 .annotate(count=Count("id"))
                 .order_by("-issue_severity", "-count")[:5]
             )
-            
+
             # Format top issues with human-readable labels
             formatted_top_issues = []
             for issue in top_issues:
@@ -83,47 +93,60 @@ class SEODashboardView(TemplateView):
                         "requires_dev_fix": issue["requires_dev_fix"],
                     }
                 )
-            
-            context.update({
-                'latest_audit': latest_audit,
-                'health_score': latest_audit.overall_score,
-                'pages_analyzed': latest_audit.pages_analyzed,
-                'critical_count': critical_count,
-                'warnings_count': warnings_count,
-                'suggestions_count': suggestions_count,
-                'top_issues': formatted_top_issues,
-                'total_issues': critical_count + warnings_count + suggestions_count,
-            })
+
+            context.update(
+                {
+                    "latest_audit": latest_audit,
+                    "health_score": latest_audit.overall_score,
+                    "pages_analyzed": latest_audit.pages_analyzed,
+                    "critical_count": critical_count,
+                    "warnings_count": warnings_count,
+                    "suggestions_count": suggestions_count,
+                    "top_issues": formatted_top_issues,
+                    "total_issues": critical_count + warnings_count + suggestions_count,
+                }
+            )
         else:
-            context.update({
-                'latest_audit': None,
-                'health_score': None,
-                'pages_analyzed': 0,
-                'critical_count': 0,
-                'warnings_count': 0,
-                'suggestions_count': 0,
-                'top_issues': [],
-                'total_issues': 0,
-            })
-        
+            context.update(
+                {
+                    "latest_audit": None,
+                    "health_score": None,
+                    "pages_analyzed": 0,
+                    "critical_count": 0,
+                    "warnings_count": 0,
+                    "suggestions_count": 0,
+                    "top_issues": [],
+                    "total_issues": 0,
+                }
+            )
+
         # Add severity constants to context for template use
-        context.update({
-            'SEVERITY_LOW': SEOAuditIssueSeverity.LOW,
-            'SEVERITY_MEDIUM': SEOAuditIssueSeverity.MEDIUM,
-            'SEVERITY_HIGH': SEOAuditIssueSeverity.HIGH,
-        })
+        context.update(
+            {
+                "SEVERITY_LOW": SEOAuditIssueSeverity.LOW,
+                "SEVERITY_MEDIUM": SEOAuditIssueSeverity.MEDIUM,
+                "SEVERITY_HIGH": SEOAuditIssueSeverity.HIGH,
+            }
+        )
 
         return context
 
+
 class SEOIssuesFilterSet(WagtailFilterSet):
     """FilterSet for SEO Issues Report"""
-    
+
     issue_severity = django_filters.ChoiceFilter(
         label=_("Severity"),
-        choices=[('', _('All'))] + SEOAuditIssueSeverity.choices,
+        choices=[("", _("All"))] + SEOAuditIssueSeverity.choices,
         empty_label=None,
     )
-    
+
+    requires_dev_fix = django_filters.ChoiceFilter(
+        label=_("Requires Dev Fix"),
+        choices=[("", _("All")), (True, _("Yes")), (False, _("No"))],
+        empty_label=None,
+    )
+
     class Meta:
         model = SEOAuditIssue
         fields = ['issue_severity']

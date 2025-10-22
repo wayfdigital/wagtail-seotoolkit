@@ -99,7 +99,7 @@
                                             {% endif %}
                                         </div>
                                         <div class="seo-sidepanel__issue-description">
-                                            {{ issue.description }}
+                                            {{ issue.description|safe }}
                                         </div>
                                     </div>
                                 {% endfor %}
@@ -130,7 +130,7 @@
                                             {% endif %}
                                         </div>
                                         <div class="seo-sidepanel__issue-description">
-                                            {{ issue.description }}
+                                            {{ issue.description|safe }}
                                         </div>
                                     </div>
                                 {% endfor %}
@@ -161,7 +161,7 @@
                                             {% endif %}
                                         </div>
                                         <div class="seo-sidepanel__issue-description">
-                                            {{ issue.description }}
+                                            {{ issue.description|safe }}
                                         </div>
                                     </div>
                                 {% endfor %}

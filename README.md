@@ -1,105 +1,225 @@
 # Wagtail SEO Toolkit
 
-A comprehensive SEO toolkit for Wagtail CMS that provides essential SEO features and optimizations for your Wagtail websites.
+A comprehensive SEO auditing and optimization plugin for Wagtail CMS that helps you identify and fix SEO issues across your website.
 
-**Minimum requirements:**
+![Dashboard](static/dashboard.png)
+
+## 🚀 Features
+
+### 🔍 **SEO Best Practices Checks**
+- **Title & Meta Tags**: Check for missing, duplicate, or suboptimal meta tags
+- **Content Analysis**: Analyze content length, readability, and structure
+- **Header Structure**: Validate H1-H6 hierarchy and usage
+- **Image Optimization**: Check for missing alt text, proper sizing, and optimization
+- **Schema Markup**: Validate structured data implementation
+- **Mobile Optimization**: Ensure mobile-friendly design and viewport settings
+- **Internal Linking**: Analyze internal link structure and distribution
+- **Content Freshness**: Track content publication and modification dates
+
+### ⚡ **PageSpeed Insights Checks** (Optional)
+- **Performance Metrics**: Get Core Web Vitals and performance scores
+- **Accessibility Checks**: Identify accessibility issues
+- **Best Practices**: Check for security and modern web standards
+- **SEO Performance**: Analyze technical SEO factors
+- **Per-Page-Type Optimization**: Efficiently audit multiple pages of the same type
+
+### 🎯 **Smart Issue Management**
+- **Issues Export**: Export list of issues to Excel/CSV
+- **Developer vs Content Issues**: Clear distinction between technical and content fixes
+
+### 🔧 **Flexible Configuration**
+- **PageSpeed Settings**: Control API usage and optimization
+- **Button Visibility**: Control audit button visibility in admin
+- **Dev Fix Filtering**: Show only content-editable issues
+
+## 📸 Screenshots
+
+### SEO Dashboard
+![Dashboard](static/dashboard.png)
+*Comprehensive overview of your site's SEO health with actionable insights*
+
+### Issues Report
+![Issues View](static/issues_view.png)
+*Detailed view of all SEO issues with filtering and management options*
+
+### Page Sidebar
+![Sidebar](static/sidebar.png)
+*Real-time SEO insights directly in the Wagtail page editor*
+
+## 🛠 Installation
+
+### Prerequisites
 - Python 3.8+
 - Django 3.2+
 - Wagtail 5.0+
 
-
-## Development Setup
-
-This project includes a full development environment using Docker with the [Wagtail Bakerydemo](https://github.com/wagtail/bakerydemo) as the test project. The plugin is automatically configured and ready to use in the demo. The project has the bakery demo frozen at the time of the repo creation.
-
-### Prerequisites
-
-- Docker
-- Docker Compose
-
-### Getting Started
-
-1. **Clone the repository:**
+### Install via pip
 
 ```bash
-git clone https://github.com/yourusername/wagtail-seotoolkit.git
-cd wagtail-seotoolkit
+pip install wagtail-seotoolkit
 ```
 
-2. **Start the Docker environment:**
+### Add to your Django settings
 
-```bash
-docker compose up --build
+```python
+# settings.py
+INSTALLED_APPS = [
+    # ... other apps
+    'wagtail_seotoolkit',
+]
 ```
 
-That's it! The entrypoint script automatically:
-- Installs the package in editable mode
-- Waits for the database to be ready
-- Runs migrations
-- Loads bakerydemo initial data (first time only)
-- Starts the development server
-
-3. **Access the site:**
-
-Once you see `"Starting development server at http://0.0.0.0:8000/"`, visit:
-
-- **Website**: http://localhost:8000
-- **Admin**: http://localhost:8000/admin
-- **Credentials**: `admin` / `changeme`
-
-You'll see the **"SEO Toolkit"** menu item (with cog icon) in the Wagtail admin sidebar!
-
-## Features
-
-### SEO Audit
-
-Run comprehensive SEO audits on your Wagtail pages to identify and fix SEO issues:
-
-- **Title Tag Optimization** - Check for missing, too short, or too long titles
-- **Meta Description Quality** - Validate descriptions and check for CTAs
-- **Content Depth Analysis** - Ensure adequate word count and paragraph structure
-- **Header Structure** - Validate H1 usage and heading hierarchy
-- **Image Alt Text** - Check for missing or generic alt text
-- **Structured Data** - Verify JSON-LD schema markup presence
-- **Mobile Responsiveness** - Check viewport meta tag and fixed-width layouts
-- **Internal Linking** - Analyze internal link structure
-- **Content Freshness** - Check for publish and modified dates
-
-### Running SEO Audits
-
-#### Command Line
-
-Run an SEO audit using the management command:
+### Run migrations
 
 ```bash
-# Audit all pages
+python manage.py migrate
+```
+
+
+## ⚙️ Configuration
+
+### All Settings
+
+```python
+# settings.py
+
+# SEO Toolkit Configuration
+WAGTAIL_SEOTOOLKIT_SHOW_AUDIT_BUTTON = True  # Show audit button in admin (default: False)
+WAGTAIL_SEOTOOLKIT_INCLUDE_DEV_FIXES = True  # Include developer-required fixes (default: True)
+
+# PageSpeed Insights Configuration (Optional - must be manually enabled)
+# Note: PageSpeed checks are disabled by default and must be manually enabled
+WAGTAIL_SEOTOOLKIT_PAGESPEED_API_KEY = "your-api-key-here"  # Get from Google
+WAGTAIL_SEOTOOLKIT_PAGESPEED_ENABLED = True  # Enable PageSpeed checks
+WAGTAIL_SEOTOOLKIT_PAGESPEED_DRY_RUN = False  # Use real API calls
+WAGTAIL_SEOTOOLKIT_PAGESPEED_PER_PAGE_TYPE = True  # Optimize API usage
+```
+
+### Getting a PageSpeed API Key
+
+1. Visit [Google PageSpeed Insights API](https://developers.google.com/speed/docs/insights/v5/get-started)
+2. Create a new project or select existing one
+3. Enable the PageSpeed Insights API
+4. Create credentials (API key)
+5. Add the key to your settings
+
+## 🚀 Usage
+
+### Running Audits
+
+This plugin exposes 2 management commands `seoaudit` and `run_scheduled_audits` those commands needs to be executed by some process. Smiliarly to [publish_scheduled](https://docs.wagtail.org/en/stable/reference/management_commands.html#publish-scheduled).
+
+#### Option 1: User-Requested Audits (Recommended)
+
+To allow users to request audits through the admin interface:
+
+1. **Enable the audit button**:
+   ```python
+   # settings.py
+   WAGTAIL_SEOTOOLKIT_SHOW_AUDIT_BUTTON = True
+   ```
+
+2. **Set up periodic task** to process scheduled audits:
+   ```bash
+   python manage.py run_scheduled_audits
+   ```
+WARNING: First audit needs to be started manually with `seoaudit` command.
+
+
+#### Option 2: Automated Audits
+
+Set up a scheduled task to run audits automatically:
+
+```bash
 python manage.py seoaudit
-
-# Audit a specific page
-python manage.py seoaudit --page-id 123
-
-# Limit number of pages
-python manage.py seoaudit --pages 10
-
-# Disable progress bar
-python manage.py seoaudit --no-progress
 ```
 
-### Development Workflow
 
-The development environment is configured with **live code reloading**:
+## 🔧 Advanced Configuration
 
-1. Edit package code in `src/wagtail_seotoolkit/`
-2. Save your changes
-3. Django automatically reloads
-4. Refresh browser to see changes
-5. No container rebuild needed!
+### Filtering Dev Fixes
 
-## License
+For content editors who shouldn't see technical issues:
 
-This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.
+```python
+# settings.py
+WAGTAIL_SEOTOOLKIT_INCLUDE_DEV_FIXES = False
+```
 
-## Credits
+This will hide all issues that require developer intervention, showing only content-related issues.
 
-- Development environment powered by [Wagtail Bakerydemo](https://github.com/wagtail/bakerydemo)
-- Built for the [Wagtail CMS](https://wagtail.org/) ecosystem
+### PageSpeed Optimization
+
+For sites with many pages of the same type:
+
+```python
+# settings.py
+WAGTAIL_SEOTOOLKIT_PAGESPEED_PER_PAGE_TYPE = True
+```
+
+This optimizes API usage by testing one page per type and propagating results.
+
+## 🛠 Development
+
+### Setting up Development Environment
+
+You can start developing with this plugin using the Wagtail Bakery demo project that includes this plugin enabled:
+
+```bash
+# Clone the repository
+git clone https://github.com/your-org/wagtail-seotoolkit.git
+cd wagtail-seotoolkit
+
+# Start the development environment with Docker
+docker-compose up
+
+# The plugin will be available at http://localhost:8000/admin/
+# Login with: admin / changeme
+```
+
+## 📊 Performance Considerations
+
+### PageSpeed API Limits
+- Google PageSpeed Insights API has rate limits
+- Use `WAGTAIL_SEOTOOLKIT_PAGESPEED_PER_PAGE_TYPE = True` for large sites
+- Consider running audits during off-peak hours
+
+## 📝 Changelog
+
+### Version 1.0.0
+- Initial release
+- Comprehensive SEO auditing
+- PageSpeed Insights integration
+- Wagtail admin integration
+- Configurable settings
+
+## 📄 License
+
+This project is licensed under the Creative Commons Attribution 4.0 International License.
+
+**Author**: WAYF
+
+**Copyright**: © 2025 WAYF
+
+### License Summary
+
+You are free to:
+- **Share**: Copy and redistribute the material in any medium or format
+- **Adapt**: Remix, transform, and build upon the material for any purpose, even commercially
+
+Under the following terms:
+- **Attribution**: You must give appropriate credit, provide a link to the license, and indicate if changes were made
+- **No additional restrictions**: You may not apply legal terms or technological measures that legally restrict others from doing anything the license permits
+
+For the full license text, see [LICENSE](LICENSE).
+
+## 🙏 Acknowledgments
+
+- Built for the Wagtail CMS community
+- Inspired by modern SEO best practices
+- Powered by Google PageSpeed Insights API
+- Thanks to all contributors and users
+
+---
+
+**Made by WAYF**

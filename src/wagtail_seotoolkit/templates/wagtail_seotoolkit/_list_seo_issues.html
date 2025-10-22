@@ -56,7 +56,7 @@
                 </div>
                 
                 {% if issue.description %}
-                    <p class="issue-description">{{ issue.description }}</p>
+                    <p class="issue-description">{{ issue.description|safe }}</p>
                 {% endif %}
             </div>
         {% endwith %}

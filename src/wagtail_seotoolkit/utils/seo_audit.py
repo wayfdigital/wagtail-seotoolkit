@@ -21,6 +21,7 @@ from wagtail_seotoolkit.utils.checkers import (
     LinkChecker,
     MetaChecker,
     MobileChecker,
+    PageSpeedChecker,
     SchemaChecker,
     TitleChecker,
 )
@@ -55,6 +56,8 @@ class SEOAuditor:
         html: str,
         url: str = "",
         base_domain: str = "",
+        debug: bool = False,
+        skip_pagespeed: bool = False,
     ):
         """
         Initialize the auditor with HTML content.
@@ -63,12 +66,16 @@ class SEOAuditor:
             html: The HTML content to audit
             url: The URL of the page being audited
             base_domain: The base domain to identify internal links
+            debug: Enable debug output
+            skip_pagespeed: Skip PageSpeed checks for this audit
         """
         self.html = html
         self.url = url
         self.base_domain = base_domain or extract_base_domain(url)
         self.soup = BeautifulSoup(html, "html.parser")
         self.issues: List[Dict[str, Any]] = []
+        self.debug = debug
+        self.skip_pagespeed = skip_pagespeed
 
     def run_all_checks(self) -> List[Dict[str, Any]]:
         """Run all SEO checks and return a list of issues."""
@@ -87,10 +94,40 @@ class SEOAuditor:
             FreshnessChecker(self.soup, self.url, self.base_domain),
         ]
 
+        # Add PageSpeed checker if not skipped
+        if not self.skip_pagespeed:
+            checkers.append(
+                PageSpeedChecker(
+                    self.soup, self.url, self.base_domain, debug=self.debug
+                )
+            )
+
         # Run all checkers
         for checker in checkers:
             issues = checker.check()
             self.issues.extend(issues)
+
+        # Filter out dev-fix issues if disabled in settings
+        from django.conf import settings
+
+        include_dev_fixes = getattr(
+            settings, "WAGTAIL_SEOTOOLKIT_INCLUDE_DEV_FIXES", True
+        )
+
+        if not include_dev_fixes:
+            from wagtail_seotoolkit.models import SEOAuditIssueType
+
+            original_count = len(self.issues)
+            self.issues = [
+                issue
+                for issue in self.issues
+                if not SEOAuditIssueType.requires_dev_fix(issue["issue_type"])
+            ]
+            if self.debug and len(self.issues) < original_count:
+                filtered_count = original_count - len(self.issues)
+                print(
+                    f"[DEBUG] Filtered out {filtered_count} dev-fix issues globally (WAGTAIL_SEOTOOLKIT_INCLUDE_DEV_FIXES=False)"
+                )
 
         return self.issues
 
@@ -177,13 +214,17 @@ def get_page_html(page) -> str:
 # ==================== Audit Execution ====================
 
 
-def audit_single_page(page, audit_run) -> List[Dict[str, Any]]:
+def audit_single_page(
+    page, audit_run, debug=False, skip_pagespeed=False
+) -> List[Dict[str, Any]]:
     """
     Audit a single Wagtail page and create issue records.
 
     Args:
         page: The Wagtail page to audit
         audit_run: The SEOAuditRun instance to attach issues to
+        debug: Enable debug output
+        skip_pagespeed: Skip PageSpeed checks for this audit
 
     Returns:
         List of issues found
@@ -198,7 +239,13 @@ def audit_single_page(page, audit_run) -> List[Dict[str, Any]]:
     base_domain = extract_base_domain(url)
 
     # Run audit
-    auditor = SEOAuditor(html, url=url, base_domain=base_domain)
+    auditor = SEOAuditor(
+        html,
+        url=url,
+        base_domain=base_domain,
+        debug=debug,
+        skip_pagespeed=skip_pagespeed,
+    )
     issues = auditor.run_all_checks()
 
     # Create issue records
@@ -221,7 +268,11 @@ def audit_single_page(page, audit_run) -> List[Dict[str, Any]]:
 
 
 def run_audit_on_pages(
-    pages: List, audit_run, show_progress: bool = True
+    pages: List,
+    audit_run,
+    show_progress: bool = True,
+    debug: bool = False,
+    skip_pagespeed: bool = False,
 ) -> Dict[str, Any]:
     """
     Run SEO audit on a list of Wagtail pages.
@@ -230,20 +281,42 @@ def run_audit_on_pages(
         pages: List of Wagtail pages to audit
         audit_run: The SEOAuditRun instance to attach issues to
         show_progress: Whether to show a progress bar
+        debug: Enable debug output
+        skip_pagespeed: Skip PageSpeed checks for this audit
 
     Returns:
         Dictionary with audit results summary
     """
+    from django.conf import settings
+
     total_pages = len(pages)
     total_issues = 0
 
-    # Audit each page
-    if show_progress:
-        total_issues = _audit_with_progress(pages, audit_run)
+    # Check if dev fixes are disabled - if so, skip PageSpeed entirely
+    include_dev_fixes = getattr(settings, "WAGTAIL_SEOTOOLKIT_INCLUDE_DEV_FIXES", True)
+    if not include_dev_fixes:
+        skip_pagespeed = True
+        if debug:
+            print("[DEBUG] Dev fixes disabled, skipping PageSpeed checks entirely")
+
+    # Check if per-page-type optimization is enabled for PageSpeed only
+    per_page_type = getattr(
+        settings, "WAGTAIL_SEOTOOLKIT_PAGESPEED_PER_PAGE_TYPE", False
+    )
+
+    if per_page_type and not skip_pagespeed:
+        # Run full SEO audits on all pages, but optimize PageSpeed checks per page type
+        total_issues = _audit_with_pagespeed_per_page_type_optimization(
+            pages, audit_run, show_progress, debug, skip_pagespeed
+        )
     else:
-        for page in pages:
-            issues = audit_single_page(page, audit_run)
-            total_issues += len(issues)
+        # Audit each page normally (all checkers run on every page)
+        if show_progress:
+            total_issues = _audit_with_progress(pages, audit_run, debug, skip_pagespeed)
+        else:
+            for page in pages:
+                issues = audit_single_page(page, audit_run, debug, skip_pagespeed)
+                total_issues += len(issues)
 
     # Get breakdown by severity
     high_issues = audit_run.issues.filter(
@@ -273,7 +346,9 @@ def run_audit_on_pages(
     }
 
 
-def _audit_with_progress(pages: List, audit_run) -> int:
+def _audit_with_progress(
+    pages: List, audit_run, debug: bool = False, skip_pagespeed: bool = False
+) -> int:
     """Audit pages with a progress bar."""
     total_issues = 0
 
@@ -281,13 +356,186 @@ def _audit_with_progress(pages: List, audit_run) -> int:
         for page in pages:
             pbar.set_description(f"Auditing: {page.title[:50]}")
 
-            issues = audit_single_page(page, audit_run)
+            issues = audit_single_page(page, audit_run, debug, skip_pagespeed)
             total_issues += len(issues)
 
             pbar.set_postfix({"issues": total_issues})
             pbar.update(1)
 
     return total_issues
+
+
+def _audit_with_pagespeed_per_page_type_optimization(
+    pages: List,
+    audit_run,
+    show_progress: bool = True,
+    debug: bool = False,
+    skip_pagespeed: bool = False,
+) -> int:
+    """
+    Audit pages with PageSpeed per-page-type optimization.
+
+    Completely separates PageSpeed testing from regular SEO testing:
+    1. Test PageSpeed on one page per type (collect issues only)
+    2. Run regular SEO audits on ALL pages (no PageSpeed)
+    3. Propagate PageSpeed issues to remaining pages
+    """
+    from collections import defaultdict
+
+    from wagtail_seotoolkit.models import SEOAuditIssue, SEOAuditIssueType
+
+    total_issues = 0
+    pagespeed_issues_by_type = {}  # Store PageSpeed issues for each page type
+    pages_by_type = defaultdict(list)
+
+    # Group pages by type
+    for page in pages:
+        page_type = page.specific_class.__name__
+        pages_by_type[page_type].append(page)
+
+    if debug:
+        print(
+            f"[DEBUG] Found {len(pages_by_type)} page types: {list(pages_by_type.keys())}"
+        )
+
+    # PHASE 1: Test PageSpeed on one page per type (collect issues only, don't create records)
+    if show_progress:
+        with tqdm(
+            total=len(pages_by_type),
+            desc="Testing PageSpeed per page type",
+            unit="type",
+        ) as pbar:
+            for page_type, type_pages in pages_by_type.items():
+                test_page = type_pages[0]  # Use first page of this type
+                pbar.set_description(f"PageSpeed: {page_type}")
+
+                if debug:
+                    print(
+                        f"[DEBUG] Testing PageSpeed for page type '{page_type}' using page: {test_page.title}"
+                    )
+
+                # Run PageSpeed check only (no regular SEO checks)
+                pagespeed_issues = _run_pagespeed_only_check(test_page, debug)
+                pagespeed_issues_by_type[page_type] = pagespeed_issues
+
+                if debug and pagespeed_issues:
+                    print(
+                        f"[DEBUG] Found {len(pagespeed_issues)} PageSpeed issues for type '{page_type}'"
+                    )
+
+                pbar.update(1)
+    else:
+        for page_type, type_pages in pages_by_type.items():
+            test_page = type_pages[0]  # Use first page of this type
+
+            if debug:
+                print(
+                    f"[DEBUG] Testing PageSpeed for page type '{page_type}' using page: {test_page.title}"
+                )
+
+            # Run PageSpeed check only (no regular SEO checks)
+            pagespeed_issues = _run_pagespeed_only_check(test_page, debug)
+            pagespeed_issues_by_type[page_type] = pagespeed_issues
+
+            if debug and pagespeed_issues:
+                print(
+                    f"[DEBUG] Found {len(pagespeed_issues)} PageSpeed issues for type '{page_type}'"
+                )
+
+    # PHASE 2: Run regular SEO audits on ALL pages (no PageSpeed)
+    if show_progress:
+        with tqdm(total=len(pages), desc="Auditing pages", unit="page") as pbar:
+            for page in pages:
+                pbar.set_description(f"Auditing: {page.title[:50]}")
+
+                # Run regular SEO audit (no PageSpeed)
+                issues = audit_single_page(page, audit_run, debug, skip_pagespeed=True)
+                total_issues += len(issues)
+
+                pbar.set_postfix({"issues": total_issues})
+                pbar.update(1)
+    else:
+        for page in pages:
+            # Run regular SEO audit (no PageSpeed)
+            issues = audit_single_page(page, audit_run, debug, skip_pagespeed=True)
+            total_issues += len(issues)
+
+    # PHASE 3: Create PageSpeed issues for all pages of each type
+    for page_type, type_pages in pages_by_type.items():
+        if page_type in pagespeed_issues_by_type:
+            pagespeed_issues = pagespeed_issues_by_type[page_type]
+
+            if debug and pagespeed_issues:
+                print(
+                    f"[DEBUG] Creating {len(pagespeed_issues)} PageSpeed issues for {len(type_pages)} pages of type '{page_type}'"
+                )
+
+            # Create PageSpeed issues for ALL pages of this type
+            for page in type_pages:
+                for issue_data in pagespeed_issues:
+                    requires_dev_fix = SEOAuditIssueType.requires_dev_fix(
+                        issue_data["issue_type"]
+                    )
+                    severity = SEOAuditIssueType.get_severity(issue_data["issue_type"])
+
+                    # Update description to indicate this affects all pages of this type
+                    description = issue_data["description"]
+                    if "affects all" not in description.lower():
+                        description += f" (affects all {len(type_pages)} pages of type '{page_type}')"
+
+                    SEOAuditIssue.objects.create(
+                        audit_run=audit_run,
+                        page=page,
+                        issue_type=issue_data["issue_type"],
+                        issue_severity=severity,
+                        page_url=issue_data.get("page_url", ""),
+                        page_title=page.title,
+                        description=description,
+                        requires_dev_fix=requires_dev_fix,
+                    )
+                    total_issues += 1
+
+    return total_issues
+
+
+def _run_pagespeed_only_check(page, debug: bool = False) -> List[Dict[str, Any]]:
+    """
+    Run only PageSpeed check on a page (no regular SEO checks).
+    Returns PageSpeed issues without creating database records.
+    """
+    from django.test import RequestFactory
+
+    from wagtail_seotoolkit.utils.checkers.pagespeed_checker import PageSpeedChecker
+
+    # Get page URL and HTML (same approach as audit_single_page)
+    url = page.get_full_url()
+
+    # Create a mock request for page.serve()
+    factory = RequestFactory()
+    request = factory.get(url)
+
+    # Add a mock user to the request (some pages might need it)
+    from django.contrib.auth.models import AnonymousUser
+
+    request.user = AnonymousUser()
+
+    # Render the response properly
+    response = page.serve(request)
+    response.render()
+    html = response.content.decode("utf-8")
+
+    # Run only PageSpeed check
+    pagespeed_checker = PageSpeedChecker(html, url, "", debug=debug)
+    pagespeed_issues = pagespeed_checker.check()
+
+    # Filter to only PageSpeed issues
+    pagespeed_issues = [
+        issue
+        for issue in pagespeed_issues
+        if "pagespeed" in issue.get("issue_type", "").lower()
+    ]
+
+    return pagespeed_issues
 
 
 def calculate_audit_score(high_issues: int, medium_issues: int, low_issues: int, total_pages: int) -> int:
@@ -328,7 +576,9 @@ def calculate_audit_score(high_issues: int, medium_issues: int, low_issues: int,
     return int(score)
 
 
-def execute_audit_run(audit_run, pages=None, show_progress=True):
+def execute_audit_run(
+    audit_run, pages=None, show_progress=True, debug=False, skip_pagespeed=False
+):
     """
     Execute an audit run on the provided pages.
 
@@ -339,6 +589,8 @@ def execute_audit_run(audit_run, pages=None, show_progress=True):
         audit_run: The SEOAuditRun instance to execute
         pages: List of pages to audit (if None, will audit all live pages)
         show_progress: Whether to show progress bar (default: True)
+        debug: Enable debug output (default: False)
+        skip_pagespeed: Skip PageSpeed checks (default: False)
 
     Returns:
         Dictionary with audit results summary
@@ -358,7 +610,13 @@ def execute_audit_run(audit_run, pages=None, show_progress=True):
 
     try:
         # Run the audit
-        results = run_audit_on_pages(pages, audit_run, show_progress=show_progress)
+        results = run_audit_on_pages(
+            pages,
+            audit_run,
+            show_progress=show_progress,
+            debug=debug,
+            skip_pagespeed=skip_pagespeed,
+        )
         return results
 
     except Exception as e:
