@@ -170,14 +170,32 @@ This will hide all issues that require developer intervention, showing only cont
 
 ### PageSpeed Optimization
 
-For sites with many pages of the same type:
+The `WAGTAIL_SEOTOOLKIT_PAGESPEED_PER_PAGE_TYPE` setting optimizes PageSpeed API usage for sites with many pages of the same type:
 
 ```python
 # settings.py
-WAGTAIL_SEOTOOLKIT_PAGESPEED_PER_PAGE_TYPE = True
+WAGTAIL_SEOTOOLKIT_PAGESPEED_PER_PAGE_TYPE = True  # Enable optimization (default: False)
 ```
 
-This optimizes API usage by testing one page per type and propagating results.
+**How it works:**
+- **When `True`**: Tests PageSpeed on only one page per page type (e.g., one BlogPage, one ProductPage)
+- **When `False`**: Tests PageSpeed on every individual page
+- **Result propagation**: PageSpeed issues found on the test page are applied to all pages of that same type
+
+**Example:**
+- Site has 50 BlogPage instances and 30 ProductPage instances
+- **With optimization**: 2 PageSpeed API calls (1 for BlogPage + 1 for ProductPage)
+- **Without optimization**: 80 PageSpeed API calls (1 for each page)
+
+**Benefits:**
+- **Cost savings**: Dramatically reduces Google PageSpeed API usage
+- **Faster audits**: Significantly faster completion times
+- **Same accuracy**: PageSpeed issues are typically consistent across pages of the same type
+
+**When to use:**
+- Sites with many pages of the same type
+- When PageSpeed API costs are a concern
+- For faster audit execution
 
 ## 🛠 Development
 
