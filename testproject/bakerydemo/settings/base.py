@@ -225,9 +225,7 @@ ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "changeme")
 
 # SEO Toolkit PageSpeed Insights Configuration
 # Get your API key from: https://developers.google.com/speed/docs/insights/v5/get-started
-WAGTAIL_SEOTOOLKIT_PAGESPEED_API_KEY = (
-    "***YOUR_API_KEY_HERE***"  # Demo API key for testing
-)
+WAGTAIL_SEOTOOLKIT_PAGESPEED_API_KEY = "YOUR_API_KEY_HERE"
 WAGTAIL_SEOTOOLKIT_PAGESPEED_ENABLED = True  # Enable/disable PageSpeed checks
 WAGTAIL_SEOTOOLKIT_PAGESPEED_DRY_RUN = False  # Use mock data instead of real API calls
 WAGTAIL_SEOTOOLKIT_PAGESPEED_PER_PAGE_TYPE = (
