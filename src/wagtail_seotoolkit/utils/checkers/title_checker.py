@@ -34,6 +34,8 @@ class TitleChecker(BaseChecker):
             return self.issues
 
         title_text = title_tag.string.strip()
+        # Normalize whitespace by replacing multiple whitespace characters with single spaces
+        title_text = " ".join(title_text.split())
         title_length = len(title_text)
 
         if title_length < TITLE_MIN_LENGTH:
