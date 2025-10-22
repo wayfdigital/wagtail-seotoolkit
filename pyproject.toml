@@ -4,22 +4,24 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wagtail-seotoolkit"
-version = "0.0.1"
+version = "0.1.0"
 description = "A comprehensive SEO toolkit for Wagtail CMS"
 readme = "README.md"
 authors = [
     {name = "WAYF", email = "hello@wayfdigital.com"}
 ]
-license = {text = "BSD-3-Clause"}
+maintainers = [
+    {name = "WAYF", email = "hello@wayfdigital.com"}
+]
+license = "MIT"
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Framework :: Django",
     "Framework :: Wagtail",
     "Framework :: Wagtail :: 5",
     "Framework :: Wagtail :: 6",
     "Framework :: Wagtail :: 7",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",

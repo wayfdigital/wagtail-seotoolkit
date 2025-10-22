@@ -224,7 +224,7 @@ docker-compose up
 
 ## 📝 Changelog
 
-### Version 1.0.0
+### Version 0.1.0
 - Initial release
 - Comprehensive SEO auditing
 - PageSpeed Insights integration
@@ -233,21 +233,11 @@ docker-compose up
 
 ## 📄 License
 
-This project is licensed under the Creative Commons Attribution 4.0 International License.
+This project is licensed under the MIT License.
 
 **Author**: WAYF
 
 **Copyright**: © 2025 WAYF
-
-### License Summary
-
-You are free to:
-- **Share**: Copy and redistribute the material in any medium or format
-- **Adapt**: Remix, transform, and build upon the material for any purpose, even commercially
-
-Under the following terms:
-- **Attribution**: You must give appropriate credit, provide a link to the license, and indicate if changes were made
-- **No additional restrictions**: You may not apply legal terms or technological measures that legally restrict others from doing anything the license permits
 
 For the full license text, see [LICENSE](LICENSE).
 
