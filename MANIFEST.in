@@ -2,6 +2,9 @@
 include README.md
 include LICENSE
 
+# Include all Python packages and modules
+recursive-include src/wagtail_seotoolkit *
+
 # Include all template files
 recursive-include src/wagtail_seotoolkit/templates *
 
