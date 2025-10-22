@@ -4,6 +4,25 @@ A comprehensive SEO auditing and optimization plugin for Wagtail CMS that helps 
 
 ![Dashboard](static/dashboard.png)
 
+## 📋 Table of Contents
+
+- [🚀 Features](#-features)
+  - [🔍 SEO Best Practices Checks](#-seo-best-practices-checks)
+  - [⚡ PageSpeed Insights Checks (Optional)](#-pagespeed-insights-checks-optional)
+  - [🎯 Smart Issue Management](#-smart-issue-management)
+  - [🔧 Flexible Configuration](#-flexible-configuration)
+- [📸 Screenshots](#-screenshots)
+- [🛠 Installation](#-installation)
+- [⚙️ Configuration](#️-configuration)
+- [🚀 Usage](#-usage)
+  - [Running Audits](#running-audits)
+- [🔧 Advanced Configuration](#-advanced-configuration)
+- [🛠 Development](#-development)
+- [📊 Performance Considerations](#-performance-considerations)
+- [📝 Changelog](#-changelog)
+- [📄 License](#-license)
+- [🙏 Acknowledgments](#-acknowledgments)
+
 ## 🚀 Features
 
 ### 🔍 **SEO Best Practices Checks**
@@ -44,6 +63,7 @@ A comprehensive SEO auditing and optimization plugin for Wagtail CMS that helps 
 
 ### Page Sidebar
 ![Sidebar](static/sidebar.png)
+
 *Real-time SEO insights directly in the Wagtail page editor*
 
 ## 🛠 Installation
