@@ -1,9 +1,23 @@
+import inspect
+
 from django.utils.translation import gettext_lazy
 from wagtail.admin.ui.side_panels import BaseSidePanel
 from wagtail.admin.userbar import AccessibilityItem, apply_userbar_hooks
 from wagtail.models import Page
 
 from wagtail_seotoolkit.models import SEOAuditIssue, SEOAuditIssueSeverity, SEOAuditRun
+
+
+def _supports_in_editor_parameter():
+    """
+    Check if AccessibilityItem supports the in_editor parameter.
+    This parameter was added in newer versions of Wagtail.
+    """
+    try:
+        sig = inspect.signature(AccessibilityItem.__init__)
+        return "in_editor" in sig.parameters
+    except (TypeError, AttributeError):
+        return False
 
 
 class CustomChecksSidePanel(BaseSidePanel):
@@ -26,7 +40,12 @@ class CustomChecksSidePanel(BaseSidePanel):
 
     def get_axe_configuration(self):
         # Retrieve the Axe configuration from the userbar.
-        userbar_items = [AccessibilityItem(in_editor=True)]
+        # Conditionally pass in_editor parameter based on Wagtail version support
+        if _supports_in_editor_parameter():
+            userbar_items = [AccessibilityItem(in_editor=True)]
+        else:
+            userbar_items = [AccessibilityItem()]
+
         page = self.object if issubclass(self.model, Page) else None
         apply_userbar_hooks(self.request, userbar_items, page)
 
