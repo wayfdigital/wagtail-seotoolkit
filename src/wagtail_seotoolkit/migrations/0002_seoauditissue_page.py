@@ -7,8 +7,8 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wagtail_seotoolkit', '0001_initial'),
-        ('wagtailcore', '0095_groupsitepermission'),
+        ("wagtail_seotoolkit", "0001_initial"),
+        ("wagtailcore", "0001_initial"),
     ]
 
     operations = [
