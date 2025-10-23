@@ -129,11 +129,21 @@ class Command(BaseCommand):
         
         # Exclude root and system pages
         pages = pages.exclude(depth__lte=2)
-        
+
+        # Filter out pages without site assigned
+        for page in pages:
+            if not page.full_url:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  ⚠️  Skipping {page.title} because it has no site assigned"
+                    )
+                )
+                pages = pages.exclude(id=page.id)
+
         # Limit if specified
-        if options['pages']:
-            pages = pages[:options['pages']]
-        
+        if options["pages"]:
+            pages = pages[: options["pages"]]
+
         return list(pages)
     
     def display_summary(self, results):
