@@ -229,13 +229,13 @@ WAGTAIL_SEOTOOLKIT_PAGESPEED_API_KEY = os.environ.get("PAGESPEED_API_KEY")
 WAGTAIL_SEOTOOLKIT_PAGESPEED_ENABLED = True  # Enable/disable PageSpeed checks
 WAGTAIL_SEOTOOLKIT_PAGESPEED_DRY_RUN = True  # Use mock data instead of real API calls
 WAGTAIL_SEOTOOLKIT_PAGESPEED_PER_PAGE_TYPE = (
-    False  # Check one page per model type instead of all pages
+    True  # Check one page per model type instead of all pages
 )
 WAGTAIL_SEOTOOLKIT_INCLUDE_DEV_FIXES = (
     True  # Include issues that require developer fixes
 )
 WAGTAIL_SEOTOOLKIT_SHOW_AUDIT_BUTTON = (
-    False  # Show "Request Audit" button in Wagtail admin
+    True  # Show "Request Audit" button in Wagtail admin
 )
 
 # Content Security policy settings
