@@ -503,6 +503,7 @@ def _run_pagespeed_only_check(page, debug: bool = False) -> List[Dict[str, Any]]
     Run only PageSpeed check on a page (no regular SEO checks).
     Returns PageSpeed issues without creating database records.
     """
+    from django.conf import settings
     from django.test import RequestFactory
 
     from wagtail_seotoolkit.utils.checkers.pagespeed_checker import PageSpeedChecker
@@ -512,7 +513,7 @@ def _run_pagespeed_only_check(page, debug: bool = False) -> List[Dict[str, Any]]
 
     # Create a mock request for page.serve()
     factory = RequestFactory()
-    request = factory.get(url)
+    request = factory.get(url, headers={"Host": settings.ALLOWED_HOSTS[0]})
 
     # Add a mock user to the request (some pages might need it)
     from django.contrib.auth.models import AnonymousUser
