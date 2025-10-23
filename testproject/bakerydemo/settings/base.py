@@ -27,7 +27,7 @@ SECRET_KEY = "c6u0-9c!7nilj_ysatsda0(f@e_2mws2f!6m0n^o*4#*q#kzp)"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["bakery.localhost"]
 
 # Uncomment (and adjust as appropriate) to enable django-debug-toolbar
 # INTERNAL_IPS = [
@@ -227,7 +227,7 @@ ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "changeme")
 # Get your API key from: https://developers.google.com/speed/docs/insights/v5/get-started
 WAGTAIL_SEOTOOLKIT_PAGESPEED_API_KEY = os.environ.get("PAGESPEED_API_KEY")
 WAGTAIL_SEOTOOLKIT_PAGESPEED_ENABLED = True  # Enable/disable PageSpeed checks
-WAGTAIL_SEOTOOLKIT_PAGESPEED_DRY_RUN = False  # Use mock data instead of real API calls
+WAGTAIL_SEOTOOLKIT_PAGESPEED_DRY_RUN = True  # Use mock data instead of real API calls
 WAGTAIL_SEOTOOLKIT_PAGESPEED_PER_PAGE_TYPE = (
     False  # Check one page per model type instead of all pages
 )

@@ -224,7 +224,7 @@ docker-compose up
 
 ## 📝 Changelog
 
-### Version 0.1.3
+### Version 0.1.4
 - Initial release
 - Comprehensive SEO auditing
 - PageSpeed Insights integration

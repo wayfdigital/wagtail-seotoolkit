@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wagtail-seotoolkit"
-version = "0.1.3-beta"
+version = "0.1.4-beta"
 description = "A comprehensive SEO toolkit for Wagtail CMS"
 readme = "README.md"
 authors = [
