@@ -25,7 +25,7 @@
 
 {% block results %}
     <div class="nice-padding">
-        {% if request.GET.issue_severity %}
+        {% if request.GET.issue_severity or request.GET.locale or request.GET.requires_dev_fix %}
             <div class="seo-issues-report__clear-filters">
                 <a href="{% url 'seo_issues_report' %}" class="button button-small button-secondary">
                     {% trans "Clear filters" %}

@@ -8,6 +8,7 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic import TemplateView, View
 from wagtail.admin.filters import WagtailFilterSet
 from wagtail.admin.views.reports import ReportView
+from wagtail.models import Locale
 
 from .models import (
     SEOAuditIssue,
@@ -147,9 +148,16 @@ class SEOIssuesFilterSet(WagtailFilterSet):
         empty_label=None,
     )
 
+    locale = django_filters.ModelChoiceFilter(
+        label=_("Locale"),
+        queryset=Locale.objects.all(),
+        field_name="page__locale",
+        empty_label=_("All"),
+    )
+
     class Meta:
         model = SEOAuditIssue
-        fields = ['issue_severity']
+        fields = ['issue_severity', 'locale', 'requires_dev_fix']
 
 
 class SEOIssuesReportView(ReportView):
