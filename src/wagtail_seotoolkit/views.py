@@ -2,6 +2,7 @@
 Views for SEO Toolkit
 """
 import django_filters
+from django import forms
 from django.db.models import Count
 from django.http import JsonResponse
 from django.utils.translation import gettext_lazy as _
@@ -155,9 +156,15 @@ class SEOIssuesFilterSet(WagtailFilterSet):
         empty_label=_("All"),
     )
 
+    issue_type = django_filters.MultipleChoiceFilter(
+        label=_("Issue Type"),
+        choices=SEOAuditIssueType.choices,
+        widget=forms.CheckboxSelectMultiple,
+    )
+
     class Meta:
         model = SEOAuditIssue
-        fields = ['issue_severity', 'locale', 'requires_dev_fix']
+        fields = ["issue_severity", "locale", "requires_dev_fix", "issue_type"]
 
 
 class SEOIssuesReportView(ReportView):
