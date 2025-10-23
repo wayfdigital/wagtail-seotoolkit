@@ -194,21 +194,25 @@ def get_page_html(page) -> str:
         HTML string
     """
     try:
-        # Get the rendered content from the page
         request = HttpRequest()
-        # Add necessary attributes to the request
         site = page.get_site()
         request.META = {"SERVER_NAME": site.hostname, "SERVER_PORT": site.port}
         request.path = page.url
         request.user = AnonymousUser()
-        rendered_content = page.serve(request).render()
-        if isinstance(rendered_content.content, bytes):
-            return rendered_content.content.decode("utf-8")
+        # First attempt: try to use page's serve method with simple rendering
+        response = page.specific.serve(request)
+        if hasattr(response, "render"):
+            response = response.render()
+            if isinstance(response.content, bytes):
+                return response.content.decode("utf-8")
+            else:
+                return str(response.content)
         else:
-            return str(rendered_content.content)
+            return str(response)
     except Exception as e:
-        # Use tqdm.write to avoid breaking the progress bar
+        # Last resort: return empty HTML to continue with the audit
         tqdm.write(f"  ⚠️  Could not render {page.title}: {e}")
+        return "<html></html>"
 
 
 # ==================== Audit Execution ====================
@@ -503,27 +507,10 @@ def _run_pagespeed_only_check(page, debug: bool = False) -> List[Dict[str, Any]]
     Run only PageSpeed check on a page (no regular SEO checks).
     Returns PageSpeed issues without creating database records.
     """
-    from django.conf import settings
-    from django.test import RequestFactory
-
     from wagtail_seotoolkit.utils.checkers.pagespeed_checker import PageSpeedChecker
 
-    # Get page URL and HTML (same approach as audit_single_page)
+    html = get_page_html(page)
     url = page.get_full_url()
-
-    # Create a mock request for page.serve()
-    factory = RequestFactory()
-    request = factory.get(url, headers={"Host": settings.ALLOWED_HOSTS[0]})
-
-    # Add a mock user to the request (some pages might need it)
-    from django.contrib.auth.models import AnonymousUser
-
-    request.user = AnonymousUser()
-
-    # Render the response properly
-    response = page.serve(request)
-    response.render()
-    html = response.content.decode("utf-8")
 
     # Run only PageSpeed check
     pagespeed_checker = PageSpeedChecker(html, url, "", debug=debug)
