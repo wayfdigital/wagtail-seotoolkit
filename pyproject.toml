@@ -37,8 +37,7 @@ classifiers = [
 keywords = ["wagtail", "django", "seo", "cms"]
 requires-python = ">=3.8"
 dependencies = [
-    "wagtail>=5.0",
-    "Django>=3.2",
+    "wagtail>=6.4.0",
     "beautifulsoup4>=4.9.0",
     "tqdm>=4.65.0",
 ]

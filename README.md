@@ -69,9 +69,7 @@ A comprehensive SEO auditing and optimization plugin for Wagtail CMS that helps 
 ## 🛠 Installation
 
 ### Prerequisites
-- Python 3.8+
-- Django 3.2+
-- Wagtail 5.0+
+- Wagtail 6.4+
 
 ### Install via pip
 
