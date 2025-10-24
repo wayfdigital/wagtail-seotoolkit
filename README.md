@@ -241,7 +241,7 @@ This is **Phase 1** - the free tier that shows you what's broken.
 - **Content Scoring** - AI analysis for search visibility and user engagement
 - **Competitive Analysis** - See how your pages compare to competitors
 
-**Interested in Pro features?** Let us know what would be most valuable → [GitHub Discussions](https://github.com/jedrus7/wagtail-seotoolkit/discussions)
+**Interested in Pro features?** Let us know what would be most valuable → [GitHub Discussions](https://github.com/wayfdigital/wagtail-seotoolkit/discussions)
 
 ---
 
@@ -249,9 +249,9 @@ This is **Phase 1** - the free tier that shows you what's broken.
 
 This is an early release and we want your feedback!
 
-**Found a bug?** [Open an issue](https://github.com/jedrus7/wagtail-seotoolkit/issues)
+**Found a bug?** [Open an issue](https://github.com/wayfdigital/wagtail-seotoolkit/issues)
 
-**Have a suggestion?** [Start a discussion](https://github.com/jedrus7/wagtail-seotoolkit/discussions)
+**Have a suggestion?** [Start a discussion](https://github.com/wayfdigital/wagtail-seotoolkit/discussions)
 
 ### What We're Looking For Feedback On:
 
@@ -264,8 +264,8 @@ This is an early release and we want your feedback!
 
 ## 💬 Support
 
-- **Issues:** [GitHub Issues](https://github.com/jedrus7/wagtail-seotoolkit/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/jedrus7/wagtail-seotoolkit/discussions)
+- **Issues:** [GitHub Issues](https://github.com/wayfdigital/wagtail-seotoolkit/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/wayfdigital/wagtail-seotoolkit/discussions)
 - **Email:** hello@wayfdigital.com
 
 ---
