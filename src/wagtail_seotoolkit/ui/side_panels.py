@@ -1,34 +1,11 @@
-import inspect
-
-from django.utils.translation import gettext_lazy
-from wagtail.admin.ui.side_panels import BaseSidePanel
-from wagtail.admin.userbar import AccessibilityItem, apply_userbar_hooks
+from wagtail.admin.ui.side_panels import ChecksSidePanel
 from wagtail.models import Page
 
 from wagtail_seotoolkit.models import SEOAuditIssue, SEOAuditIssueSeverity, SEOAuditRun
 
 
-def _supports_in_editor_parameter():
-    """
-    Check if AccessibilityItem supports the in_editor parameter.
-    This parameter was added in newer versions of Wagtail.
-    """
-    try:
-        sig = inspect.signature(AccessibilityItem.__init__)
-        return "in_editor" in sig.parameters
-    except (TypeError, AttributeError):
-        return False
-
-
-class CustomChecksSidePanel(BaseSidePanel):
-    class SidePanelToggle(BaseSidePanel.SidePanelToggle):
-        aria_label = gettext_lazy("Toggle checks")
-        icon_name = "glasses"
-
-    name = "checks"
-    title = gettext_lazy("Checks")
+class CustomChecksSidePanel(ChecksSidePanel):
     template_name = "wagtail_seotoolkit/checks_sidepanel.html"
-    order = 350
 
     class Media:
         css = {
@@ -37,21 +14,6 @@ class CustomChecksSidePanel(BaseSidePanel):
                 "wagtail_seotoolkit/css/dev_badge.css",
             ]
         }
-
-    def get_axe_configuration(self):
-        # Retrieve the Axe configuration from the userbar.
-        # Conditionally pass in_editor parameter based on Wagtail version support
-        if _supports_in_editor_parameter():
-            userbar_items = [AccessibilityItem(in_editor=True)]
-        else:
-            userbar_items = [AccessibilityItem()]
-
-        page = self.object if issubclass(self.model, Page) else None
-        apply_userbar_hooks(self.request, userbar_items, page)
-
-        for item in userbar_items:
-            if isinstance(item, AccessibilityItem):
-                return item.get_axe_configuration(self.request)
 
     def get_seo_insights(self):
         """Get SEO issues for the current page from the latest audit"""
@@ -101,6 +63,5 @@ class CustomChecksSidePanel(BaseSidePanel):
 
     def get_context_data(self, parent_context):
         context = super().get_context_data(parent_context)
-        context["axe_configuration"] = self.get_axe_configuration()
         context["seo_insights"] = self.get_seo_insights()
         return context
