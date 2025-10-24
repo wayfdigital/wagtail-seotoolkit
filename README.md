@@ -2,7 +2,7 @@
 
 A comprehensive SEO auditing and optimization plugin for Wagtail CMS that helps you identify and fix SEO issues across your website.
 
-![Dashboard](static/dashboard.png)
+![Dashboard](https://github.com/wayfdigital/wagtail-seotoolkit/blob/main/static/dashboard.png?raw=True)
 
 ## 📋 Table of Contents
 
@@ -54,15 +54,15 @@ A comprehensive SEO auditing and optimization plugin for Wagtail CMS that helps 
 ## 📸 Screenshots
 
 ### SEO Dashboard
-![Dashboard](static/dashboard.png)
+![Dashboard](https://github.com/wayfdigital/wagtail-seotoolkit/blob/main/static/dashboard.png?raw=True)
 *Comprehensive overview of your site's SEO health with actionable insights*
 
 ### Issues Report
-![Issues View](static/issues_view.png)
+![Issues View](https://github.com/wayfdigital/wagtail-seotoolkit/blob/main/static/issues_view.png?raw=True)
 *Detailed view of all SEO issues with filtering and management options*
 
 ### Page Sidebar
-![Sidebar](static/sidebar.png)
+![Sidebar](https://github.com/wayfdigital/wagtail-seotoolkit/blob/main/static/sidebar.png?raw=True)
 
 *Real-time SEO insights directly in the Wagtail page editor*
 
@@ -220,32 +220,88 @@ docker-compose up
 - Use `WAGTAIL_SEOTOOLKIT_PAGESPEED_PER_PAGE_TYPE = True` for large sites
 - Consider running audits during off-peak hours
 
+---
+
+## 🗺️ Roadmap
+
+This is **Phase 1** - the free tier that shows you what's broken.
+
+### Coming Very Soon (Phase 2 - Pro Tier)
+
+- **Bulk Editor** - Fix 100+ pages at once instead of manually editing each one
+- **Template System** - Apply consistent meta tag patterns across your site (e.g., `{title} | {site_name}`)
+- **Auto-Suggestions** - Generate meta descriptions from page content
+- **Daily Monitoring** - Automated audits with email alerts when issues are detected
+- **Historical Tracking** - See how your SEO health improves over time
+
+### Coming Also Quite Soon (Phase 3 - AI)
+
+- **AI-Powered Optimization** - GPT-generated meta descriptions optimized for search
+- **Smart Internal Linking** - Automatic suggestions for related content
+- **Content Scoring** - AI analysis for search visibility and user engagement
+- **Competitive Analysis** - See how your pages compare to competitors
+
+**Interested in Pro features?** Let us know what would be most valuable → [GitHub Discussions](https://github.com/jedrus7/wagtail-seotoolkit/discussions)
+
+---
+
+## 🤝 Contributing
+
+This is an early release and we want your feedback!
+
+**Found a bug?** [Open an issue](https://github.com/jedrus7/wagtail-seotoolkit/issues)
+
+**Have a suggestion?** [Start a discussion](https://github.com/jedrus7/wagtail-seotoolkit/discussions)
+
+### What We're Looking For Feedback On:
+
+- Are the checks finding real, actionable issues?
+- What SEO checks are we missing?
+- Would bulk fixing be worth paying for?
+- How's the performance on large sites (1000+ pages)?
+
+---
+
+## 💬 Support
+
+- **Issues:** [GitHub Issues](https://github.com/jedrus7/wagtail-seotoolkit/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/jedrus7/wagtail-seotoolkit/discussions)
+- **Email:** hello@wayfdigital.com
+
+---
+
 ## 📝 Changelog
 
-### Version 0.1.7
+### Version 0.1.0
+
 - Initial release
 - Comprehensive SEO auditing
 - PageSpeed Insights integration
 - Wagtail admin integration
 - Configurable settings
 
+---
+
 ## 📄 License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see [LICENSE](LICENSE) for full details.
 
-**Author**: WAYF
+**Author:** [WAYF](https://wayfdigital.com)
 
-**Copyright**: © 2025 WAYF
+**Copyright:** ©2025 WAYF DIGITAL SP. Z O.O.
 
-For the full license text, see [LICENSE](LICENSE).
+---
 
 ## 🙏 Acknowledgments
 
 - Built for the Wagtail CMS community
 - Inspired by modern SEO best practices
-- Powered by Google PageSpeed Insights API
-- Thanks to all contributors and users
+- Special thanks to early testers and contributors
 
 ---
 
-**Made by WAYF**
+**⭐ If this tool saves you time, please star the repo and share it with other Wagtail users!**
+
+Made with ❤️ by [WAYF](https://wayfdigital.com/)
+
+**About WAYF:** We build tools for modern web development. Check out our other projects at [wayfdigital.com](https://wayfdigital.com/)
