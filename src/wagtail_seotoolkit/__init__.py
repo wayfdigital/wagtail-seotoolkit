@@ -2,7 +2,7 @@
 Wagtail SEO Toolkit - A comprehensive SEO package for Wagtail CMS
 """
 
-__version__ = "0.1.7-beta"
+__version__ = "0.1.8-beta"
 
 # Ensure hooks are loaded
 default_app_config = 'wagtail_seotoolkit.apps.WagtailSEOToolkitConfig'
