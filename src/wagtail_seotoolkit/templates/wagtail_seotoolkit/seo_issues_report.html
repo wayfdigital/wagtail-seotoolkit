@@ -2,6 +2,11 @@
 {% load i18n %}
 
 {% block before_results %}
+<!-- Email Verification Gate -->
+<div id="verification-gate"></div>
+
+<!-- Protected Content -->
+<div id="protected-content" style="display: none;">
 <div class="nice-padding">
     {% if latest_audit %}
         <div class="seo-issues-report__audit-meta">
@@ -38,5 +43,10 @@
 
 {% block no_results_message %}
     <p>{% trans "No SEO issues found! Your site is in great shape." %} ✅</p>
+{% endblock %}
+
+{% block extra_content %}
+</div>
+<!-- End Protected Content -->
 {% endblock %}
 

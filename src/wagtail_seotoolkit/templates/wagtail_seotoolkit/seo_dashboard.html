@@ -7,6 +7,7 @@
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/seo_dashboard.css' %}">
     <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/dev_badge.css' %}">
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/email_verification.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -14,6 +15,12 @@
     {% include "wagtailadmin/shared/header.html" with title=title_str icon="chart-bar" %}
     
     {% csrf_token %}
+    
+    <!-- Email Verification Gate -->
+    <div id="verification-gate"></div>
+    
+    <!-- Protected Content -->
+    <div id="protected-content" style="display: none;">
     <div class="seo-dashboard nice-padding">
         {% if latest_audit %}
             <!-- Main Health Score Card -->
@@ -120,9 +127,12 @@
             </div>
         {% endif %}
     </div>
+    </div>
+    <!-- End Protected Content -->
 {% endblock %}
 
 {% block extra_js %}
+    <script src="{% static 'wagtail_seotoolkit/js/email_verification.js' %}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const requestBtn = document.getElementById('request-audit-btn');

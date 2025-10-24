@@ -7,7 +7,16 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
 from wagtail.admin.menu import MenuItem
 
-from .views import SEODashboardView, SEOIssuesReportView, RequestAuditView
+from .views import (
+    GetEmailVerificationView,
+    ProxyCheckVerifiedView,
+    ProxyResendVerificationView,
+    ProxySendVerificationView,
+    RequestAuditView,
+    SaveEmailVerificationView,
+    SEODashboardView,
+    SEOIssuesReportView,
+)
 
 
 @hooks.register("register_admin_urls")
@@ -35,6 +44,31 @@ def register_seo_admin_urls():
             "reports/seo-issues/results/",
             SEOIssuesReportView.as_view(results_only=True),
             name="seo_issues_report_results",
+        ),
+        path(
+            "api/email-verification/get/",
+            GetEmailVerificationView.as_view(),
+            name="get_email_verification",
+        ),
+        path(
+            "api/email-verification/save/",
+            SaveEmailVerificationView.as_view(),
+            name="save_email_verification",
+        ),
+        path(
+            "api/proxy/send-verification/",
+            ProxySendVerificationView.as_view(),
+            name="proxy_send_verification",
+        ),
+        path(
+            "api/proxy/check-verified/",
+            ProxyCheckVerifiedView.as_view(),
+            name="proxy_check_verified",
+        ),
+        path(
+            "api/proxy/resend-verification/",
+            ProxyResendVerificationView.as_view(),
+            name="proxy_resend_verification",
         ),
     ]
 

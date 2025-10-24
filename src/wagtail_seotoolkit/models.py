@@ -279,3 +279,22 @@ class SEOAuditIssue(models.Model):
 
     def __str__(self):
         return f"{self.get_issue_type_display()} - {self.get_issue_severity_display()}"
+
+
+class PluginEmailVerification(models.Model):
+    """
+    Stores email for plugin license verification.
+    This is a singleton model - only one record should exist.
+    Verification status is always checked via external API to prevent local manipulation.
+    """
+
+    email = models.EmailField(unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Plugin Email Verification"
+        verbose_name_plural = "Plugin Email Verifications"
+
+    def __str__(self):
+        return self.email

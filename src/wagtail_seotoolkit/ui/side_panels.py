@@ -1,7 +1,12 @@
 from wagtail.admin.ui.side_panels import ChecksSidePanel
 from wagtail.models import Page
 
-from wagtail_seotoolkit.models import SEOAuditIssue, SEOAuditIssueSeverity, SEOAuditRun
+from wagtail_seotoolkit.models import (
+    PluginEmailVerification,
+    SEOAuditIssue,
+    SEOAuditIssueSeverity,
+    SEOAuditRun,
+)
 
 
 class CustomChecksSidePanel(ChecksSidePanel):
@@ -64,4 +69,9 @@ class CustomChecksSidePanel(ChecksSidePanel):
     def get_context_data(self, parent_context):
         context = super().get_context_data(parent_context)
         context["seo_insights"] = self.get_seo_insights()
+
+        # Add stored email for verification
+        verification = PluginEmailVerification.objects.first()
+        context["stored_email"] = verification.email if verification else None
+
         return context

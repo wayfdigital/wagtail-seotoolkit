@@ -6,5 +6,11 @@
     <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/seo_issues_report.css' %}">
     <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/seo_issues_list.css' %}">
     <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/dev_badge.css' %}">
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/email_verification.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script src="{% static 'wagtail_seotoolkit/js/email_verification.js' %}"></script>
 {% endblock %}
 

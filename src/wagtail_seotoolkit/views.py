@@ -1,7 +1,10 @@
 """
 Views for SEO Toolkit
 """
+import json
+
 import django_filters
+import requests
 from django import forms
 from django.db.models import Count
 from django.http import JsonResponse
@@ -12,6 +15,7 @@ from wagtail.admin.views.reports import ReportView
 from wagtail.models import Locale
 
 from .models import (
+    PluginEmailVerification,
     SEOAuditIssue,
     SEOAuditIssueSeverity,
     SEOAuditIssueType,
@@ -131,6 +135,10 @@ class SEODashboardView(TemplateView):
             }
         )
 
+        # Add stored email for verification
+        verification = PluginEmailVerification.objects.first()
+        context["stored_email"] = verification.email if verification else None
+
         return context
 
 
@@ -230,7 +238,11 @@ class SEOIssuesReportView(ReportView):
             'SEVERITY_MEDIUM': SEOAuditIssueSeverity.MEDIUM,
             'SEVERITY_HIGH': SEOAuditIssueSeverity.HIGH,
         })
-        
+
+        # Add stored email for verification
+        verification = PluginEmailVerification.objects.first()
+        context["stored_email"] = verification.email if verification else None
+
         return context
 
 
@@ -276,3 +288,197 @@ class RequestAuditView(View):
                 'error': f'Failed to schedule audit: {str(e)}'
             }, status=500)
 
+
+class GetEmailVerificationView(View):
+    """
+    API endpoint to get stored email verification data.
+    Returns the stored email if exists, otherwise null.
+    Verification status must be checked via external API.
+    """
+
+    def get(self, request):
+        try:
+            verification = PluginEmailVerification.objects.first()
+            if verification:
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "email": verification.email,
+                    }
+                )
+            else:
+                return JsonResponse({"success": True, "email": None})
+        except Exception as e:
+            return JsonResponse(
+                {"success": False, "error": f"Failed to retrieve email: {str(e)}"},
+                status=500,
+            )
+
+
+class SaveEmailVerificationView(View):
+    """
+    API endpoint to save or update email verification data.
+    Only stores the email - verification status must be checked via external API.
+    """
+
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            email = data.get("email")
+
+            if not email:
+                return JsonResponse(
+                    {"success": False, "error": "Email is required"}, status=400
+                )
+
+            # Update or create verification record (only stores email, not verification status)
+            verification, created = PluginEmailVerification.objects.get_or_create(
+                email=email
+            )
+
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": "Email saved successfully",
+                    "email": verification.email,
+                }
+            )
+
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+        except Exception as e:
+            return JsonResponse(
+                {"success": False, "error": f"Failed to save email: {str(e)}"},
+                status=500,
+            )
+
+
+class ProxySendVerificationView(View):
+    """
+    Proxy endpoint to send verification email via external API.
+    Avoids CORS issues by making server-to-server request.
+    """
+
+    API_BASE_URL = "https://wagtail-seotoolkit-license-server.vercel.app"
+
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            email = data.get("email")
+
+            if not email:
+                return JsonResponse(
+                    {"success": False, "error": "Email is required"}, status=400
+                )
+
+            # Make request to external API
+            response = requests.post(
+                f"{self.API_BASE_URL}/api/send-verification",
+                json={"email": email},
+                headers={"Content-Type": "application/json"},
+                timeout=10,
+            )
+
+            # Return the external API response
+            return JsonResponse(response.json(), status=response.status_code)
+
+        except requests.RequestException as e:
+            return JsonResponse(
+                {"success": False, "message": f"Failed to send verification: {str(e)}"},
+                status=500,
+            )
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+        except Exception as e:
+            return JsonResponse(
+                {"success": False, "message": f"Error: {str(e)}"}, status=500
+            )
+
+
+class ProxyCheckVerifiedView(View):
+    """
+    Proxy endpoint to check verification status via external API.
+    Avoids CORS issues by making server-to-server request.
+    """
+
+    API_BASE_URL = "https://wagtail-seotoolkit-license-server.vercel.app"
+
+    def get(self, request):
+        email = request.GET.get("email")
+
+        if not email:
+            return JsonResponse(
+                {"verified": False, "pending": False, "error": "Email is required"},
+                status=400,
+            )
+
+        try:
+            # Make request to external API
+            response = requests.get(
+                f"{self.API_BASE_URL}/api/check-verified",
+                params={"email": email},
+                timeout=10,
+            )
+
+            # Return the external API response
+            return JsonResponse(response.json(), status=response.status_code)
+
+        except requests.RequestException as e:
+            return JsonResponse(
+                {
+                    "verified": False,
+                    "pending": False,
+                    "error": f"Failed to check verification: {str(e)}",
+                },
+                status=500,
+            )
+        except Exception as e:
+            return JsonResponse(
+                {"verified": False, "pending": False, "error": f"Error: {str(e)}"},
+                status=500,
+            )
+
+
+class ProxyResendVerificationView(View):
+    """
+    Proxy endpoint to resend verification email via external API.
+    Avoids CORS issues by making server-to-server request.
+    """
+
+    API_BASE_URL = "https://wagtail-seotoolkit-license-server.vercel.app"
+
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            email = data.get("email")
+
+            if not email:
+                return JsonResponse(
+                    {"success": False, "error": "Email is required"}, status=400
+                )
+
+            # Make request to external API
+            response = requests.post(
+                f"{self.API_BASE_URL}/api/resend-verification",
+                json={"email": email},
+                headers={"Content-Type": "application/json"},
+                timeout=10,
+            )
+
+            # Return the external API response
+            return JsonResponse(response.json(), status=response.status_code)
+
+        except requests.RequestException as e:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": f"Failed to resend verification: {str(e)}",
+                },
+                status=500,
+            )
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+        except Exception as e:
+            return JsonResponse(
+                {"success": False, "message": f"Error: {str(e)}"}, status=500
+            )
