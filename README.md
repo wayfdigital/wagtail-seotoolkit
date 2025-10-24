@@ -272,7 +272,7 @@ This is an early release and we want your feedback!
 
 ## 📝 Changelog
 
-### Version 0.1.0
+### Version 0.1.1
 
 - Initial release
 - Comprehensive SEO auditing
