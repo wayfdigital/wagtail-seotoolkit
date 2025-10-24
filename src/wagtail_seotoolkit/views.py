@@ -8,7 +8,9 @@ import requests
 from django import forms
 from django.db.models import Count
 from django.http import JsonResponse
+from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
+from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.generic import TemplateView, View
 from wagtail.admin.filters import WagtailFilterSet
 from wagtail.admin.views.reports import ReportView
@@ -23,6 +25,7 @@ from .models import (
 )
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class SEODashboardView(TemplateView):
     """
     Main dashboard view showing SEO health score and top issues
@@ -175,6 +178,7 @@ class SEOIssuesFilterSet(WagtailFilterSet):
         fields = ["issue_severity", "locale", "requires_dev_fix", "issue_type"]
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class SEOIssuesReportView(ReportView):
     """
     Report view showing all SEO issues from the latest audit
@@ -246,6 +250,7 @@ class SEOIssuesReportView(ReportView):
         return context
 
 
+@method_decorator(csrf_protect, name="dispatch")
 class RequestAuditView(View):
     """
     API endpoint to request a new SEO audit.
@@ -289,6 +294,7 @@ class RequestAuditView(View):
             }, status=500)
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class GetEmailVerificationView(View):
     """
     API endpoint to get stored email verification data.
@@ -315,6 +321,7 @@ class GetEmailVerificationView(View):
             )
 
 
+@method_decorator(csrf_protect, name="dispatch")
 class SaveEmailVerificationView(View):
     """
     API endpoint to save or update email verification data.
@@ -353,6 +360,7 @@ class SaveEmailVerificationView(View):
             )
 
 
+@method_decorator(csrf_protect, name="dispatch")
 class ProxySendVerificationView(View):
     """
     Proxy endpoint to send verification email via external API.
@@ -395,6 +403,7 @@ class ProxySendVerificationView(View):
             )
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class ProxyCheckVerifiedView(View):
     """
     Proxy endpoint to check verification status via external API.
@@ -439,6 +448,7 @@ class ProxyCheckVerifiedView(View):
             )
 
 
+@method_decorator(csrf_protect, name="dispatch")
 class ProxyResendVerificationView(View):
     """
     Proxy endpoint to resend verification email via external API.
