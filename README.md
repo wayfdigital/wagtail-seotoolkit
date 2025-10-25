@@ -280,8 +280,11 @@ This is an early release and we want your feedback!
 - Wagtail admin integration
 - Configurable settings
 
-### Version 0.1.1
+### Version 0.1.2
  - Fix CSRF bug
+
+### Version 0.1.3
+- Further improvements to CSRF fixes
 
 ---
 
