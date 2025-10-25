@@ -9,6 +9,11 @@
     <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/email_verification.css' %}">
 {% endblock %}
 
+{% block listing %}
+    {% csrf_token %}
+    {{ block.super }}
+{% endblock %}
+
 {% block extra_js %}
     {{ block.super }}
     <script src="{% static 'wagtail_seotoolkit/js/email_verification.js' %}"></script>

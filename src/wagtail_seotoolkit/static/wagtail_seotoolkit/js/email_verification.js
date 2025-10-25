@@ -17,12 +17,30 @@
 
     /**
      * Get CSRF token from Django
+     * Tries to get from cookie first, then from DOM
      */
     function getCSRFToken() {
+        // Try to get from cookie first
         const cookieValue = document.cookie
             .split('; ')
             .find(row => row.startsWith('csrftoken='));
-        return cookieValue ? cookieValue.split('=')[1] : null;
+
+        if (cookieValue) {
+            return cookieValue.split('=')[1];
+        }
+
+        // Fallback: try to get from DOM (input or meta tag)
+        const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (csrfInput) {
+            return csrfInput.value;
+        }
+
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        if (csrfMeta) {
+            return csrfMeta.content;
+        }
+
+        return null;
     }
 
     /**

@@ -27,6 +27,7 @@
 {% endblock %}
 
 {% block content %}
+    {% csrf_token %}
     <div class="w-divide-y w-divide-border-furniture w-py-6 w-pl-2 lg:w-pl-8 w-gap-3">
         {% block metrics_section %}
             <div>

@@ -8,9 +8,7 @@ import requests
 from django import forms
 from django.db.models import Count
 from django.http import JsonResponse
-from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
-from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.generic import TemplateView, View
 from wagtail.admin.filters import WagtailFilterSet
 from wagtail.admin.views.reports import ReportView
@@ -25,22 +23,26 @@ from .models import (
 )
 
 
-@method_decorator(ensure_csrf_cookie, name="dispatch")
 class SEODashboardView(TemplateView):
     """
     Main dashboard view showing SEO health score and top issues
     """
+
     template_name = "wagtail_seotoolkit/seo_dashboard.html"
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
         # Get the latest completed audit run
-        latest_audit = SEOAuditRun.objects.filter(status='completed').order_by('-created_at').first()
-        
+        latest_audit = (
+            SEOAuditRun.objects.filter(status="completed")
+            .order_by("-created_at")
+            .first()
+        )
+
         # Check for scheduled or running audits
-        scheduled_audit = SEOAuditRun.objects.filter(status='scheduled').first()
-        running_audit = SEOAuditRun.objects.filter(status='running').first()
+        scheduled_audit = SEOAuditRun.objects.filter(status="scheduled").first()
+        running_audit = SEOAuditRun.objects.filter(status="running").first()
 
         # Check if audit button should be shown
         from django.conf import settings
@@ -178,7 +180,6 @@ class SEOIssuesFilterSet(WagtailFilterSet):
         fields = ["issue_severity", "locale", "requires_dev_fix", "issue_type"]
 
 
-@method_decorator(ensure_csrf_cookie, name="dispatch")
 class SEOIssuesReportView(ReportView):
     """
     Report view showing all SEO issues from the latest audit
@@ -250,51 +251,52 @@ class SEOIssuesReportView(ReportView):
         return context
 
 
-@method_decorator(csrf_protect, name="dispatch")
 class RequestAuditView(View):
     """
     API endpoint to request a new SEO audit.
-    
-    Creates a scheduled audit run that will be picked up by the 
+
+    Creates a scheduled audit run that will be picked up by the
     run_scheduled_audits management command.
     """
-    
+
     def post(self, request):
         # Check for existing scheduled or running audits
         existing_audit = SEOAuditRun.objects.filter(
-            status__in=['scheduled', 'running']
+            status__in=["scheduled", "running"]
         ).first()
-        
+
         if existing_audit:
-            return JsonResponse({
-                'success': False,
-                'error': f'Audit is already {existing_audit.status}. Please wait for it to complete.',
-                'status': existing_audit.status
-            }, status=409)
-        
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": f"Audit is already {existing_audit.status}. Please wait for it to complete.",
+                    "status": existing_audit.status,
+                },
+                status=409,
+            )
+
         # Create new scheduled audit
         try:
             audit_run = SEOAuditRun.objects.create(
-                overall_score=0,
-                pages_analyzed=0,
-                status='scheduled'
+                overall_score=0, pages_analyzed=0, status="scheduled"
             )
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Audit has been scheduled successfully.',
-                'audit_id': audit_run.id,
-                'status': 'scheduled'
-            })
-            
+
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": "Audit has been scheduled successfully.",
+                    "audit_id": audit_run.id,
+                    "status": "scheduled",
+                }
+            )
+
         except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'error': f'Failed to schedule audit: {str(e)}'
-            }, status=500)
+            return JsonResponse(
+                {"success": False, "error": f"Failed to schedule audit: {str(e)}"},
+                status=500,
+            )
 
 
-@method_decorator(ensure_csrf_cookie, name="dispatch")
 class GetEmailVerificationView(View):
     """
     API endpoint to get stored email verification data.
@@ -321,7 +323,6 @@ class GetEmailVerificationView(View):
             )
 
 
-@method_decorator(csrf_protect, name="dispatch")
 class SaveEmailVerificationView(View):
     """
     API endpoint to save or update email verification data.
@@ -360,7 +361,6 @@ class SaveEmailVerificationView(View):
             )
 
 
-@method_decorator(csrf_protect, name="dispatch")
 class ProxySendVerificationView(View):
     """
     Proxy endpoint to send verification email via external API.
@@ -403,7 +403,6 @@ class ProxySendVerificationView(View):
             )
 
 
-@method_decorator(ensure_csrf_cookie, name="dispatch")
 class ProxyCheckVerifiedView(View):
     """
     Proxy endpoint to check verification status via external API.
@@ -448,7 +447,6 @@ class ProxyCheckVerifiedView(View):
             )
 
 
-@method_decorator(csrf_protect, name="dispatch")
 class ProxyResendVerificationView(View):
     """
     Proxy endpoint to resend verification email via external API.
