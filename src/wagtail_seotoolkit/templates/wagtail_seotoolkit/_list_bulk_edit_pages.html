@@ -1,0 +1,79 @@
+{% load i18n wagtailadmin_tags %}
+
+<table class="listing">
+    <col width="30%" />
+    <col width="15%" />
+    <col width="12%" />
+    <col width="12%" />
+    <col width="12%" />
+    <col width="19%" />
+    <thead>
+        <tr class="table-headers">
+            <th class="title">
+                {% trans 'Title' %}
+            </th>
+            <th class="seo-title">
+                {% trans 'SEO Title' %}
+            </th>
+            <th class="updated">
+                {% trans 'Updated' %}
+            </th>
+            <th class="type">
+                {% trans 'Type' %}
+            </th>
+            <th class="status">
+                {% trans 'Status' %}
+            </th>
+            <th class="seo-issues">
+                {% trans 'SEO Issues' %}
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for page in pages %}
+            {% page_permissions page as page_perms %}
+            <tr class="{% if not page.live %}unpublished{% endif %}">
+                <td class="title" valign="top" data-listing-page-title>
+                    {% i18n_enabled as show_locale_labels %}
+                    {% include "wagtailadmin/pages/listing/_page_title_explore.html" with show_locale_labels=show_locale_labels %}
+                </td>
+                <td class="seo-title" valign="top">
+                    <div class="seo-title-preview">
+                        {% if page.seo_title %}
+                            {{ page.seo_title|truncatechars:50 }}
+                        {% else %}
+                            <span class="status-tag secondary">{% trans "Not set" %}</span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td class="updated" valign="top">
+                    {% if page.last_published_at %}
+                        {% human_readable_date page.last_published_at %}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td class="type" valign="top">
+                    {{ page.page_type_display_name }}
+                </td>
+                <td class="status" valign="top">
+                    {% include "wagtailadmin/shared/page_status_tag.html" with page=page %}
+                </td>
+                <td class="seo-issues" valign="top">
+                    {% with issue_count=page.seo_issues.count %}
+                        {% if issue_count > 0 %}
+                            <span class="status-tag warning">
+                                {{ issue_count }} {% if issue_count == 1 %}{% trans "issue" %}{% else %}{% trans "issues" %}{% endif %}
+                            </span>
+                        {% else %}
+                            <span class="status-tag success">
+                                {% trans "No issues" %}
+                            </span>
+                        {% endif %}
+                    {% endwith %}
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+

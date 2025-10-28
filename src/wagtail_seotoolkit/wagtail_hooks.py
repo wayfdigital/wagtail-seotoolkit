@@ -8,6 +8,7 @@ from wagtail import hooks
 from wagtail.admin.menu import MenuItem
 
 from .views import (
+    BulkEditView,
     GetEmailVerificationView,
     ProxyCheckVerifiedView,
     ProxyResendVerificationView,
@@ -44,6 +45,16 @@ def register_seo_admin_urls():
             "reports/seo-issues/results/",
             SEOIssuesReportView.as_view(results_only=True),
             name="seo_issues_report_results",
+        ),
+        path(
+            "reports/bulk-edit/",
+            BulkEditView.as_view(),
+            name="bulk_edit",
+        ),
+        path(
+            "reports/bulk-edit/results/",
+            BulkEditView.as_view(results_only=True),
+            name="bulk_edit_results",
         ),
         path(
             "api/email-verification/get/",
@@ -83,4 +94,17 @@ def register_seo_toolkit_menu_item():
         reverse("seo_dashboard"),
         icon_name="glasses",
         order=1000,
+    )
+
+
+@hooks.register("register_admin_menu_item")
+def register_bulk_edit_menu_item():
+    """
+    Add Bulk Editor to Reports menu
+    """
+    return MenuItem(
+        _("Bulk SEO Editor"),
+        reverse("bulk_edit"),
+        icon_name="edit",
+        order=1001,
     )

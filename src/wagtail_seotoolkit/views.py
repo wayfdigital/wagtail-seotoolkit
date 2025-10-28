@@ -6,13 +6,14 @@ import json
 import django_filters
 import requests
 from django import forms
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import Count
 from django.http import JsonResponse
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import TemplateView, View
 from wagtail.admin.filters import WagtailFilterSet
 from wagtail.admin.views.reports import ReportView
-from wagtail.models import Locale
+from wagtail.models import Locale, Page
 
 from .models import (
     PluginEmailVerification,
@@ -490,3 +491,84 @@ class ProxyResendVerificationView(View):
             return JsonResponse(
                 {"success": False, "message": f"Error: {str(e)}"}, status=500
             )
+
+
+class BulkEditFilterSet(WagtailFilterSet):
+    """FilterSet for Bulk Editor"""
+
+    issue_type = django_filters.MultipleChoiceFilter(
+        label=_("Issue Type"),
+        field_name="seo_issues__issue_type",
+        choices=SEOAuditIssueType.choices,
+        widget=forms.CheckboxSelectMultiple,
+    )
+
+    content_type = django_filters.ModelMultipleChoiceFilter(
+        label=_("Page Type"),
+        queryset=ContentType.objects.filter(
+            id__in=Page.objects.values_list("content_type_id", flat=True).distinct()
+        )
+        .exclude(app_label="wagtailcore")
+        .order_by("app_label", "model"),
+        field_name="content_type",
+        widget=forms.CheckboxSelectMultiple,
+    )
+
+    class Meta:
+        model = Page
+        fields = ["locale"]
+
+
+class BulkEditView(ReportView):
+    """
+    Bulk editor view showing all pages for SEO metadata editing
+    """
+
+    index_url_name = "bulk_edit"
+    index_results_url_name = "bulk_edit_results"
+    page_title = _("Bulk SEO Editor")
+    header_icon = "edit"
+    template_name = "wagtail_seotoolkit/bulk_edit_base.html"
+    results_template_name = "wagtail_seotoolkit/bulk_edit_results.html"
+
+    model = Page
+    filterset_class = BulkEditFilterSet
+
+    list_export = [
+        "title",
+        "seo_title",
+        "search_description",
+        "last_published_at",
+    ]
+
+    def get_queryset(self):
+        # Get all pages, excluding the root page
+        return (
+            Page.objects.exclude(depth=1)
+            .select_related("locale", "content_type")
+            .prefetch_related("seo_issues")
+            .order_by("-last_published_at")
+        )
+
+    def get_breadcrumbs_items(self):
+        """Add SEO Dashboard to breadcrumbs"""
+        from django.urls import reverse
+
+        return [
+            {
+                "url": reverse("seo_dashboard"),
+                "label": _("SEO Dashboard"),
+            },
+            {
+                "url": None,
+                "label": _("Bulk SEO Editor"),
+            },
+        ]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Alias object_list for template consistency
+        context["pages"] = context.get("object_list", [])
+
+        return context

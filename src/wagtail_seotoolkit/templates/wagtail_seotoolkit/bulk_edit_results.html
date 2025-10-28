@@ -1,0 +1,11 @@
+{% extends 'wagtailadmin/reports/base_report_results.html' %}
+{% load i18n %}
+
+{% block results %}
+    {% include 'wagtail_seotoolkit/_list_bulk_edit_pages.html' %}
+{% endblock %}
+
+{% block no_results_message %}
+    <p>{% trans "No pages found." %}</p>
+{% endblock %}
+
