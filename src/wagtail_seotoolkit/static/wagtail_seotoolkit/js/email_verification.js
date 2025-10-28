@@ -501,12 +501,54 @@
     }
 
     /**
+     * Watch for DOM mutations (when content is dynamically replaced)
+     * This is the primary mechanism for detecting Wagtail filterset updates
+     * See: https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver
+     */
+    function watchForDOMChanges() {
+        const observer = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                // Check if verification-gate or protected-content was added
+                if (mutation.addedNodes.length > 0) {
+                    for (const node of mutation.addedNodes) {
+                        if (node.nodeType === 1) { // Element node
+                            const hasGate = node.id === 'verification-gate' ||
+                                node.querySelector('#verification-gate');
+                            const hasProtected = node.id === 'protected-content' ||
+                                node.querySelector('#protected-content');
+
+                            if (hasGate || hasProtected) {
+                                initializeVerification();
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Observe the entire document body for changes
+        // childList: watch for nodes being added/removed
+        // subtree: watch entire subtree, not just direct children
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        return observer;
+    }
+
+    /**
      * Initialize on page load
      */
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeVerification);
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeVerification();
+            watchForDOMChanges();
+        });
     } else {
         initializeVerification();
+        watchForDOMChanges();
     }
 
     /**
