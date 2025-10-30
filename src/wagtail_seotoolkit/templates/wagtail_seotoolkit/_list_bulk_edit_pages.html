@@ -21,11 +21,10 @@
 
     <table class="listing">
         <col width="5%" />
-        <col width="20%" />
-        <col width="20%" />
-        <col width="15%" />
+        <col width="25%" />
         <col width="10%" />
-        <col width="10%" />
+        <col width="25%" />
+        <col width="20%" />
         <col width="10%" />
         <col width="10%" />
         <thead>
@@ -33,6 +32,9 @@
                 <th class="bulk-action-checkbox-header"></th>
                 <th class="title">
                     {% trans 'Title' %}
+                </th>
+                <th class="type">
+                    {% trans 'Type' %}
                 </th>
                 <th class="seo-title">
                     {% trans 'SEO Title' %}
@@ -43,14 +45,8 @@
                 <th class="updated">
                     {% trans 'Updated' %}
                 </th>
-                <th class="type">
-                    {% trans 'Type' %}
-                </th>
                 <th class="status">
                     {% trans 'Status' %}
-                </th>
-                <th class="seo-issues">
-                    {% trans 'Issues' %}
                 </th>
             </tr>
         </thead>
@@ -85,6 +81,9 @@
                         {% endif %}
                     </div>
                 </td>
+                <td class="type" valign="top">
+                    {{ page.page_type_display_name }}
+                </td>
                 <td class="seo-title" valign="top">
                     <div class="seo-title-preview" title="{% if active_title %}{{ active_title.title }}{% else %}Not set{% endif %}">
                         {% if active_title %}
@@ -110,24 +109,8 @@
                         —
                     {% endif %}
                 </td>
-                <td class="type" valign="top">
-                    {{ page.page_type_display_name }}
-                </td>
                 <td class="status" valign="top">
                     {% include "wagtailadmin/shared/page_status_tag.html" with page=page %}
-                </td>
-                <td class="seo-issues" valign="top">
-                    {% with issue_count=page.seo_issues.count %}
-                        {% if issue_count > 0 %}
-                            <span class="status-tag warning">
-                                {{ issue_count }}
-                            </span>
-                        {% else %}
-                            <span class="status-tag success">
-                                0
-                            </span>
-                        {% endif %}
-                    {% endwith %}
                 </td>
             </tr>
             {% endwith %}
