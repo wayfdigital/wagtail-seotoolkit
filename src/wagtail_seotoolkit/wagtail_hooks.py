@@ -8,6 +8,7 @@ from wagtail import hooks
 from wagtail.admin.menu import MenuItem
 
 from .views import (
+    BulkEditActionView,
     BulkEditView,
     GetEmailVerificationView,
     ProxyCheckVerifiedView,
@@ -17,6 +18,8 @@ from .views import (
     SaveEmailVerificationView,
     SEODashboardView,
     SEOIssuesReportView,
+    bulk_apply_metadata,
+    preview_metadata,
 )
 
 
@@ -55,6 +58,21 @@ def register_seo_admin_urls():
             "reports/bulk-edit/results/",
             BulkEditView.as_view(results_only=True),
             name="bulk_edit_results",
+        ),
+        path(
+            "reports/bulk-edit/action/",
+            BulkEditActionView.as_view(),
+            name="bulk_edit_action",
+        ),
+        path(
+            "api/bulk-apply-metadata/",
+            bulk_apply_metadata,
+            name="bulk_apply_metadata",
+        ),
+        path(
+            "api/preview-metadata/",
+            preview_metadata,
+            name="preview_metadata",
         ),
         path(
             "api/email-verification/get/",

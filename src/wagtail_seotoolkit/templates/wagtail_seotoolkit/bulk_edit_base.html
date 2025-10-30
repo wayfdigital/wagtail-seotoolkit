@@ -4,14 +4,16 @@
 {% block extra_css %}
     {{ block.super }}
     <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/seo_issues_report.css' %}">
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/bulk_edit.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script src="{% static 'wagtail_seotoolkit/js/bulk_edit.js' %}"></script>
 {% endblock %}
 
 {% block listing %}
     {% csrf_token %}
-    {{ block.super }}
-{% endblock %}
-
-{% block extra_js %}
     {{ block.super }}
 {% endblock %}
 

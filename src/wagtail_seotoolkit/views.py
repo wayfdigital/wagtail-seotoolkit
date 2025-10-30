@@ -7,9 +7,11 @@ import django_filters
 import requests
 from django import forms
 from django.contrib.contenttypes.models import ContentType
+from django.db import models
 from django.db.models import Count
 from django.http import JsonResponse
 from django.utils.translation import gettext_lazy as _
+from django.views.decorators.http import require_POST
 from django.views.generic import TemplateView, View
 from wagtail.admin.filters import WagtailFilterSet
 from wagtail.admin.views.reports import ReportView
@@ -21,7 +23,10 @@ from .models import (
     SEOAuditIssueSeverity,
     SEOAuditIssueType,
     SEOAuditRun,
+    SEOMetaDescription,
+    SEOTitle,
 )
+from .utils.placeholder_utils import process_placeholders
 
 
 class SEODashboardView(TemplateView):
@@ -546,7 +551,16 @@ class BulkEditView(ReportView):
         return (
             Page.objects.exclude(depth=1)
             .select_related("locale", "content_type")
-            .prefetch_related("seo_issues")
+            .prefetch_related(
+                "seo_issues",
+                models.Prefetch(
+                    "seo_titles", queryset=SEOTitle.objects.filter(is_active=True)
+                ),
+                models.Prefetch(
+                    "seo_meta_descriptions",
+                    queryset=SEOMetaDescription.objects.filter(is_active=True),
+                ),
+            )
             .order_by("-last_published_at")
         )
 
@@ -570,5 +584,212 @@ class BulkEditView(ReportView):
 
         # Alias object_list for template consistency
         context["pages"] = context.get("object_list", [])
+
+        return context
+
+
+@require_POST
+def preview_metadata(request):
+    """
+    API endpoint to preview how placeholders will be processed for selected pages.
+    Returns processed values for each page to show in preview table.
+    """
+    try:
+        page_ids = request.POST.getlist("page_ids")
+        template = request.POST.get("template", "").strip()
+
+        if not page_ids or not template:
+            return JsonResponse(
+                {"success": False, "error": "Missing required parameters"}, status=400
+            )
+
+        pages = Page.objects.filter(id__in=page_ids).select_related("content_type")
+
+        previews = []
+        for page in pages:
+            # Get current SEO values
+            current_title = SEOTitle.objects.filter(page=page, is_active=True).first()
+            current_description = SEOMetaDescription.objects.filter(
+                page=page, is_active=True
+            ).first()
+
+            # Process template for this page
+            processed_value = process_placeholders(template, page, request)
+
+            previews.append(
+                {
+                    "page_id": page.id,
+                    "page_title": page.title,
+                    "page_type": page.page_type_display_name,
+                    "current_value": current_title.title
+                    if current_title
+                    else (
+                        current_description.description if current_description else ""
+                    ),
+                    "new_value": processed_value,
+                }
+            )
+
+        return JsonResponse({"success": True, "previews": previews})
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+@require_POST
+def bulk_apply_metadata(request):
+    """
+    API endpoint to apply bulk metadata changes.
+    Saves templates with placeholders - they will be processed by middleware.
+    """
+    try:
+        page_ids = request.POST.getlist("page_ids")
+        action = request.POST.get("action")
+        content_template = request.POST.get("content", "").strip()
+
+        if not page_ids or not action or not content_template:
+            return JsonResponse(
+                {"success": False, "error": "Missing required parameters"}, status=400
+            )
+
+        pages = Page.objects.filter(id__in=page_ids)
+        updated_count = 0
+
+        for page in pages:
+            # Save template as-is with placeholders
+            # Middleware will process them when rendering
+            if action == "edit_title":
+                # Create new SEO title (automatically deactivates old ones)
+                SEOTitle.objects.create(
+                    page=page,
+                    title=content_template[:255],  # Respect max_length
+                    is_active=True,
+                )
+            elif action == "edit_description":
+                # Create new SEO meta description (automatically deactivates old ones)
+                SEOMetaDescription.objects.create(
+                    page=page,
+                    description=content_template[:320],  # Respect max_length
+                    is_active=True,
+                )
+            updated_count += 1
+
+        return JsonResponse(
+            {
+                "success": True,
+                "updated": updated_count,
+                "message": f"Successfully updated {updated_count} pages",
+            }
+        )
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+class BulkEditActionView(TemplateView):
+    """
+    View for bulk editing SEO titles or descriptions for selected pages
+    """
+
+    template_name = "wagtail_seotoolkit/bulk_edit_action.html"
+
+    def get_available_placeholders(self, pages):
+        """
+        Get available field placeholders based on selected pages.
+        Returns a list of dicts with field info.
+        """
+        from django.db.models import CharField, TextField
+        from wagtail.fields import RichTextField, StreamField
+
+        placeholders = []
+
+        # Always include site name
+        placeholders.append({"name": "site_name", "label": "Site Name", "type": "site"})
+
+        # Always include base Page fields
+        base_fields = [
+            {"name": "title", "label": "Page Title", "type": "page"},
+            {"name": "seo_title", "label": "SEO Title", "type": "page"},
+            {
+                "name": "search_description",
+                "label": "Search Description",
+                "type": "page",
+            },
+        ]
+        placeholders.extend(base_fields)
+
+        # Check if all pages are of the same specific type
+        if pages:
+            content_types = set(page.content_type_id for page in pages)
+
+            if len(content_types) == 1:
+                # All pages are the same type, get specific fields
+                first_page = pages[0].specific
+                specific_model = type(first_page)
+
+                # Skip if it's just the base Page model
+                if specific_model != Page:
+                    # Get text fields from the specific model
+                    for field in specific_model._meta.get_fields():
+                        # Include CharField, TextField, RichTextField, and StreamField
+                        if isinstance(
+                            field, (CharField, TextField, RichTextField, StreamField)
+                        ) and not field.name.startswith("_"):
+                            # Skip fields that are already in base fields
+                            if field.name not in [f["name"] for f in base_fields]:
+                                # Skip internal/system fields
+                                if field.name not in [
+                                    "path",
+                                    "url_path",
+                                    "draft_title",
+                                    "latest_revision_created_at",
+                                ]:
+                                    placeholders.append(
+                                        {
+                                            "name": field.name,
+                                            "label": field.verbose_name.title(),
+                                            "type": "specific",
+                                        }
+                                    )
+
+        return placeholders
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get selected page IDs from URL parameters
+        page_ids = self.request.GET.getlist("page_ids")
+        action = self.request.GET.get("action", "edit_title")
+
+        # Get the selected pages with SEO data
+        from django.db import models
+
+        pages = (
+            Page.objects.filter(id__in=page_ids)
+            .select_related("content_type")
+            .prefetch_related(
+                models.Prefetch(
+                    "seo_titles", queryset=SEOTitle.objects.filter(is_active=True)
+                ),
+                models.Prefetch(
+                    "seo_meta_descriptions",
+                    queryset=SEOMetaDescription.objects.filter(is_active=True),
+                ),
+            )
+        )
+
+        # Get available placeholders
+        placeholders = self.get_available_placeholders(pages)
+
+        context.update(
+            {
+                "pages": pages,
+                "page_ids": page_ids,
+                "action": action,
+                "is_title": action == "edit_title",
+                "is_description": action == "edit_description",
+                "placeholders": placeholders,
+            }
+        )
 
         return context

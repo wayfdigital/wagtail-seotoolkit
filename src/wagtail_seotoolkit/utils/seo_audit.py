@@ -218,6 +218,46 @@ def get_page_html(page) -> str:
 # ==================== Audit Execution ====================
 
 
+def save_default_seo_metadata(page, html):
+    """
+    Extract and save default SEO metadata (title and meta description) from rendered HTML.
+    Only saves if no SEOTitle or SEOMetaDescription exists for this page.
+
+    Args:
+        page: The Wagtail page
+        html: The rendered HTML content
+    """
+    from wagtail_seotoolkit.models import SEOMetaDescription, SEOTitle
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    # Save default title if no SEOTitle exists
+    if not SEOTitle.objects.filter(page=page).exists():
+        title_tag = soup.find("title")
+        if title_tag and title_tag.string:
+            title_text = title_tag.string.strip()
+            # Normalize whitespace
+            title_text = " ".join(title_text.split())
+            if title_text:
+                SEOTitle.objects.create(
+                    page=page,
+                    title=title_text[:255],  # Respect max_length
+                    is_active=True,
+                )
+
+    # Save default meta description if no SEOMetaDescription exists
+    if not SEOMetaDescription.objects.filter(page=page).exists():
+        meta_desc = soup.find("meta", attrs={"name": "description"})
+        if meta_desc and meta_desc.get("content"):
+            desc_text = meta_desc.get("content", "").strip()
+            if desc_text:
+                SEOMetaDescription.objects.create(
+                    page=page,
+                    description=desc_text[:320],  # Respect max_length
+                    is_active=True,
+                )
+
+
 def audit_single_page(
     page, audit_run, debug=False, skip_pagespeed=False
 ) -> List[Dict[str, Any]]:
@@ -237,6 +277,9 @@ def audit_single_page(
 
     # Get HTML content
     html = get_page_html(page)
+
+    # Save default SEO metadata if it doesn't exist
+    save_default_seo_metadata(page, html)
 
     # Get page URL and base domain
     url = page.get_full_url() if hasattr(page, "get_full_url") else page.url

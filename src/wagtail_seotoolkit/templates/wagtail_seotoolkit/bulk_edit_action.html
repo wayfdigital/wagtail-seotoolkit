@@ -1,0 +1,145 @@
+{% extends "wagtailadmin/base.html" %}
+{% load i18n static %}
+
+{% block titletag %}
+    {% if is_title %}{% trans "Bulk Edit SEO Titles" %}{% else %}{% trans "Bulk Edit Meta Descriptions" %}{% endif %} - {% trans "SEO Toolkit" %}
+{% endblock %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/bulk_edit.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script src="{% static 'wagtail_seotoolkit/js/bulk_edit_action.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+    <div id="message-container"></div>
+    <header class="w-header">
+        <div class="row">
+            <div class="left">
+                <div class="col">
+                        <h1 class="w-header__title" id="header-title">
+                            <svg class="icon icon-edit w-header__glyph" aria-hidden="true"><use href="#icon-edit"></use></svg>
+                            {% if is_title %}
+                                {% trans "Bulk Edit SEO Titles" %}
+                            {% else %}
+                                {% trans "Bulk Edit Meta Descriptions" %}
+                            {% endif %}
+                        </h1>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="nice-padding">
+        <form id="bulk-edit-form" method="post" action="{% url 'bulk_apply_metadata' %}" data-redirect-url="{% url 'bulk_edit' %}">
+            {% csrf_token %}
+            
+            {% for page_id in page_ids %}
+                <input type="hidden" name="page_ids" value="{{ page_id }}">
+            {% endfor %}
+            <input type="hidden" name="action" value="{{ action }}">
+
+            <div class="field">
+                <h2>
+                    <label for="id_content" class="field__label">
+                        {% if is_title %}
+                            {% trans "SEO Title" %}
+                        {% else %}
+                            {% trans "Meta Description" %}
+                        {% endif %}
+                    </label>
+                </h2>
+                <div class="placeholder-badges">
+                    <div class="placeholder-cloud">
+                        {% for placeholder in placeholders %}
+                            <button type="button" 
+                                    class="placeholder-badge placeholder-badge--{{ placeholder.type }}" 
+                                    data-placeholder="{{ placeholder.name }}"
+                                    title="{% trans 'Click to insert' %} {{'{'}}{{ placeholder.name }}{{'}'}}">
+                                {{ placeholder.label }}
+                            </button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="field-content">
+                    <textarea 
+                        name="content" 
+                        id="id_content" 
+                        rows="{% if is_title %}3{% else %}5{% endif %}"
+                        maxlength="{% if is_title %}255{% else %}320{% endif %}"
+                        class="field__input w-field__wrapper"
+                        required
+                        placeholder="While using placeholders, you can add [:N] to truncate, e.g. {title[:60]}"></textarea>
+                        
+                </div>
+            </div>
+
+            <h2>{% trans "Preview Changes" %}</h2>
+            <p class="help">{% trans "See how your template will be applied to each page" %}</p>
+            
+            <table class="listing" id="preview-table">
+                <thead>
+                    <tr>
+                        <th>{% trans "Page" %}</th>
+                        <th>{% trans "Type" %}</th>
+                        <th>{% trans "Current" %}</th>
+                        <th>{% trans "New" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for page in pages %}
+                        {% with active_title=page.seo_titles.all.0 active_description=page.seo_meta_descriptions.all.0 %}
+                        <tr data-page-id="{{ page.id }}">
+                            <td class="title">
+                                <strong>{{ page.title }}</strong>
+                            </td>
+                            <td>{{ page.page_type_display_name }}</td>
+                            <td class="current-value">
+                                {% if is_title %}
+                                    {% if active_title %}
+                                        {{ active_title.title }}
+                                    {% else %}
+                                        <span class="muted">{% trans "Not set" %}</span>
+                                    {% endif %}
+                                {% else %}
+                                    {% if active_description %}
+                                        {{ active_description.description }}
+                                    {% else %}
+                                        <span class="muted">{% trans "Not set" %}</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td class="new-value">
+                                <span class="preview-placeholder muted">{% trans "Enter template above..." %}</span>
+                            </td>
+                        </tr>
+                        {% endwith %}
+                    {% empty %}
+                        <tr>
+                            <td colspan="4">
+                                <p class="help-block help-warning">
+                                    {% trans "No pages selected. Please go back and select pages." %}
+                                </p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <button type="submit" class="button button-longrunning" data-clicked-text="{% trans 'Applying...' %}">
+                <span class="icon icon-spinner"></span>
+                <em>{% trans "Apply to All" %}</em>
+            </button>
+            <a href="{% url 'bulk_edit' %}" class="button button-secondary">
+                {% trans "Cancel" %}
+            </a>
+
+        </form>
+    </div>
+{% endblock %}
+
