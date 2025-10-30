@@ -67,23 +67,26 @@ class SEOMetadataMiddleware(MiddlewareMixin):
         
         # Check if we have custom SEO metadata for this page
         try:
-            from .models import SEOMetaDescription, SEOTitle
             from .utils.placeholder_utils import process_placeholders
-            
-            # Get active SEO title
-            seo_title = SEOTitle.objects.filter(
-                page=page, 
-                is_active=True
-            ).first()
-            
-            # Get active SEO meta description
-            seo_description = SEOMetaDescription.objects.filter(
-                page=page,
-                is_active=True
-            ).first()
+
+            # Get SEO metadata from page fields
+            # Use the latest live version if the page is live, otherwise use draft
+            if page.live:
+                # For live pages, use the live revision
+                live_revision = page.get_latest_revision()
+                if live_revision:
+                    page_instance = live_revision.as_object()
+                else:
+                    page_instance = page
+            else:
+                # For draft pages, use current instance
+                page_instance = page
+
+            seo_title = page_instance.seo_title
+            search_description = page_instance.search_description
             
             # If no custom metadata, return unchanged response
-            if not seo_title and not seo_description:
+            if not seo_title and not search_description:
                 return response
             
             # Decode content
@@ -98,7 +101,9 @@ class SEOMetadataMiddleware(MiddlewareMixin):
             # Replace title tag if we have a custom title
             if seo_title:
                 # Process placeholders in the title template
-                processed_title = process_placeholders(seo_title.title, page, request)
+                processed_title = process_placeholders(
+                    seo_title, page_instance, request
+                )
                 
                 # Match <title>...</title> including multiline and whitespace
                 title_pattern = r'<title[^>]*>.*?</title>'
@@ -115,9 +120,11 @@ class SEOMetadataMiddleware(MiddlewareMixin):
                     modified = True
             
             # Replace meta description if we have a custom description
-            if seo_description:
+            if search_description:
                 # Process placeholders in the description template
-                processed_description = process_placeholders(seo_description.description, page, request)
+                processed_description = process_placeholders(
+                    search_description, page_instance, request
+                )
                 
                 # Escape any quotes in the description for HTML attribute
                 escaped_description = processed_description.replace('"', '&quot;')

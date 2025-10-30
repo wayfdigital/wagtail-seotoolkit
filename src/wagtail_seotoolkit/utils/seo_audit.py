@@ -220,42 +220,61 @@ def get_page_html(page) -> str:
 
 def save_default_seo_metadata(page, html):
     """
-    Extract and save default SEO metadata (title and meta description) from rendered HTML.
-    Only saves if no SEOTitle or SEOMetaDescription exists for this page.
+    Extract and save default SEO metadata (title and meta description) from rendered HTML
+    to page fields via revisions. Always extracts from HTML to populate fields.
+    Publishes revision for live pages without unpublished changes.
 
     Args:
         page: The Wagtail page
         html: The rendered HTML content
     """
-    from wagtail_seotoolkit.models import SEOMetaDescription, SEOTitle
-
     soup = BeautifulSoup(html, "html.parser")
 
-    # Save default title if no SEOTitle exists
-    if not SEOTitle.objects.filter(page=page).exists():
-        title_tag = soup.find("title")
-        if title_tag and title_tag.string:
-            title_text = title_tag.string.strip()
-            # Normalize whitespace
-            title_text = " ".join(title_text.split())
-            if title_text:
-                SEOTitle.objects.create(
-                    page=page,
-                    title=title_text[:255],  # Respect max_length
-                    is_active=True,
-                )
+    # Track if we need to create a revision
+    needs_update = False
 
-    # Save default meta description if no SEOMetaDescription exists
-    if not SEOMetaDescription.objects.filter(page=page).exists():
-        meta_desc = soup.find("meta", attrs={"name": "description"})
-        if meta_desc and meta_desc.get("content"):
-            desc_text = meta_desc.get("content", "").strip()
-            if desc_text:
-                SEOMetaDescription.objects.create(
-                    page=page,
-                    description=desc_text[:320],  # Respect max_length
-                    is_active=True,
-                )
+    # Get the latest revision to base our changes on
+    latest_revision = page.get_latest_revision()
+    if latest_revision:
+        page_instance = latest_revision.as_object()
+    else:
+        page_instance = page.specific
+
+    # Check if page should be auto-published (check BEFORE making changes)
+    should_publish = page.live and not page.has_unpublished_changes
+
+    # Extract and save title if field is empty
+    title_tag = soup.find("title")
+    if title_tag and title_tag.string:
+        title_text = title_tag.string.strip()
+        # Normalize whitespace
+        title_text = " ".join(title_text.split())
+        if title_text and not page_instance.seo_title:
+            page_instance.seo_title = title_text[:255]  # Respect max_length
+            needs_update = True
+
+    # Extract and save meta description if field is empty
+    meta_desc = soup.find("meta", attrs={"name": "description"})
+    if meta_desc and meta_desc.get("content"):
+        desc_text = meta_desc.get("content", "").strip()
+        if desc_text and not page_instance.search_description:
+            page_instance.search_description = desc_text[:320]  # Respect max_length
+            needs_update = True
+
+    # Create revision if we made changes
+    if needs_update:
+        new_revision = page_instance.save_revision(
+            user=None,  # System-generated revision
+            log_action=True,  # Create log entry for revision history
+            changed=True,  # Mark that content has changed
+        )
+
+        # Publish if appropriate
+        if should_publish:
+            new_revision.publish(
+                user=None,
+                log_action=True,  # Create log entry for publish action
+            )
 
 
 def audit_single_page(

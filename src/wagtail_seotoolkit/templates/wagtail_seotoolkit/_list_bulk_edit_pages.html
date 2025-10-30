@@ -53,7 +53,6 @@
         <tbody>
         {% for page in pages %}
             {% page_permissions page as page_perms %}
-            {% with active_title=page.seo_titles.all.0 active_description=page.seo_meta_descriptions.all.0 %}
             <tr class="{% if not page.live %}unpublished{% endif %}">
                 <td class="bulk-action-checkbox-cell">
                     <input type="checkbox" 
@@ -85,18 +84,18 @@
                     {{ page.page_type_display_name }}
                 </td>
                 <td class="seo-title" valign="top">
-                    <div class="seo-title-preview" title="{% if active_title %}{{ active_title.title }}{% else %}Not set{% endif %}">
-                        {% if active_title %}
-                            {{ active_title.title|truncatechars:40 }}
+                    <div class="seo-title-preview" title="{% if page.seo_title %}{{ page.seo_title }}{% else %}Not set{% endif %}">
+                        {% if page.seo_title %}
+                            {{ page.seo_title|truncatechars:40 }}
                         {% else %}
                             <span class="status-tag secondary">{% trans "Not set" %}</span>
                         {% endif %}
                     </div>
                 </td>
                 <td class="seo-description" valign="top">
-                    <div class="seo-description-preview" title="{% if active_description %}{{ active_description.description }}{% else %}Not set{% endif %}">
-                        {% if active_description %}
-                            {{ active_description.description|truncatechars:50 }}
+                    <div class="seo-description-preview" title="{% if page.search_description %}{{ page.search_description }}{% else %}Not set{% endif %}">
+                        {% if page.search_description %}
+                            {{ page.search_description|truncatechars:50 }}
                         {% else %}
                             <span class="status-tag secondary">{% trans "Not set" %}</span>
                         {% endif %}
@@ -113,7 +112,6 @@
                     {% include "wagtailadmin/shared/page_status_tag.html" with page=page %}
                 </td>
             </tr>
-            {% endwith %}
         {% endfor %}
     </tbody>
 </table>

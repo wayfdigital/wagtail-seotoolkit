@@ -93,7 +93,6 @@
                 </thead>
                 <tbody>
                     {% for page in pages %}
-                        {% with active_title=page.seo_titles.all.0 active_description=page.seo_meta_descriptions.all.0 %}
                         <tr data-page-id="{{ page.id }}">
                             <td class="title">
                                 <strong>{{ page.title }}</strong>
@@ -101,14 +100,14 @@
                             <td>{{ page.page_type_display_name }}</td>
                             <td class="current-value">
                                 {% if is_title %}
-                                    {% if active_title %}
-                                        {{ active_title.title }}
+                                    {% if page.seo_title %}
+                                        {{ page.seo_title }}
                                     {% else %}
                                         <span class="muted">{% trans "Not set" %}</span>
                                     {% endif %}
                                 {% else %}
-                                    {% if active_description %}
-                                        {{ active_description.description }}
+                                    {% if page.search_description %}
+                                        {{ page.search_description }}
                                     {% else %}
                                         <span class="muted">{% trans "Not set" %}</span>
                                     {% endif %}
@@ -118,7 +117,6 @@
                                 <span class="preview-placeholder muted">{% trans "Enter template above..." %}</span>
                             </td>
                         </tr>
-                        {% endwith %}
                     {% empty %}
                         <tr>
                             <td colspan="4">

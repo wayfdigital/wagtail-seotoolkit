@@ -37,13 +37,31 @@
     /**
      * Show success message
      */
-    function showSuccessMessage(message, redirectUrl) {
+    function showSuccessMessage(message, redirectUrl, data) {
         const messageContainer = document.querySelector(SELECTORS.messageContainer);
         if (!messageContainer) return;
+
+        let detailsHtml = '';
+
+        // Show detailed information about published vs draft pages
+        if (data && (data.published > 0 || data.draft > 0)) {
+            detailsHtml = '<ul style="margin-top: 10px;">';
+
+            if (data.published > 0) {
+                detailsHtml += `<li><strong>${data.published}</strong> page(s) published immediately</li>`;
+            }
+
+            if (data.draft > 0) {
+                detailsHtml += `<li><strong>${data.draft}</strong> page(s) saved as draft (had unpublished changes or were not live)</li>`;
+            }
+
+            detailsHtml += '</ul>';
+        }
 
         messageContainer.innerHTML = `
             <div class="help-block help-info">
                 <p>${message}</p>
+                ${detailsHtml}
             </div>
         `;
 
@@ -51,7 +69,7 @@
         if (redirectUrl) {
             setTimeout(() => {
                 window.location.href = redirectUrl;
-            }, 1500);
+            }, 2500);  // Longer delay to show details
         }
     }
 
@@ -132,7 +150,7 @@
             if (data.success) {
                 // Get the redirect URL from the form's data attribute or use default
                 const redirectUrl = form.dataset.redirectUrl || '/admin/reports/bulk-edit/';
-                showSuccessMessage(data.message, redirectUrl);
+                showSuccessMessage(data.message, redirectUrl, data);
             } else {
                 throw new Error(data.error || 'Unknown error occurred');
             }
