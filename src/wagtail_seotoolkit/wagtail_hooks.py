@@ -50,17 +50,17 @@ def register_seo_admin_urls():
             name="seo_issues_report_results",
         ),
         path(
-            "reports/bulk-edit/",
+            "seo-toolkit/bulk-edit/",
             BulkEditView.as_view(),
             name="bulk_edit",
         ),
         path(
-            "reports/bulk-edit/results/",
+            "seo-toolkit/bulk-edit/results/",
             BulkEditView.as_view(results_only=True),
             name="bulk_edit_results",
         ),
         path(
-            "reports/bulk-edit/action/",
+            "seo-toolkit/bulk-edit/action/",
             BulkEditActionView.as_view(),
             name="bulk_edit_action",
         ),
