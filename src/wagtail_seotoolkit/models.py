@@ -242,6 +242,20 @@ class SEOAuditIssueType(models.TextChoices):
         }
         return severity_mapping.get(issue_type, SEOAuditIssueSeverity.MEDIUM)
 
+    @classmethod
+    def is_bulk_edit_issue(cls, issue_type):
+        """Check if an issue type is a bulk edit issue"""
+        bulk_edit_issues = {
+            cls.TITLE_MISSING,
+            cls.TITLE_TOO_SHORT,
+            cls.TITLE_TOO_LONG,
+            cls.META_DESCRIPTION_MISSING,
+            cls.META_DESCRIPTION_TOO_SHORT,
+            cls.META_DESCRIPTION_TOO_LONG,
+            cls.META_DESCRIPTION_DUPLICATE,
+            cls.META_DESCRIPTION_NO_CTA,
+        }
+        return issue_type in bulk_edit_issues
 
 class SEOAuditRun(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)

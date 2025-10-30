@@ -504,7 +504,12 @@ class BulkEditFilterSet(WagtailFilterSet):
     issue_type = django_filters.MultipleChoiceFilter(
         label=_("Issue Type"),
         field_name="seo_issues__issue_type",
-        choices=SEOAuditIssueType.choices,
+        choices=list(
+            filter(
+                lambda x: SEOAuditIssueType.is_bulk_edit_issue(x[0]),
+                SEOAuditIssueType.choices,
+            )
+        ),
         widget=forms.CheckboxSelectMultiple,
     )
 
