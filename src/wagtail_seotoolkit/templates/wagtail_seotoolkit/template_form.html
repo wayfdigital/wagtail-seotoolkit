@@ -58,6 +58,40 @@
             opacity: 1;
             background: rgba(0, 0, 0, 0.05);
         }
+        /* Color inheritance for each badge type */
+        .placeholder-badge-wrapper.placeholder-badge--site .placeholder-badge-main {
+            color: #7c3aed;
+            border-color: #7c3aed;
+        }
+        .placeholder-badge-wrapper.placeholder-badge--site .placeholder-truncate-btn {
+            color: #7c3aed;
+        }
+        .placeholder-badge-wrapper.placeholder-badge--site:hover .placeholder-badge-main,
+        .placeholder-badge-wrapper.placeholder-badge--site:hover .placeholder-truncate-btn {
+            color: white;
+        }
+        .placeholder-badge-wrapper.placeholder-badge--page .placeholder-badge-main {
+            color: #007d7e;
+            border-color: #007d7e;
+        }
+        .placeholder-badge-wrapper.placeholder-badge--page .placeholder-truncate-btn {
+            color: #007d7e;
+        }
+        .placeholder-badge-wrapper.placeholder-badge--page:hover .placeholder-badge-main,
+        .placeholder-badge-wrapper.placeholder-badge--page:hover .placeholder-truncate-btn {
+            color: white;
+        }
+        .placeholder-badge-wrapper.placeholder-badge--specific .placeholder-badge-main {
+            color: #f59e0b;
+            border-color: #f59e0b;
+        }
+        .placeholder-badge-wrapper.placeholder-badge--specific .placeholder-truncate-btn {
+            color: #f59e0b;
+        }
+        .placeholder-badge-wrapper.placeholder-badge--specific:hover .placeholder-badge-main,
+        .placeholder-badge-wrapper.placeholder-badge--specific:hover .placeholder-truncate-btn {
+            color: white;
+        }
         #placeholder-help {
             margin: 0;
             font-size: 0.9em;
