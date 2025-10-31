@@ -261,7 +261,7 @@
     /**
      * Insert placeholder at cursor position in textarea
      */
-    function insertPlaceholder(placeholder) {
+    function insertPlaceholder(placeholder, truncateLength = null) {
         const textarea = document.querySelector(SELECTORS.textarea);
         if (!textarea) return;
 
@@ -271,8 +271,14 @@
         const before = text.substring(0, start);
         const after = text.substring(end, text.length);
 
-        // Insert placeholder with braces
-        const placeholderText = `{${placeholder}}`;
+        // Insert placeholder with braces and optional truncation
+        let placeholderText;
+        if (truncateLength && truncateLength > 0) {
+            placeholderText = `{${placeholder}[:${truncateLength}]}`;
+        } else {
+            placeholderText = `{${placeholder}}`;
+        }
+
         textarea.value = before + placeholderText + after;
 
         // Move cursor to after the inserted placeholder
@@ -288,11 +294,49 @@
     }
 
     /**
+     * Show truncation dialog and return the length
+     */
+    function promptForTruncation(placeholderName) {
+        const length = prompt(
+            `Truncate "${placeholderName}" to how many characters?\n\n`
+        );
+
+        if (length === null) {
+            return null; // User cancelled
+        }
+
+        const parsedLength = parseInt(length, 10);
+
+        if (isNaN(parsedLength) || parsedLength <= 0) {
+            alert('Please enter a valid positive number');
+            return null;
+        }
+
+        return parsedLength;
+    }
+
+    /**
      * Handle placeholder badge click
      */
     function handlePlaceholderClick(e) {
-        if (e.target.classList.contains('placeholder-badge')) {
-            const placeholder = e.target.dataset.placeholder;
+        // Handle truncate button clicks
+        const truncateBtn = e.target.closest('.placeholder-truncate-btn');
+        if (truncateBtn) {
+            e.stopPropagation(); // Prevent badge click from firing
+            const placeholder = truncateBtn.dataset.placeholder;
+            if (placeholder) {
+                const truncateLength = promptForTruncation(placeholder);
+                if (truncateLength !== null) {
+                    insertPlaceholder(placeholder, truncateLength);
+                }
+            }
+            return;
+        }
+
+        // Handle regular badge clicks (both old .placeholder-badge and new .placeholder-badge-main)
+        const badge = e.target.closest('.placeholder-badge-main, .placeholder-badge');
+        if (badge) {
+            const placeholder = badge.dataset.placeholder;
             if (placeholder) {
                 insertPlaceholder(placeholder);
             }

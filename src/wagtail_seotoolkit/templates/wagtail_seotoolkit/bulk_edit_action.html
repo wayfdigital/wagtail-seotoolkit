@@ -80,12 +80,20 @@
                 <div class="placeholder-badges">
                     <div class="placeholder-cloud">
                         {% for placeholder in placeholders %}
-                            <button type="button" 
-                                    class="placeholder-badge placeholder-badge--{{ placeholder.type }}" 
-                                    data-placeholder="{{ placeholder.name }}"
-                                    title="{% trans 'Click to insert' %} {{'{'}}{{ placeholder.name }}{{'}'}}">
-                                {{ placeholder.label }}
-                            </button>
+                            <span class="placeholder-badge-wrapper placeholder-badge--{{ placeholder.type }}">
+                                <button type="button" 
+                                        class="placeholder-badge-main" 
+                                        data-placeholder="{{ placeholder.name }}"
+                                        title="{% trans 'Click to insert' %} {{'{'}}{{ placeholder.name }}{{'}'}}">
+                                    {{ placeholder.label }}
+                                </button>
+                                <button type="button" 
+                                        class="placeholder-truncate-btn"
+                                        data-placeholder="{{ placeholder.name }}"
+                                        title="{% trans 'Insert with truncation' %}">
+                                    ...
+                                </button>
+                            </span>
                         {% endfor %}
                     </div>
                 </div>

@@ -7,8 +7,9 @@
  * Insert placeholder at cursor position in textarea
  * @param {HTMLTextAreaElement} textarea - The textarea element
  * @param {string} placeholder - The placeholder name (without braces)
+ * @param {number|null} truncateLength - Optional truncation length
  */
-function insertPlaceholderAtCursor(textarea, placeholder) {
+function insertPlaceholderAtCursor(textarea, placeholder, truncateLength = null) {
     if (!textarea) return;
 
     const start = textarea.selectionStart;
@@ -17,8 +18,14 @@ function insertPlaceholderAtCursor(textarea, placeholder) {
     const before = text.substring(0, start);
     const after = text.substring(end, text.length);
 
-    // Insert placeholder with braces
-    const placeholderText = `{${placeholder}}`;
+    // Insert placeholder with braces and optional truncation
+    let placeholderText;
+    if (truncateLength && truncateLength > 0) {
+        placeholderText = `{${placeholder}[:${truncateLength}]}`;
+    } else {
+        placeholderText = `{${placeholder}}`;
+    }
+
     textarea.value = before + placeholderText + after;
 
     // Move cursor to after the inserted placeholder
@@ -44,13 +51,29 @@ function renderPlaceholderBadges(container, placeholders) {
     container.innerHTML = '';
 
     placeholders.forEach(placeholder => {
+        // Create wrapper for badge and truncate button
+        const wrapper = document.createElement('span');
+        wrapper.className = `placeholder-badge-wrapper placeholder-badge--${placeholder.type}`;
+
+        // Create the main badge button
         const button = document.createElement('button');
         button.type = 'button';
-        button.className = `placeholder-badge placeholder-badge--${placeholder.type}`;
+        button.className = 'placeholder-badge-main';
         button.dataset.placeholder = placeholder.name;
         button.title = `Click to insert {${placeholder.name}}`;
         button.textContent = placeholder.label;
-        container.appendChild(button);
+
+        // Create truncate icon button
+        const truncateBtn = document.createElement('button');
+        truncateBtn.type = 'button';
+        truncateBtn.className = 'placeholder-truncate-btn';
+        truncateBtn.dataset.placeholder = placeholder.name;
+        truncateBtn.title = 'Insert with truncation';
+        truncateBtn.textContent = '[:N]';
+
+        wrapper.appendChild(button);
+        wrapper.appendChild(truncateBtn);
+        container.appendChild(wrapper);
     });
 }
 
@@ -79,6 +102,30 @@ async function fetchPlaceholders(contentTypeId) {
 }
 
 /**
+ * Show truncation dialog and return the length
+ * @param {string} placeholderName - The placeholder name for display
+ * @returns {number|null} The truncation length or null if cancelled
+ */
+function promptForTruncation(placeholderName) {
+    const length = prompt(
+        `Truncate "${placeholderName}" to how many characters?\n\n`
+    );
+
+    if (length === null) {
+        return null; // User cancelled
+    }
+
+    const parsedLength = parseInt(length, 10);
+
+    if (isNaN(parsedLength) || parsedLength <= 0) {
+        alert('Please enter a valid positive number');
+        return null;
+    }
+
+    return parsedLength;
+}
+
+/**
  * Set up placeholder cloud with click handling
  * @param {HTMLElement} cloudContainer - Container with placeholder badges
  * @param {HTMLTextAreaElement} targetTextarea - Textarea to insert into
@@ -94,7 +141,22 @@ function setupPlaceholderCloud(cloudContainer, targetTextarea) {
 
     // Create click handler function
     const clickHandler = function(e) {
-        const badge = e.target.closest('.placeholder-badge');
+        // Handle truncate button clicks
+        const truncateBtn = e.target.closest('.placeholder-truncate-btn');
+        if (truncateBtn) {
+            e.stopPropagation(); // Prevent badge click from firing
+            const placeholder = truncateBtn.dataset.placeholder;
+            if (placeholder) {
+                const truncateLength = promptForTruncation(placeholder);
+                if (truncateLength !== null) {
+                    insertPlaceholderAtCursor(targetTextarea, placeholder, truncateLength);
+                }
+            }
+            return;
+        }
+
+        // Handle regular badge clicks
+        const badge = e.target.closest('.placeholder-badge-main');
         if (badge) {
             const placeholder = badge.dataset.placeholder;
             if (placeholder) {
@@ -118,6 +180,7 @@ if (typeof module !== 'undefined' && module.exports) {
         insertPlaceholderAtCursor,
         renderPlaceholderBadges,
         fetchPlaceholders,
+        promptForTruncation,
         setupPlaceholderCloud
     };
 }
