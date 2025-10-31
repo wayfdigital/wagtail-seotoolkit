@@ -29,11 +29,9 @@
                 </div>
             </div>
             <div class="right">
-                <div class="col">
-                    <a href="{% url 'seo_template_create' %}" class="button bicolor icon icon-plus">
-                        {% trans "Create Template" %}
-                    </a>
-                </div>
+                <a href="{% url 'seo_template_create' %}" class="button">
+                    {% trans "Create Template" %} 
+                </a>
             </div>
         </div>
     </header>
@@ -78,16 +76,17 @@
                             </td>
                             <td>
                                 <div class="actions">
-                                    <a href="{% url 'seo_template_edit' template.id %}" class="button button-small button-secondary" title="{% trans 'Edit' %}">
-                                        <svg class="icon icon-edit"><use href="#icon-edit"></use></svg>
-                                    </a>
-                                    <button type="button" 
+                                    <span><a href="{% url 'seo_template_edit' template.id %}" title="{% trans 'Edit' %}" class="button button-small button-secondary">
+                                        {% trans "Edit" %}
+                                    </a></span>
+
+                                    <span><button type="button" 
                                             class="button button-small button-secondary delete-template" 
                                             data-template-id="{{ template.id }}" 
                                             data-template-name="{{ template.name }}"
                                             title="{% trans 'Delete' %}">
-                                        <svg class="icon icon-bin"><use href="#icon-bin"></use></svg>
-                                    </button>
+                                        {% trans "Delete" %}
+                                    </button></span>
                                 </div>
                             </td>
                         </tr>
@@ -99,7 +98,7 @@
                 <p class="help-block help-info">
                     {% trans "No templates found. Create your first template to get started!" %}
                 </p>
-                <a href="{% url 'seo_template_create' %}" class="button bicolor icon icon-plus">
+                <a href="{% url 'seo_template_create' %}" class="button">
                     {% trans "Create Your First Template" %}
                 </a>
             </div>

@@ -7,12 +7,12 @@
 
 {% block extra_css %}
     {{ block.super }}
-    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/bulk_edit.css' %}">
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/bulk_edit.css' %}?v=3">
 {% endblock %}
 
 {% block extra_js %}
     {{ block.super }}
-    <script src="{% static 'wagtail_seotoolkit/js/bulk_edit_action.js' %}"></script>
+    <script src="{% static 'wagtail_seotoolkit/js/bulk_edit_action.js' %}?v=4"></script>
 {% endblock %}
 
 {% block content %}
@@ -121,6 +121,7 @@
                         <th>{% trans "Type" %}</th>
                         <th>{% trans "Current" %}</th>
                         <th>{% trans "New" %}</th>
+                        <th class="validation-column">{% trans "SEO Checks" %}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -131,27 +132,27 @@
                             </td>
                             <td>{{ page.page_type_display_name }}</td>
                             <td class="current-value">
-                                {% if is_title %}
-                                    {% if page.seo_title %}
-                                        {{ page.seo_title }}
-                                    {% else %}
-                                        <span class="muted">{% trans "Not set" %}</span>
-                                    {% endif %}
+                                {% if page.current_processed %}
+                                    {{ page.current_processed }}
                                 {% else %}
-                                    {% if page.search_description %}
-                                        {{ page.search_description }}
-                                    {% else %}
-                                        <span class="muted">{% trans "Not set" %}</span>
-                                    {% endif %}
+                                    <span class="muted">{% trans "Not set" %}</span>
                                 {% endif %}
                             </td>
                             <td class="new-value">
                                 <span class="preview-placeholder muted">{% trans "Enter template above..." %}</span>
                             </td>
+                            <td class="validation-cell">
+                                <div class="validation-status" data-page-id="{{ page.id }}">
+                                    <span class="validation-loading muted">
+                                        <svg class="icon w-w-4 w-h-4" aria-hidden="true"><use href="#icon-spinner"></use></svg>
+                                        {% trans "Waiting..." %}
+                                    </span>
+                                </div>
+                            </td>
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="4">
+                            <td colspan="5">
                                 <p class="help-block help-warning">
                                     {% trans "No pages selected. Please go back and select pages." %}
                                 </p>

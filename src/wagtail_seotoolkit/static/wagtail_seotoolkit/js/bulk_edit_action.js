@@ -201,13 +201,19 @@
 
         const template = textarea.value.trim();
         
-        // If empty, show placeholder text
+        // If empty, show placeholder text and reset validation
         if (!template) {
             const rows = previewTable.querySelectorAll('tbody tr');
             rows.forEach(row => {
                 const newValueCell = row.querySelector('.new-value');
                 if (newValueCell) {
                     newValueCell.innerHTML = '<span class="preview-placeholder muted">Enter template above...</span>';
+                }
+
+                // Reset validation to waiting state
+                const validationCell = row.querySelector('.validation-status');
+                if (validationCell) {
+                    validationCell.innerHTML = '<span class="validation-loading muted"><svg class="icon w-w-4 w-h-4" aria-hidden="true"><use href="#icon-spinner"></use></svg> Waiting...</span>';
                 }
             });
             return;
@@ -240,8 +246,96 @@
                     }
                 });
             }
+
+            // Also trigger validation update
+            await updateValidation();
         } catch (error) {
             console.error('Preview update error:', error);
+        }
+    }
+
+    /**
+     * Update validation results for all pages
+     */
+    async function updateValidation() {
+        const textarea = document.querySelector(SELECTORS.textarea);
+        const form = document.querySelector(SELECTORS.form);
+        const previewTable = document.querySelector(SELECTORS.previewTable);
+
+        if (!textarea || !form || !previewTable) return;
+
+        const template = textarea.value.trim();
+
+        // If empty, reset validation to waiting
+        if (!template) {
+            const validationCells = previewTable.querySelectorAll('.validation-status');
+            validationCells.forEach(cell => {
+                cell.innerHTML = '<span class="validation-loading muted"><svg class="icon w-w-4 w-h-4" aria-hidden="true"><use href="#icon-spinner"></use></svg> Waiting...</span>';
+            });
+            return;
+        }
+
+        try {
+            const formData = new FormData(form);
+            formData.set('template', template);
+
+            const response = await fetch('/admin/api/validate-metadata-bulk/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCSRFToken()
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.validations) {
+                // Update each row with validation results
+                data.validations.forEach(validation => {
+                    const validationCell = previewTable.querySelector(`.validation-status[data-page-id="${validation.page_id}"]`);
+                    if (validationCell) {
+                        renderValidationResult(validationCell, validation);
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Validation update error:', error);
+        }
+    }
+
+    /**
+     * Render validation result in cell
+     */
+    function renderValidationResult(cell, validation) {
+        cell.innerHTML = '';
+
+        if (validation.is_valid) {
+            // Valid - show success without character count
+            cell.innerHTML = `
+                <div class="validation-success">
+                    <svg class="icon icon-success" aria-hidden="true"><use href="#icon-success"></use></svg>
+                    <span>Valid</span>
+                </div>
+            `;
+        } else {
+            // Has issues - show them directly without character count
+            let issuesHTML = '<div class="validation-issues-direct">';
+
+            // Show all issues directly without collapsing
+            issuesHTML += '<ul class="validation-issue-list">';
+            validation.issues.forEach(issue => {
+                const iconName = issue.severity === 'high' ? 'warning' : (issue.severity === 'medium' ? 'warning' : 'help');
+                issuesHTML += `
+                    <li class="validation-issue severity-${issue.severity}">
+                        <svg class="icon icon-${iconName}" aria-hidden="true"><use href="#icon-${iconName}"></use></svg>
+                        <span>${issue.message}</span>
+                    </li>`;
+            });
+            issuesHTML += '</ul>';
+
+            issuesHTML += '</div>';
+
+            cell.innerHTML = issuesHTML;
         }
     }
 
@@ -394,7 +488,7 @@
         // Show loading state
         saveButton.disabled = true;
         const originalHTML = saveButton.innerHTML;
-        saveButton.innerHTML = '<svg class="icon icon-spinner"><use href="#icon-spinner"></use></svg> Saving...';
+        saveButton.innerHTML = '<svg class="icon"><use href="#icon-spinner"></use></svg> Saving...';
 
         // Prepare form data
         const formData = new FormData();

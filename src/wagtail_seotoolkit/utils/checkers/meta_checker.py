@@ -6,24 +6,14 @@ Checks for meta description presence, length, and CTA presence.
 from typing import Any, Dict, List
 
 from wagtail_seotoolkit.models import SEOAuditIssueSeverity, SEOAuditIssueType
+from wagtail_seotoolkit.utils.seo_validators import (
+    CTA_KEYWORDS,
+    META_DESC_MAX_LENGTH,
+    META_DESC_MIN_LENGTH,
+    validate_meta_description,
+)
 
 from .base import BaseChecker
-
-# Meta description constraints
-META_DESC_MIN_LENGTH = 120
-META_DESC_MAX_LENGTH = 160
-CTA_KEYWORDS = [
-    "buy",
-    "learn",
-    "discover",
-    "get",
-    "find",
-    "explore",
-    "download",
-    "try",
-    "start",
-    "join",
-]
 
 
 class MetaChecker(BaseChecker):
@@ -34,54 +24,51 @@ class MetaChecker(BaseChecker):
         self.issues = []
 
         meta_desc = self.soup.find("meta", attrs={"name": "description"})
+        desc_text = meta_desc.get("content", "").strip() if meta_desc else ""
 
-        if not meta_desc or not meta_desc.get("content"):
-            self.add_issue(
-                SEOAuditIssueType.META_DESCRIPTION_MISSING,
-                SEOAuditIssueType.get_severity(SEOAuditIssueType.META_DESCRIPTION_MISSING),
-                SEOAuditIssueType.get_description_template(
+        # Use the reusable validation function
+        validation_result = validate_meta_description(desc_text)
+
+        # Convert validation results to audit issues
+        for issue in validation_result["issues"]:
+            issue_type = None
+            description = issue["message"]
+
+            if issue["type"] == "missing":
+                issue_type = SEOAuditIssueType.META_DESCRIPTION_MISSING
+                description = SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.META_DESCRIPTION_MISSING
-                ),
-            )
-            return self.issues
-
-        desc_text = meta_desc.get("content", "").strip()
-        desc_length = len(desc_text)
-
-        if desc_length < META_DESC_MIN_LENGTH:
-            self.add_issue(
-                SEOAuditIssueType.META_DESCRIPTION_TOO_SHORT,
-                SEOAuditIssueType.get_severity(SEOAuditIssueType.META_DESCRIPTION_TOO_SHORT),
-                SEOAuditIssueType.get_description_template(
+                )
+            elif issue["type"] == "too_short":
+                issue_type = SEOAuditIssueType.META_DESCRIPTION_TOO_SHORT
+                description = SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.META_DESCRIPTION_TOO_SHORT
                 ).format(
-                    length=desc_length,
+                    length=validation_result["length"],
                     min_length=META_DESC_MIN_LENGTH,
                     max_length=META_DESC_MAX_LENGTH,
-                ),
-            )
-        elif desc_length > META_DESC_MAX_LENGTH:
-            self.add_issue(
-                SEOAuditIssueType.META_DESCRIPTION_TOO_LONG,
-                SEOAuditIssueType.get_severity(SEOAuditIssueType.META_DESCRIPTION_TOO_LONG),
-                SEOAuditIssueType.get_description_template(
+                )
+            elif issue["type"] == "too_long":
+                issue_type = SEOAuditIssueType.META_DESCRIPTION_TOO_LONG
+                description = SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.META_DESCRIPTION_TOO_LONG
                 ).format(
-                    length=desc_length,
+                    length=validation_result["length"],
                     min_length=META_DESC_MIN_LENGTH,
                     max_length=META_DESC_MAX_LENGTH,
-                ),
-            )
-
-        # Check for CTA words
-        if not any(word in desc_text.lower() for word in CTA_KEYWORDS):
-            self.add_issue(
-                SEOAuditIssueType.META_DESCRIPTION_NO_CTA,
-                SEOAuditIssueType.get_severity(SEOAuditIssueType.META_DESCRIPTION_NO_CTA),
-                SEOAuditIssueType.get_description_template(
+                )
+            elif issue["type"] == "no_cta":
+                issue_type = SEOAuditIssueType.META_DESCRIPTION_NO_CTA
+                description = SEOAuditIssueType.get_description_template(
                     SEOAuditIssueType.META_DESCRIPTION_NO_CTA
-                ).format(cta_examples=", ".join(CTA_KEYWORDS[:5])),
-            )
+                ).format(cta_examples=", ".join(CTA_KEYWORDS[:5]))
+
+            if issue_type:
+                self.add_issue(
+                    issue_type,
+                    SEOAuditIssueType.get_severity(issue_type),
+                    description,
+                )
 
         return self.issues
 

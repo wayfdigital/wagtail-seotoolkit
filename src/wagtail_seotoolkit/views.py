@@ -629,9 +629,16 @@ def preview_metadata(request):
 
             # Get current SEO values from page fields
             if action == "edit_title":
-                current_value = page_instance.seo_title or ""
+                current_value_raw = page_instance.seo_title or ""
             else:  # edit_description
-                current_value = page_instance.search_description or ""
+                current_value_raw = page_instance.search_description or ""
+
+            # Process placeholders in current value
+            current_value = (
+                process_placeholders(current_value_raw, page_instance, request)
+                if current_value_raw
+                else ""
+            )
 
             # Process template for this page
             processed_value = process_placeholders(template, page_instance, request)
@@ -647,6 +654,76 @@ def preview_metadata(request):
             )
 
         return JsonResponse({"success": True, "previews": previews})
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+@require_POST
+def validate_metadata_bulk(request):
+    """
+    API endpoint to validate SEO metadata for multiple pages.
+
+    Validates either titles or meta descriptions based on action parameter,
+    and returns validation results for each page including issues and severity.
+
+    Expected POST data:
+        - page_ids: List of page IDs
+        - template: Template string with placeholders
+        - action: Either "edit_title" or "edit_description"
+
+    Returns:
+        JSON with validation results for each page
+    """
+    try:
+        from .utils.seo_validators import validate_meta_description, validate_title
+
+        page_ids = request.POST.getlist("page_ids")
+        template = request.POST.get("template", "").strip()
+        action = request.POST.get("action", "edit_title")
+
+        if not page_ids:
+            return JsonResponse(
+                {"success": False, "error": "Missing page_ids parameter"}, status=400
+            )
+
+        pages = Page.objects.filter(id__in=page_ids).select_related("content_type")
+
+        validations = []
+        for page in pages:
+            # Get the latest revision
+            latest_revision = page.get_latest_revision()
+            if latest_revision:
+                page_instance = latest_revision.as_object()
+            else:
+                page_instance = page.specific
+
+            # Process template to get the actual value
+            if template:
+                processed_value = process_placeholders(template, page_instance, request)
+            else:
+                # If no template, use current value
+                if action == "edit_title":
+                    processed_value = page_instance.seo_title or ""
+                else:  # edit_description
+                    processed_value = page_instance.search_description or ""
+
+            # Validate based on action type
+            if action == "edit_title":
+                validation_result = validate_title(processed_value)
+            else:  # edit_description
+                validation_result = validate_meta_description(processed_value)
+
+            validations.append(
+                {
+                    "page_id": page.id,
+                    "page_title": page.title,
+                    "value": processed_value,
+                    **validation_result,
+                }
+            )
+
+        return JsonResponse({"success": True, "validations": validations})
 
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)}, status=500)
@@ -1115,6 +1192,28 @@ class BulkEditActionView(TemplateView):
         # Get the selected pages
         pages = Page.objects.filter(id__in=page_ids).select_related("content_type")
 
+        # Process current values with placeholders
+        pages_with_processed = []
+        for page in pages:
+            page_instance = page.specific
+
+            # Get current value and process placeholders
+            if action == "edit_title":
+                current_raw = page_instance.seo_title or ""
+            else:  # edit_description
+                current_raw = page_instance.search_description or ""
+
+            # Process placeholders in current value
+            current_processed = (
+                process_placeholders(current_raw, page_instance, self.request)
+                if current_raw
+                else ""
+            )
+
+            # Add processed value to page object
+            page.current_processed = current_processed
+            pages_with_processed.append(page)
+
         # Get available placeholders
         placeholders = self.get_available_placeholders(pages)
 
@@ -1146,7 +1245,7 @@ class BulkEditActionView(TemplateView):
 
         context.update(
             {
-                "pages": pages,
+                "pages": pages_with_processed,
                 "page_ids": page_ids,
                 "action": action,
                 "is_title": action == "edit_title",

@@ -26,6 +26,7 @@ from .views import (
     get_placeholders_api,
     preview_metadata,
     save_as_template,
+    validate_metadata_bulk,
 )
 
 
@@ -79,6 +80,11 @@ def register_seo_admin_urls():
             "api/preview-metadata/",
             preview_metadata,
             name="preview_metadata",
+        ),
+        path(
+            "api/validate-metadata-bulk/",
+            validate_metadata_bulk,
+            name="validate_metadata_bulk",
         ),
         path(
             "api/email-verification/get/",
