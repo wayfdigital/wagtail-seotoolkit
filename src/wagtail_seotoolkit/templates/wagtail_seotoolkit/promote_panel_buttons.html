@@ -1,0 +1,25 @@
+{% load i18n %}
+<p> Use advanced SEO metadata editor provided by Wagtail SEO Toolkit:</p>
+<a class='button button-secondary' href='{% url 'bulk_edit_action' %}?action=edit_title&page_ids=' data-page-link="edit_title"> {% trans "Title editor" %}</a>
+<a class='button button-secondary' href='{% url 'bulk_edit_action' %}?action=edit_description&page_ids=' data-page-link="edit_description"> {% trans "Description editor" %}</a>
+
+<script>
+(function() {
+    // Extract page ID from the form action URL
+    const form = document.getElementById('page-edit-form');
+    if (form) {
+        const actionUrl = form.getAttribute('action');
+        // Match pattern like /admin/pages/60/edit/
+        const match = actionUrl.match(/\/pages\/(\d+)\//);
+        if (match && match[1]) {
+            const pageId = match[1];
+            // Update all links with data-page-link attribute
+            document.querySelectorAll('[data-page-link]').forEach(function(link) {
+                const currentHref = link.getAttribute('href');
+                link.setAttribute('href', currentHref + pageId);
+            });
+        }
+    }
+})();
+</script>
+

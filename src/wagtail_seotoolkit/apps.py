@@ -26,3 +26,12 @@ class WagtailSEOToolkitConfig(AppConfig):
 
         EditView.get_side_panels = get_side_panels
         CreateView.get_side_panels = get_side_panels
+
+        # Add information panel to the promote tab in the page editor
+        from wagtail.admin.panels import HelpPanel
+        from wagtail.models import Page
+
+        Page.promote_panels.insert(
+            1,
+            HelpPanel(template="wagtail_seotoolkit/promote_panel_buttons.html"),
+        )
