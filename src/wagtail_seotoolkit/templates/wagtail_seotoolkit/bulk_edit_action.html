@@ -50,7 +50,7 @@
                     </label>
                 </h2>
                 <div class="field-content">
-                    <select id="id_template" class="field__input">
+                    <select id="id_template" class="field__input" {% if not templates %}disabled{% endif %}>
                         <option value="">{% trans "-- Select a template --" %}</option>
                         {% for template in templates %}
                             <option value="{{ template.id }}" 
@@ -63,7 +63,7 @@
                 {% if templates %}
                     <p class="help">{% trans "Choose a saved template to auto-fill the content below" %}</p>
                 {% else %}
-                    <p class="help help-info">{% trans "No templates available for this page type. Create one below!" %}</p>
+                    <p class="help">{% trans "No templates available for this page type." %}</p>
                 {% endif %}
             </div>
 
