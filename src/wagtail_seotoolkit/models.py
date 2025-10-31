@@ -313,3 +313,63 @@ class PluginEmailVerification(models.Model):
     def __str__(self):
         return self.email
 
+
+class SEOMetadataTemplate(models.Model):
+    """
+    Stores reusable templates for SEO titles and meta descriptions.
+    Templates can contain placeholders like {title}, {site_name}, etc.
+    Templates can be page-type specific or apply to all pages.
+    """
+
+    TEMPLATE_TYPE_CHOICES = [
+        ("title", "SEO Title"),
+        ("description", "Meta Description"),
+    ]
+
+    name = models.CharField(
+        max_length=100,
+        help_text="A descriptive name for this template (e.g., 'Blog Post Title', 'Product Description')",
+    )
+    template_type = models.CharField(
+        max_length=20,
+        choices=TEMPLATE_TYPE_CHOICES,
+        help_text="Whether this template is for titles or descriptions",
+    )
+    content_type = models.ForeignKey(
+        "contenttypes.ContentType",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        help_text="Leave blank for a template that works with all page types, or select a specific page type",
+    )
+    template_content = models.TextField(
+        max_length=320,
+        help_text="Template content. Use placeholders like {title}, {site_name}, etc. Add [:N] to truncate.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        "auth.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="seo_templates",
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "SEO Metadata Template"
+        verbose_name_plural = "SEO Metadata Templates"
+
+    def __str__(self):
+        content_type_str = (
+            f" - {self.content_type.name}" if self.content_type else " - All Pages"
+        )
+        return f"{self.name} ({self.get_template_type_display()}){content_type_str}"
+
+    def clean(self):
+        """Validate template content"""
+        from django.core.exceptions import ValidationError
+
+        if not self.template_content:
+            raise ValidationError({"template_content": "Template content is required."})

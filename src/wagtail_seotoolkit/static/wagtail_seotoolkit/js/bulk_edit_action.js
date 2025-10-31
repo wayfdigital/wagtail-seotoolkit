@@ -14,7 +14,8 @@
         charCount: '#char-count',
         messageContainer: '#message-container',
         submitButton: 'button[type="submit"]',
-        previewTable: '#preview-table'
+        previewTable: '#preview-table',
+        templateSelect: '#id_template'
     };
 
     // State
@@ -35,7 +36,7 @@
     }
 
     /**
-     * Show success message
+     * Show success message using Wagtail's native message system
      */
     function showSuccessMessage(message, redirectUrl, data) {
         const messageContainer = document.querySelector(SELECTORS.messageContainer);
@@ -45,7 +46,7 @@
 
         // Show detailed information about published vs draft pages
         if (data && (data.published > 0 || data.draft > 0)) {
-            detailsHtml = '<ul style="margin-top: 10px;">';
+            detailsHtml = '<ul style="margin-top: 10px; margin-left: 20px;">';
 
             if (data.published > 0) {
                 detailsHtml += `<li><strong>${data.published}</strong> page(s) published immediately</li>`;
@@ -58,31 +59,51 @@
             detailsHtml += '</ul>';
         }
 
+        // Add optional back button if redirect URL provided
+        let backButtonHtml = '';
+        if (redirectUrl) {
+            backButtonHtml = `
+                <p style="margin-top: 15px;">
+                    <a href="${redirectUrl}" class="button button-small button-secondary">
+                        Back to pages
+                    </a>
+                </p>
+            `;
+        }
+
         messageContainer.innerHTML = `
-            <div class="help-block help-info">
-                <p>${message}</p>
-                ${detailsHtml}
+            <div class="messages" role="status">
+                <ul>
+                    <li class="success">
+                        <svg class="icon icon-success messages-icon" aria-hidden="true">
+                            <use href="#icon-success"></use>
+                        </svg>
+                        ${message}
+                        ${detailsHtml}
+                        ${backButtonHtml}
+                    </li>
+                </ul>
             </div>
         `;
-
-        // Redirect after short delay
-        if (redirectUrl) {
-            setTimeout(() => {
-                window.location.href = redirectUrl;
-            }, 2500);  // Longer delay to show details
-        }
     }
 
     /**
-     * Show error message
+     * Show error message using Wagtail's native message system
      */
     function showErrorMessage(message) {
         const messageContainer = document.querySelector(SELECTORS.messageContainer);
         if (!messageContainer) return;
 
         messageContainer.innerHTML = `
-            <div class="help-block help-critical">
-                <p>${message}</p>
+            <div class="messages" role="status">
+                <ul>
+                    <li class="error">
+                        <svg class="icon icon-warning messages-icon" aria-hidden="true">
+                            <use href="#icon-warning"></use>
+                        </svg>
+                        ${message}
+                    </li>
+                </ul>
             </div>
         `;
     }
@@ -151,6 +172,10 @@
                 // Get the redirect URL from the form's data attribute or use default
                 const redirectUrl = form.dataset.redirectUrl || '/admin/reports/bulk-edit/';
                 showSuccessMessage(data.message, redirectUrl, data);
+
+                // Re-enable submit button so user can make another edit
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('button-longrunning-active');
             } else {
                 throw new Error(data.error || 'Unknown error occurred');
             }
@@ -275,12 +300,110 @@
     }
 
     /**
+     * Handle template selection
+     */
+    function handleTemplateSelect(e) {
+        const select = e.target;
+        const selectedOption = select.options[select.selectedIndex];
+        const textarea = document.querySelector(SELECTORS.textarea);
+
+        if (!textarea) return;
+
+        // Get template content from data attribute
+        const templateContent = selectedOption.dataset.templateContent || '';
+
+        // Set textarea value
+        if (templateContent) {
+            textarea.value = templateContent;
+
+            // Trigger input event to update preview and character count
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    }
+
+    /**
+     * Handle save as template button click
+     */
+    function handleSaveAsTemplate() {
+        const textarea = document.querySelector(SELECTORS.textarea);
+        const saveButton = document.getElementById('save-as-template');
+
+        if (!textarea || !saveButton) return;
+
+        const content = textarea.value.trim();
+
+        if (!content) {
+            alert('Please enter some content before saving as template.');
+            return;
+        }
+
+        // Prompt for template name
+        const templateName = prompt('Enter a name for this template:');
+
+        if (!templateName || !templateName.trim()) {
+            return; // User cancelled or entered empty name
+        }
+
+        const templateType = saveButton.dataset.templateType;
+        const contentTypeId = saveButton.dataset.contentTypeId;
+
+        // Show loading state
+        saveButton.disabled = true;
+        const originalHTML = saveButton.innerHTML;
+        saveButton.innerHTML = '<svg class="icon icon-spinner"><use href="#icon-spinner"></use></svg> Saving...';
+
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('name', templateName.trim());
+        formData.append('template_type', templateType);
+        formData.append('template_content', content);
+        if (contentTypeId) {
+            formData.append('content_type_id', contentTypeId);
+        }
+        formData.append('csrfmiddlewaretoken', getCSRFToken());
+
+        // Submit to save endpoint
+        fetch('/admin/api/save-as-template/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+
+                    // Reset button
+                    saveButton.disabled = false;
+                    saveButton.innerHTML = originalHTML;
+
+                    // Optionally reload to show new template in dropdown
+                    // window.location.reload();
+                } else {
+                    throw new Error(data.error || 'Failed to save template');
+                }
+            })
+            .catch(error => {
+                console.error('Save template error:', error);
+                alert('Error: ' + error.message);
+
+                // Reset button
+                saveButton.disabled = false;
+                saveButton.innerHTML = originalHTML;
+            });
+    }
+
+    /**
      * Attach event listeners
      */
     function attachEventListeners() {
         const form = document.querySelector(SELECTORS.form);
         const textarea = document.querySelector(SELECTORS.textarea);
         const placeholderCloud = document.querySelector('.placeholder-cloud');
+        const templateSelect = document.querySelector(SELECTORS.templateSelect);
+        const saveAsTemplateBtn = document.getElementById('save-as-template');
 
         if (!form) {
             return false;
@@ -298,6 +421,16 @@
         // Placeholder badge clicks (using event delegation)
         if (placeholderCloud) {
             placeholderCloud.addEventListener('click', handlePlaceholderClick);
+        }
+
+        // Template selection
+        if (templateSelect) {
+            templateSelect.addEventListener('change', handleTemplateSelect);
+        }
+
+        // Save as template button
+        if (saveAsTemplateBtn) {
+            saveAsTemplateBtn.addEventListener('click', handleSaveAsTemplate);
         }
 
         // Form submission

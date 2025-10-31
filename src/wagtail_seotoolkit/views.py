@@ -8,6 +8,7 @@ import django_filters
 import requests
 from django import forms
 from django.contrib.contenttypes.models import ContentType
+from django.db import models
 from django.db.models import Count
 from django.http import JsonResponse
 from django.utils.translation import gettext_lazy as _
@@ -23,8 +24,13 @@ from .models import (
     SEOAuditIssueSeverity,
     SEOAuditIssueType,
     SEOAuditRun,
+    SEOMetadataTemplate,
 )
-from .utils.placeholder_utils import process_placeholders
+from .utils.placeholder_utils import (
+    get_placeholders_for_content_type,
+    process_placeholders,
+    validate_template_placeholders,
+)
 
 
 class SEODashboardView(TemplateView):
@@ -733,6 +739,349 @@ def bulk_apply_metadata(request):
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
+class TemplateListView(TemplateView):
+    """
+    View for listing all SEO metadata templates
+    """
+
+    template_name = "wagtail_seotoolkit/template_list.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        templates = SEOMetadataTemplate.objects.all().select_related(
+            "created_by", "content_type"
+        )
+
+        context.update(
+            {
+                "templates": templates,
+                "page_title": _("SEO Metadata Templates"),
+            }
+        )
+
+        return context
+
+
+class TemplateCreateView(TemplateView):
+    """
+    View for creating a new SEO metadata template
+    """
+
+    template_name = "wagtail_seotoolkit/template_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get available content types (page types)
+        page_content_types = (
+            ContentType.objects.filter(
+                id__in=Page.objects.values_list("content_type_id", flat=True).distinct()
+            )
+            .exclude(app_label="wagtailcore")
+            .order_by("app_label", "model")
+        )
+
+        # Get initial placeholders (for "All Page Types")
+        initial_placeholders = get_placeholders_for_content_type(None)
+
+        context.update(
+            {
+                "page_title": _("Create SEO Template"),
+                "is_create": True,
+                "template_types": SEOMetadataTemplate.TEMPLATE_TYPE_CHOICES,
+                "page_content_types": page_content_types,
+                "placeholders": initial_placeholders,
+            }
+        )
+
+        return context
+
+    def post(self, request):
+        """Handle template creation"""
+        try:
+            name = request.POST.get("name", "").strip()
+            template_type = request.POST.get("template_type", "title")
+            template_content = request.POST.get("template_content", "").strip()
+            content_type_id = request.POST.get("content_type", "").strip()
+
+            if not name:
+                return JsonResponse(
+                    {"success": False, "error": "Template name is required"}, status=400
+                )
+
+            if not template_content:
+                return JsonResponse(
+                    {"success": False, "error": "Template content is required"},
+                    status=400,
+                )
+
+            # Get content type if specified
+            content_type = None
+            content_type_id_int = None
+            if content_type_id:
+                try:
+                    content_type = ContentType.objects.get(id=content_type_id)
+                    content_type_id_int = int(content_type_id)
+                except ContentType.DoesNotExist:
+                    pass
+
+            # Validate placeholders
+            is_valid, invalid_placeholders = validate_template_placeholders(
+                template_content, content_type_id_int
+            )
+
+            if not is_valid:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": f"Invalid placeholders detected: {', '.join(invalid_placeholders)}. "
+                        f"These fields are not available for the selected page type.",
+                    },
+                    status=400,
+                )
+
+            template = SEOMetadataTemplate.objects.create(
+                name=name,
+                template_type=template_type,
+                template_content=template_content,
+                content_type=content_type,
+                created_by=request.user if request.user.is_authenticated else None,
+            )
+
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": "Template created successfully",
+                    "template_id": template.id,
+                }
+            )
+
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+class TemplateEditView(TemplateView):
+    """
+    View for editing an existing SEO metadata template
+    """
+
+    template_name = "wagtail_seotoolkit/template_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        template_id = kwargs.get("template_id")
+        try:
+            template = SEOMetadataTemplate.objects.get(id=template_id)
+
+            # Get available content types (page types)
+            page_content_types = (
+                ContentType.objects.filter(
+                    id__in=Page.objects.values_list(
+                        "content_type_id", flat=True
+                    ).distinct()
+                )
+                .exclude(app_label="wagtailcore")
+                .order_by("app_label", "model")
+            )
+
+            # Get placeholders for current content type
+            placeholders = get_placeholders_for_content_type(
+                template.content_type_id if template.content_type else None
+            )
+
+            context.update(
+                {
+                    "page_title": _("Edit SEO Template"),
+                    "is_create": False,
+                    "template": template,
+                    "template_types": SEOMetadataTemplate.TEMPLATE_TYPE_CHOICES,
+                    "page_content_types": page_content_types,
+                    "placeholders": placeholders,
+                }
+            )
+        except SEOMetadataTemplate.DoesNotExist:
+            context.update({"error": "Template not found"})
+
+        return context
+
+    def post(self, request, template_id):
+        """Handle template update"""
+        try:
+            template = SEOMetadataTemplate.objects.get(id=template_id)
+
+            name = request.POST.get("name", "").strip()
+            template_type = request.POST.get("template_type", "title")
+            template_content = request.POST.get("template_content", "").strip()
+            content_type_id = request.POST.get("content_type", "").strip()
+
+            if not name:
+                return JsonResponse(
+                    {"success": False, "error": "Template name is required"}, status=400
+                )
+
+            if not template_content:
+                return JsonResponse(
+                    {"success": False, "error": "Template content is required"},
+                    status=400,
+                )
+
+            # Get content type if specified
+            content_type = None
+            content_type_id_int = None
+            if content_type_id:
+                try:
+                    content_type = ContentType.objects.get(id=content_type_id)
+                    content_type_id_int = int(content_type_id)
+                except ContentType.DoesNotExist:
+                    pass
+
+            # Validate placeholders
+            is_valid, invalid_placeholders = validate_template_placeholders(
+                template_content, content_type_id_int
+            )
+
+            if not is_valid:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": f"Invalid placeholders detected: {', '.join(invalid_placeholders)}. "
+                        f"These fields are not available for the selected page type.",
+                    },
+                    status=400,
+                )
+
+            template.name = name
+            template.template_type = template_type
+            template.template_content = template_content
+            template.content_type = content_type
+            template.save()
+
+            return JsonResponse(
+                {"success": True, "message": "Template updated successfully"}
+            )
+
+        except SEOMetadataTemplate.DoesNotExist:
+            return JsonResponse(
+                {"success": False, "error": "Template not found"}, status=404
+            )
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+class TemplateDeleteView(View):
+    """
+    View for deleting an SEO metadata template
+    """
+
+    def post(self, request, template_id):
+        """Handle template deletion"""
+        try:
+            template = SEOMetadataTemplate.objects.get(id=template_id)
+            template_name = template.name
+            template.delete()
+
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": f'Template "{template_name}" deleted successfully',
+                }
+            )
+
+        except SEOMetadataTemplate.DoesNotExist:
+            return JsonResponse(
+                {"success": False, "error": "Template not found"}, status=404
+            )
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+def get_placeholders_api(request):
+    """
+    API endpoint to get available placeholders for a content type.
+    Returns JSON list of placeholder objects.
+    """
+    content_type_id = request.GET.get("content_type_id")
+
+    try:
+        # Convert to int if provided
+        if content_type_id:
+            content_type_id = int(content_type_id)
+        else:
+            content_type_id = None
+
+        placeholders = get_placeholders_for_content_type(content_type_id)
+
+        return JsonResponse({"success": True, "placeholders": placeholders})
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+@require_POST
+def save_as_template(request):
+    """
+    API endpoint to save current bulk edit content as a new template
+    """
+    try:
+        name = request.POST.get("name", "").strip()
+        template_type = request.POST.get("template_type", "title")
+        template_content = request.POST.get("template_content", "").strip()
+        content_type_id = request.POST.get("content_type_id", "").strip()
+
+        if not name:
+            return JsonResponse(
+                {"success": False, "error": "Template name is required"}, status=400
+            )
+
+        if not template_content:
+            return JsonResponse(
+                {"success": False, "error": "Template content is required"}, status=400
+            )
+
+        # Get content type if specified
+        content_type = None
+        if content_type_id:
+            try:
+                content_type = ContentType.objects.get(id=content_type_id)
+            except ContentType.DoesNotExist:
+                pass
+
+        # Check if template with same name exists
+        existing = SEOMetadataTemplate.objects.filter(
+            name=name, template_type=template_type
+        ).first()
+
+        if existing:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": f"A {template_type} template with name '{name}' already exists",
+                },
+                status=400,
+            )
+
+        template = SEOMetadataTemplate.objects.create(
+            name=name,
+            template_type=template_type,
+            template_content=template_content,
+            content_type=content_type,
+            created_by=request.user if request.user.is_authenticated else None,
+        )
+
+        return JsonResponse(
+            {
+                "success": True,
+                "message": f"Template '{name}' saved successfully",
+                "template_id": template.id,
+            }
+        )
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
 class BulkEditActionView(TemplateView):
     """
     View for bulk editing SEO titles or descriptions for selected pages
@@ -745,62 +1094,16 @@ class BulkEditActionView(TemplateView):
         Get available field placeholders based on selected pages.
         Returns a list of dicts with field info.
         """
-        from django.db.models import CharField, TextField
-        from wagtail.fields import RichTextField, StreamField
+        # Get content types of selected pages
+        content_types = set(page.content_type_id for page in pages) if pages else set()
 
-        placeholders = []
-
-        # Always include site name
-        placeholders.append({"name": "site_name", "label": "Site Name", "type": "site"})
-
-        # Always include base Page fields
-        # Note: seo_title and search_description are excluded as they contain
-        # placeholder templates themselves, not processed values
-        base_fields = [
-            {"name": "title", "label": "Page Title", "type": "page"},
-        ]
-        placeholders.extend(base_fields)
-
-        # Check if all pages are of the same specific type
-        if pages:
-            content_types = set(page.content_type_id for page in pages)
-
-            if len(content_types) == 1:
-                # All pages are the same type, get specific fields
-                first_page = pages[0].specific
-                specific_model = type(first_page)
-
-                # Skip if it's just the base Page model
-                if specific_model != Page:
-                    # Get text fields from the specific model
-                    for field in specific_model._meta.get_fields():
-                        # Include CharField, TextField, RichTextField, and StreamField
-                        if (
-                            isinstance(
-                                field,
-                                (CharField, TextField, RichTextField, StreamField),
-                            )
-                            and not field.name.startswith("_")
-                            and field.name not in ["seo_title", "search_description"]
-                        ):
-                            # Skip fields that are already in base fields
-                            if field.name not in [f["name"] for f in base_fields]:
-                                # Skip internal/system fields
-                                if field.name not in [
-                                    "path",
-                                    "url_path",
-                                    "draft_title",
-                                    "latest_revision_created_at",
-                                ]:
-                                    placeholders.append(
-                                        {
-                                            "name": field.name,
-                                            "label": field.verbose_name.title(),
-                                            "type": "specific",
-                                        }
-                                    )
-
-        return placeholders
+        # If all pages are the same type, get placeholders for that type
+        if len(content_types) == 1:
+            content_type_id = list(content_types)[0]
+            return get_placeholders_for_content_type(content_type_id)
+        else:
+            # Mixed or no pages - return universal placeholders
+            return get_placeholders_for_content_type(None)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -815,6 +1118,32 @@ class BulkEditActionView(TemplateView):
         # Get available placeholders
         placeholders = self.get_available_placeholders(pages)
 
+        # Determine template type based on action
+        template_type = "title" if action == "edit_title" else "description"
+
+        # Get content types of selected pages
+        selected_content_types = set(page.content_type_id for page in pages)
+
+        # Get templates: those with no content_type (all pages) or matching content_type
+        # Only show templates if all selected pages are of the same type
+        templates = (
+            SEOMetadataTemplate.objects.filter(template_type=template_type)
+            .filter(
+                models.Q(content_type__isnull=True)
+                | models.Q(content_type_id__in=selected_content_types)
+            )
+            .select_related("content_type")
+        )
+
+        # If multiple content types selected, only show "all pages" templates
+        if len(selected_content_types) > 1:
+            templates = templates.filter(content_type__isnull=True)
+
+        # Get the content_type_id for save template feature
+        content_type_id = None
+        if len(selected_content_types) == 1:
+            content_type_id = list(selected_content_types)[0]
+
         context.update(
             {
                 "pages": pages,
@@ -823,6 +1152,9 @@ class BulkEditActionView(TemplateView):
                 "is_title": action == "edit_title",
                 "is_description": action == "edit_description",
                 "placeholders": placeholders,
+                "templates": templates,
+                "content_type_id": content_type_id,
+                "template_type": template_type,
             }
         )
 

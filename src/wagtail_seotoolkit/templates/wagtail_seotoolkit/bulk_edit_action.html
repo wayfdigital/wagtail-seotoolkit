@@ -45,6 +45,30 @@
 
             <div class="field">
                 <h2>
+                    <label for="id_template" class="field__label">
+                        {% trans "Load from Template" %}
+                    </label>
+                </h2>
+                <div class="field-content">
+                    <select id="id_template" class="field__input">
+                        <option value="">{% trans "-- Select a template --" %}</option>
+                        {% for template in templates %}
+                            <option value="{{ template.id }}" 
+                                    data-template-content="{{ template.template_content }}">
+                                {{ template.name }}{% if template.content_type %} ({{ template.content_type.name }}){% else %} ({% trans "All Pages" %}){% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% if templates %}
+                    <p class="help">{% trans "Choose a saved template to auto-fill the content below" %}</p>
+                {% else %}
+                    <p class="help help-info">{% trans "No templates available for this page type. Create one below!" %}</p>
+                {% endif %}
+            </div>
+
+            <div class="field">
+                <h2>
                     <label for="id_content" class="field__label">
                         {% if is_title %}
                             {% trans "SEO Title" %}
@@ -129,13 +153,17 @@
                 </tbody>
             </table>
 
-            <button type="submit" class="button button-longrunning" data-clicked-text="{% trans 'Applying...' %}">
-                <span class="icon icon-spinner"></span>
-                <em>{% trans "Apply to All" %}</em>
-            </button>
-            <a href="{% url 'bulk_edit' %}" class="button button-secondary">
-                {% trans "Cancel" %}
-            </a>
+            <div class="actions">
+                <button type="submit" class="button button-longrunning" data-clicked-text="{% trans 'Applying...' %}">
+                    <em>{% trans "Apply to All" %}</em>
+                </button>
+                <button type="button" id="save-as-template" class="button button-secondary" data-template-type="{{ template_type }}" data-content-type-id="{{ content_type_id|default:'' }}">
+                    {% trans "Save as Template" %}
+                </button>
+                <a href="{% url 'bulk_edit' %}" class="button button-secondary">
+                    {% trans "Cancel" %}
+                </a>
+            </div>
 
         </form>
     </div>

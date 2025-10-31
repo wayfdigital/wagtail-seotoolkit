@@ -4,9 +4,12 @@ Utilities for processing placeholders in SEO metadata templates.
 
 import re
 
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import CharField, TextField
 from django.utils.html import strip_tags
 from wagtail.blocks import StreamValue
-from wagtail.models import Site
+from wagtail.fields import RichTextField, StreamField
+from wagtail.models import Page, Site
 from wagtail.rich_text import RichText
 
 
@@ -90,3 +93,108 @@ def process_placeholders(template, page, request=None):
     result = re.sub(pattern, replace_placeholder, template)
     return result
 
+
+def get_placeholders_for_content_type(content_type_id=None):
+    """
+    Get available placeholders for a given content type.
+
+    Args:
+        content_type_id: ContentType ID (None for universal placeholders)
+
+    Returns:
+        List of dicts with placeholder info: [{"name": "field", "label": "Label", "type": "type"}]
+    """
+    placeholders = []
+
+    # Always include site name
+    placeholders.append({"name": "site_name", "label": "Site Name", "type": "site"})
+
+    # Always include base Page fields
+    base_fields = [
+        {"name": "title", "label": "Page Title", "type": "page"},
+    ]
+    placeholders.extend(base_fields)
+
+    # If content_type specified, get specific fields
+    if content_type_id:
+        try:
+            content_type = ContentType.objects.get(id=content_type_id)
+            model_class = content_type.model_class()
+
+            # Only process if it's a Page subclass
+            if model_class and issubclass(model_class, Page) and model_class != Page:
+                # Get text fields from the specific model
+                for field in model_class._meta.get_fields():
+                    # Include CharField, TextField, RichTextField, and StreamField
+                    if (
+                        isinstance(
+                            field, (CharField, TextField, RichTextField, StreamField)
+                        )
+                        and not field.name.startswith("_")
+                        and field.name not in ["seo_title", "search_description"]
+                    ):
+                        # Skip fields that are already in base fields
+                        if field.name not in [f["name"] for f in base_fields]:
+                            # Skip internal/system fields
+                            if field.name not in [
+                                "path",
+                                "url_path",
+                                "draft_title",
+                                "latest_revision_created_at",
+                            ]:
+                                placeholders.append(
+                                    {
+                                        "name": field.name,
+                                        "label": field.verbose_name.title(),
+                                        "type": "specific",
+                                    }
+                                )
+        except (ContentType.DoesNotExist, AttributeError):
+            pass
+
+    return placeholders
+
+
+def extract_placeholders_from_template(template_string):
+    """
+    Extract placeholder names from a template string.
+
+    Args:
+        template_string: String containing placeholders like {field_name} or {field_name[:60]}
+
+    Returns:
+        Set of placeholder field names (without truncation)
+
+    Example:
+        >>> extract_placeholders_from_template("{title[:60]} | {site_name}")
+        {'title', 'site_name'}
+    """
+    # Pattern to match {field_name} or {field_name[:N]}
+    pattern = r"\{([^}:\[]+)(?:\[:(\d+)\])?\}"
+    matches = re.findall(pattern, template_string)
+    # Return just the field names (first group from each match)
+    return {match[0].strip() for match in matches}
+
+
+def validate_template_placeholders(template_string, content_type_id=None):
+    """
+    Validate that all placeholders in a template are available for the content type.
+
+    Args:
+        template_string: Template string to validate
+        content_type_id: ContentType ID (None for universal templates)
+
+    Returns:
+        Tuple of (is_valid, list_of_invalid_placeholders)
+
+    Example:
+        >>> validate_template_placeholders("{title} | {invalid_field}", None)
+        (False, ['invalid_field'])
+    """
+    template_placeholders = extract_placeholders_from_template(template_string)
+    available_placeholders = get_placeholders_for_content_type(content_type_id)
+    available_names = {p["name"] for p in available_placeholders}
+
+    invalid = [p for p in template_placeholders if p not in available_names]
+
+    return (len(invalid) == 0, invalid)

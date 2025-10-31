@@ -18,8 +18,14 @@ from .views import (
     SaveEmailVerificationView,
     SEODashboardView,
     SEOIssuesReportView,
+    TemplateCreateView,
+    TemplateDeleteView,
+    TemplateEditView,
+    TemplateListView,
     bulk_apply_metadata,
+    get_placeholders_api,
     preview_metadata,
+    save_as_template,
 )
 
 
@@ -99,6 +105,36 @@ def register_seo_admin_urls():
             ProxyResendVerificationView.as_view(),
             name="proxy_resend_verification",
         ),
+        path(
+            "seo-toolkit/templates/",
+            TemplateListView.as_view(),
+            name="seo_template_list",
+        ),
+        path(
+            "seo-toolkit/templates/create/",
+            TemplateCreateView.as_view(),
+            name="seo_template_create",
+        ),
+        path(
+            "seo-toolkit/templates/<int:template_id>/edit/",
+            TemplateEditView.as_view(),
+            name="seo_template_edit",
+        ),
+        path(
+            "seo-toolkit/templates/<int:template_id>/delete/",
+            TemplateDeleteView.as_view(),
+            name="seo_template_delete",
+        ),
+        path(
+            "api/save-as-template/",
+            save_as_template,
+            name="save_as_template",
+        ),
+        path(
+            "api/get-placeholders/",
+            get_placeholders_api,
+            name="get_placeholders_api",
+        ),
     ]
 
 
@@ -125,4 +161,17 @@ def register_bulk_edit_menu_item():
         reverse("bulk_edit"),
         icon_name="edit",
         order=1001,
+    )
+
+
+@hooks.register("register_admin_menu_item")
+def register_templates_menu_item():
+    """
+    Add SEO Templates to admin menu
+    """
+    return MenuItem(
+        _("SEO Templates"),
+        reverse("seo_template_list"),
+        icon_name="snippet",
+        order=1002,
     )
