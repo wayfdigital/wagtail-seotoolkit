@@ -102,16 +102,32 @@ class SEODashboardView(TemplateView):
             formatted_top_issues = []
             for issue in top_issues:
                 # Get the display value for the issue type
+                issue_type_value = issue["issue_type"]
                 issue_type_display = dict(SEOAuditIssueType.choices).get(
-                    issue["issue_type"], issue["issue_type"]
+                    issue_type_value, issue_type_value
+                )
+
+                # Check if this is a bulk edit issue and get action type
+                is_bulk_editable = SEOAuditIssueType.is_bulk_edit_issue(
+                    issue_type_value
+                )
+                bulk_edit_action = SEOAuditIssueType.get_bulk_edit_action_type(
+                    issue_type_value
+                )
+                related_types = SEOAuditIssueType.get_related_issue_types(
+                    issue_type_value
                 )
 
                 formatted_top_issues.append(
                     {
                         "type": issue_type_display,
+                        "type_value": issue_type_value,
                         "count": issue["count"],
                         "severity": issue["issue_severity"],
                         "requires_dev_fix": issue["requires_dev_fix"],
+                        "is_bulk_editable": is_bulk_editable,
+                        "bulk_edit_action": bulk_edit_action,
+                        "related_types": related_types,
                     }
                 )
 

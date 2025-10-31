@@ -257,6 +257,51 @@ class SEOAuditIssueType(models.TextChoices):
         }
         return issue_type in bulk_edit_issues
 
+    @classmethod
+    def get_bulk_edit_action_type(cls, issue_type):
+        """Get the bulk edit action type for an issue (edit_title or edit_description)"""
+        title_issues = {
+            cls.TITLE_MISSING,
+            cls.TITLE_TOO_SHORT,
+            cls.TITLE_TOO_LONG,
+        }
+        meta_issues = {
+            cls.META_DESCRIPTION_MISSING,
+            cls.META_DESCRIPTION_TOO_SHORT,
+            cls.META_DESCRIPTION_TOO_LONG,
+            cls.META_DESCRIPTION_DUPLICATE,
+            cls.META_DESCRIPTION_NO_CTA,
+        }
+
+        if issue_type in title_issues:
+            return "edit_title"
+        elif issue_type in meta_issues:
+            return "edit_description"
+        return None
+
+    @classmethod
+    def get_related_issue_types(cls, issue_type):
+        """Get all related issue types for a given issue type (e.g., all title issues)"""
+        title_issues = [
+            cls.TITLE_MISSING,
+            cls.TITLE_TOO_SHORT,
+            cls.TITLE_TOO_LONG,
+        ]
+        meta_issues = [
+            cls.META_DESCRIPTION_MISSING,
+            cls.META_DESCRIPTION_TOO_SHORT,
+            cls.META_DESCRIPTION_TOO_LONG,
+            cls.META_DESCRIPTION_DUPLICATE,
+            cls.META_DESCRIPTION_NO_CTA,
+        ]
+
+        if issue_type in title_issues:
+            return title_issues
+        elif issue_type in meta_issues:
+            return meta_issues
+        return []
+
+
 class SEOAuditRun(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
