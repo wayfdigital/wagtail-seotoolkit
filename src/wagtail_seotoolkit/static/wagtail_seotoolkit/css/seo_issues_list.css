@@ -129,6 +129,23 @@
     padding-top: 0.25rem;
 }
 
+.issue-bulk-edit-link {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--w-color-border-furniture);
+}
+
+.issue-bulk-edit-link .button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.issue-bulk-edit-link .icon {
+    width: 14px;
+    height: 14px;
+}
+
 /* Empty state */
 .empty-state {
     text-align: center;

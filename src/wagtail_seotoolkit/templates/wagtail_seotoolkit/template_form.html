@@ -1,0 +1,245 @@
+{% extends "wagtailadmin/base.html" %}
+{% load i18n static %}
+
+{% block titletag %}
+    {{ page_title }} - {% trans "SEO Toolkit" %}
+{% endblock %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/bulk_edit.css' %}">
+    <style>
+        .placeholder-badges {
+            margin-bottom: 1em;
+        }
+        .placeholder-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5em;
+            margin-bottom: 0.5em;
+        }
+        .placeholder-badge-wrapper {
+            display: inline-flex;
+            align-items: stretch;
+            border-radius: 1rem;
+            border: 1px solid;
+            overflow: hidden;
+            background: transparent;
+            transition: all 0.15s ease;
+        }
+        .placeholder-badge-main {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            background: transparent;
+            border: none;
+            border-right: 1px solid;
+            border-color: inherit;
+        }
+        .placeholder-truncate-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 0.5rem;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            background: transparent;
+            border: none;
+            font-family: 'Monaco', 'Consolas', monospace;
+            opacity: 0.7;
+        }
+        .placeholder-truncate-btn:hover {
+            opacity: 1;
+            background: rgba(0, 0, 0, 0.05);
+        }
+        /* Color inheritance for each badge type */
+        .placeholder-badge-wrapper.placeholder-badge--site .placeholder-badge-main {
+            color: #7c3aed;
+            border-color: #7c3aed;
+        }
+        .placeholder-badge-wrapper.placeholder-badge--site .placeholder-truncate-btn {
+            color: #7c3aed;
+        }
+        .placeholder-badge-wrapper.placeholder-badge--site:hover .placeholder-badge-main,
+        .placeholder-badge-wrapper.placeholder-badge--site:hover .placeholder-truncate-btn {
+            color: white;
+        }
+        .placeholder-badge-wrapper.placeholder-badge--page .placeholder-badge-main {
+            color: #007d7e;
+            border-color: #007d7e;
+        }
+        .placeholder-badge-wrapper.placeholder-badge--page .placeholder-truncate-btn {
+            color: #007d7e;
+        }
+        .placeholder-badge-wrapper.placeholder-badge--page:hover .placeholder-badge-main,
+        .placeholder-badge-wrapper.placeholder-badge--page:hover .placeholder-truncate-btn {
+            color: white;
+        }
+        .placeholder-badge-wrapper.placeholder-badge--specific .placeholder-badge-main {
+            color: #f59e0b;
+            border-color: #f59e0b;
+        }
+        .placeholder-badge-wrapper.placeholder-badge--specific .placeholder-truncate-btn {
+            color: #f59e0b;
+        }
+        .placeholder-badge-wrapper.placeholder-badge--specific:hover .placeholder-badge-main,
+        .placeholder-badge-wrapper.placeholder-badge--specific:hover .placeholder-truncate-btn {
+            color: white;
+        }
+        #placeholder-help {
+            margin: 0;
+            font-size: 0.9em;
+        }
+    </style>
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script src="{% static 'wagtail_seotoolkit/js/wagtail_messages.js' %}"></script>
+    <script src="{% static 'wagtail_seotoolkit/js/placeholder_cloud.js' %}"></script>
+    <script src="{% static 'wagtail_seotoolkit/js/template_form.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+    <div id="message-container"></div>
+    <header class="w-header">
+        <div class="row">
+            <div class="left">
+                <div class="col">
+                    <h1 class="w-header__title">
+                        <svg class="icon icon-snippet w-header__glyph" aria-hidden="true"><use href="#icon-snippet"></use></svg>
+                        {{ page_title }}
+                    </h1>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="nice-padding">
+        {% if error %}
+            <div class="messages">
+                <div class="message error">
+                    {{ error }}
+                </div>
+            </div>
+            <a href="{% url 'seo_template_list' %}" class="button">
+                {% trans "Back to Templates" %}
+            </a>
+        {% else %}
+            <form id="template-form" method="post" 
+                  action="{% if is_create %}{% url 'seo_template_create' %}{% else %}{% url 'seo_template_edit' template.id %}{% endif %}"
+                  data-redirect-url="{% url 'seo_template_list' %}">
+                {% csrf_token %}
+
+                <div class="field">
+                    <label for="id_name" class="field__label">
+                        {% trans "Template Name" %} <span class="required">*</span>
+                    </label>
+                    <div class="field-content">
+                        <input 
+                            type="text" 
+                            name="name" 
+                            id="id_name" 
+                            class="field__input" 
+                            value="{% if not is_create %}{{ template.name }}{% endif %}"
+                            required
+                            maxlength="100"
+                            placeholder="{% trans 'e.g., Blog Post Standard, Product Page' %}">
+                    </div>
+                    <p class="help">{% trans "A descriptive name to identify this template" %}</p>
+                </div>
+
+                <div class="field">
+                    <label for="id_template_type" class="field__label">
+                        {% trans "Template Type" %} <span class="required">*</span>
+                    </label>
+                    <div class="field-content">
+                        <select name="template_type" id="id_template_type" class="field__input">
+                            {% for value, label in template_types %}
+                                <option value="{{ value }}" 
+                                        {% if not is_create and template.template_type == value %}selected{% endif %}
+                                        {% if is_create and value == 'title' %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <p class="help">{% trans "Choose whether this template is for SEO titles or meta descriptions" %}</p>
+                </div>
+
+                <div class="field">
+                    <label for="id_content_type" class="field__label">
+                        {% trans "Page Type" %}
+                    </label>
+                    <div class="field-content">
+                        <select name="content_type" id="id_content_type" class="field__input">
+                            <option value="">{% trans "All Page Types" %}</option>
+                            {% for ct in page_content_types %}
+                                <option value="{{ ct.id }}" 
+                                        {% if not is_create and template.content_type_id == ct.id %}selected{% endif %}>
+                                    {{ ct.app_label|title }} - {{ ct.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <p class="help">{% trans "Leave as 'All Page Types' for a universal template, or select a specific page type to use page-specific fields" %}</p>
+                </div>
+
+                <div class="field">
+                    <label for="id_template_content" class="field__label">
+                        {% trans "Template Content" %} <span class="required">*</span>
+                    </label>
+                    
+                    <div class="placeholder-badges">
+                        <div class="placeholder-cloud" id="placeholder-cloud">
+                            {% for placeholder in placeholders %}
+                                <span class="placeholder-badge-wrapper placeholder-badge--{{ placeholder.type }}">
+                                    <button type="button" 
+                                            class="placeholder-badge-main" 
+                                            data-placeholder="{{ placeholder.name }}"
+                                            title="{% trans 'Click to insert' %} {{'{'}}{{ placeholder.name }}{{'}'}}">
+                                        {{ placeholder.label }}
+                                    </button>
+                                    <button type="button" 
+                                            class="placeholder-truncate-btn"
+                                            data-placeholder="{{ placeholder.name }}"
+                                            title="{% trans 'Insert with truncation' %}">
+                                        ...
+                                    </button>
+                                </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="field-content">
+                        <textarea 
+                            name="template_content" 
+                            id="id_template_content" 
+                            rows="5"
+                            maxlength="320"
+                            class="field__input"
+                            required
+                            placeholder="{% trans 'e.g., {title} | {site_name} or {introduction[:150]} Learn more.' %}">{% if not is_create %}{{ template.template_content }}{% endif %}</textarea>
+                    </div>
+                    <p class="help">
+                        {% trans "Use placeholders like {title}, {site_name}. Add [:N] to truncate, e.g., {title[:60]}. Max 255 chars for titles, 320 for descriptions." %}
+                    </p>
+                </div>
+
+                <button type="submit" class="button button-longrunning" data-clicked-text="{% trans 'Saving...' %}">
+                    <em>{% trans "Save Template" %}</em>
+                </button>
+                <a href="{% url 'seo_template_list' %}" class="button button-secondary">
+                    {% trans "Cancel" %}
+                </a>
+            </form>
+        {% endif %}
+    </div>
+{% endblock %}
+

@@ -1,6 +1,6 @@
 {% load i18n l10n wagtailadmin_tags %}
 
-<div class="seo-issues-container">
+<div class="seo-issues-container nice-padding">
     {% for issue in seo_issues_list %}
         {% with page=issue.page %}
             {% if page %}
@@ -57,6 +57,16 @@
                 
                 {% if issue.description %}
                     <p class="issue-description">{{ issue.description|safe }}</p>
+                {% endif %}
+                
+                {% load wagtail_seotoolkit_tags %}
+                {% if issue.issue_type|is_bulk_edit_issue %}
+                    <div class="issue-bulk-edit-link">
+                        <a href="{% url 'bulk_edit' %}?{% issue_type_filters issue.issue_type %}&action={{ issue.issue_type|get_bulk_edit_action }}" class="button button-small button-secondary">
+                            <svg class="icon icon-edit" aria-hidden="true"><use href="#icon-edit"></use></svg>
+                            {% trans "Fix in Bulk Editor" %}
+                        </a>
+                    </div>
                 {% endif %}
             </div>
         {% endwith %}

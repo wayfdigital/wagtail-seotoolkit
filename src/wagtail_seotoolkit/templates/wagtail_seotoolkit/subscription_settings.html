@@ -1,0 +1,91 @@
+{% extends "wagtailadmin/base.html" %}
+{% load i18n static %}
+
+{% block titletag %}{% trans "Subscription Settings" %} - {% trans "SEO Toolkit" %}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/email_verification.css' %}">
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/subscription_banner.css' %}">
+{% endblock %}
+
+{% block content %}
+    {% trans "Subscription Settings" as title_str %}
+    {% include "wagtailadmin/shared/header.html" with title=title_str icon="lock" %}
+    
+    {% csrf_token %}
+    
+    <div class="nice-padding">
+        <div class="subscription-settings-container">
+            
+            <!-- Instance Information -->
+            <div class="subscription-section">
+                <h2>Instance Information</h2>
+                <div class="info-box">
+                    <div class="info-row">
+                        <strong>Instance ID:</strong>
+                        <code id="instance-id">{{ instance_id|default:"Not yet configured" }}</code>
+                    </div>
+                    {% if email %}
+                    <div class="info-row">
+                        <strong>Registered Email:</strong>
+                        <span id="registered-email">{{ email }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Subscription Status Container -->
+            <div id="subscription-status-container" class="subscription-section">
+                <h2>Subscription Status</h2>
+                <div id="subscription-status-content">
+                    <div class="loading-spinner">
+                        <p>Checking subscription status...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instance Management (shown if has subscription) -->
+            <div id="instance-management-section" class="subscription-section" style="display: none;">
+                <h2>Instance Management</h2>
+                <div id="instances-list-container">
+                    <div class="loading-spinner">
+                        <p>Loading instances...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Available Plans (shown if no subscription) -->
+            <div id="available-plans-section" class="subscription-section" style="display: none;">
+                <h2>Available Plans</h2>
+                <div id="plans-container">
+                    <div class="loading-spinner">
+                        <p>Loading plans...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="subscription-section">
+                <h2>Actions</h2>
+                <div class="action-buttons">
+                    <button id="refresh-status-btn" class="button button-secondary">
+                        Refresh Status
+                    </button>
+                    <button id="manage-subscription-btn" class="button button-secondary" style="display: none;">
+                        Manage Subscription (Stripe)
+                    </button>
+                    <button id="register-instance-btn" class="button button-primary" style="display: none;">
+                        Register This Instance
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'wagtail_seotoolkit/js/subscription_status.js' %}"></script>
+    <script src="{% static 'wagtail_seotoolkit/js/subscription_settings.js' %}"></script>
+{% endblock %}
+

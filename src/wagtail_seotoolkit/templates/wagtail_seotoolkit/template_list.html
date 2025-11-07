@@ -1,0 +1,108 @@
+{% extends "wagtailadmin/base.html" %}
+{% load i18n static %}
+
+{% block titletag %}
+    {% trans "SEO Metadata Templates" %} - {% trans "SEO Toolkit" %}
+{% endblock %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/seo_issues_report.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script src="{% static 'wagtail_seotoolkit/js/wagtail_messages.js' %}"></script>
+    <script src="{% static 'wagtail_seotoolkit/js/template_list.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+    <div id="message-container"></div>
+    <header class="w-header">
+        <div class="row">
+            <div class="left">
+                <div class="col">
+                    <h1 class="w-header__title">
+                        <svg class="icon icon-snippet w-header__glyph" aria-hidden="true"><use href="#icon-snippet"></use></svg>
+                        {% trans "SEO Metadata Templates" %}
+                    </h1>
+                </div>
+            </div>
+            <div class="right">
+                <a href="{% url 'seo_template_create' %}" class="button">
+                    {% trans "Create Template" %} 
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="nice-padding">
+        {% if templates %}
+            <table class="listing">
+                <thead>
+                    <tr>
+                        <th>{% trans "Name" %}</th>
+                        <th>{% trans "Type" %}</th>
+                        <th>{% trans "Page Type" %}</th>
+                        <th>{% trans "Template Content" %}</th>
+                        <th>{% trans "Created" %}</th>
+                        <th>{% trans "Actions" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for template in templates %}
+                        <tr data-template-id="{{ template.id }}">
+                            <td class="title">
+                                <strong>{{ template.name }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge">{{ template.get_template_type_display }}</span>
+                            </td>
+                            <td>
+                                {% if template.content_type %}
+                                    <span class="badge">{{ template.content_type.name }}</span>
+                                {% else %}
+                                    <span class="muted">{% trans "All Pages" %}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <code class="template-preview">{{ template.template_content|truncatechars:80 }}</code>
+                            </td>
+                            <td>
+                                {{ template.created_at|date:"M d, Y" }}
+                                {% if template.created_by %}
+                                    <br><small class="muted">by {{ template.created_by.get_full_name|default:template.created_by.username }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="actions">
+                                    <span><a href="{% url 'seo_template_edit' template.id %}" title="{% trans 'Edit' %}" class="button button-small button-secondary">
+                                        {% trans "Edit" %}
+                                    </a></span>
+
+                                    <span><button type="button" 
+                                            class="button button-small button-secondary delete-template" 
+                                            data-template-id="{{ template.id }}" 
+                                            data-template-name="{{ template.name }}"
+                                            title="{% trans 'Delete' %}">
+                                        {% trans "Delete" %}
+                                    </button></span>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="nice-padding">
+                <p class="help-block help-info">
+                    {% trans "No templates found. Create your first template to get started!" %}
+                </p>
+                <a href="{% url 'seo_template_create' %}" class="button">
+                    {% trans "Create Your First Template" %}
+                </a>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+

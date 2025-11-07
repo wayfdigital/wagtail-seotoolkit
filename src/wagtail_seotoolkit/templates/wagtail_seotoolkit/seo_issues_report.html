@@ -1,7 +1,7 @@
 {% extends 'wagtailadmin/reports/base_report_results.html' %}
 {% load i18n %}
 
-{% block before_results %}
+{% block before_listing %}
 <!-- Email Verification Gate -->
 <div id="verification-gate"></div>
 
@@ -29,23 +29,14 @@
 {% endblock %}
 
 {% block results %}
-    <div class="nice-padding">
-        {% if request.GET.issue_severity or request.GET.locale or request.GET.requires_dev_fix %}
-            <div class="seo-issues-report__clear-filters">
-                <a href="{% url 'seo_issues_report' %}" class="button button-small button-secondary">
-                    {% trans "Clear filters" %}
-                </a>
-            </div>
-        {% endif %}
-        {% include 'wagtail_seotoolkit/_list_seo_issues.html' %}
-    </div>
+    {% include 'wagtail_seotoolkit/_list_seo_issues.html' %}
 {% endblock %}
 
 {% block no_results_message %}
     <p>{% trans "No SEO issues found! Your site is in great shape." %} ✅</p>
 {% endblock %}
 
-{% block extra_content %}
+{% block after_listing %}
 </div>
 <!-- End Protected Content -->
 {% endblock %}

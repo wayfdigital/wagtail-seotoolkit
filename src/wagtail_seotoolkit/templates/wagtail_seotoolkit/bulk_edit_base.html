@@ -1,0 +1,98 @@
+{% extends "wagtailadmin/reports/base_report.html" %}
+{% load static %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/seo_issues_report.css' %}">
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/bulk_edit.css' %}">
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/subscription_banner.css' %}">
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/email_verification.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script>
+        // Pass subscription context to JavaScript
+        window.django = window.django || {};
+        window.django.subscriptionContext = {
+            email: {% if subscription_email %}"{{ subscription_email }}"{% else %}null{% endif %},
+            instanceId: {% if subscription_instance_id %}"{{ subscription_instance_id }}"{% else %}null{% endif %}
+        };
+    </script>
+    <script src="{% static 'wagtail_seotoolkit/js/subscription_status.js' %}"></script>
+    <script src="{% static 'wagtail_seotoolkit/js/bulk_edit.js' %}"></script>
+    <script src="{% static 'wagtail_seotoolkit/js/subscription_gate.js' %}"></script>
+{% endblock %}
+
+{% block listing %}
+    {% csrf_token %}
+    
+    <!-- Subscription Gate -->
+    <div id="subscription-gate-bulk-editor">
+        <!-- Email Verification Required Banner (Matches SEO Dashboard style) -->
+        <div id="no-email-banner" class="email-verification-overlay" style="display: none;">
+            <div class="email-verification-card">
+                <div class="email-verification-header">
+                    <svg class="email-verification-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <h2 class="email-verification-title">Bulk Editor - Pro Feature</h2>
+                    <p class="email-verification-subtitle">
+                        The Bulk SEO Editor requires email verification and an active Pro subscription
+                    </p>
+                </div>
+                
+                <div class="email-verification-benefits">
+                    <p class="email-verification-benefits-title">Required to access:</p>
+                    <ul class="email-verification-benefits-list">
+                        <li>✓ Verified email address</li>
+                        <li>✓ Active Pro subscription</li>
+                    </ul>
+                </div>
+                
+                <div class="email-verification-text">
+                    <p>To get started:</p>
+                    <ol style="text-align: left; padding-left: 1.5rem; margin: 0.5rem 0;">
+                        <li>Verify your email in the <strong>SEO Dashboard</strong></li>
+                        <li>Purchase a Pro subscription in <strong>Subscription Settings</strong></li>
+                    </ol>
+                </div>
+                
+                <a href="/admin/seo-dashboard/" class="email-verification-button">
+                    Go to SEO Dashboard to Verify Email
+                </a>
+            </div>
+        </div>
+
+        <!-- Upgrade Banner (Email Verification Card Style) -->
+        <div id="upgrade-banner" class="email-verification-overlay" style="display: none;">
+            <div class="email-verification-card">
+                <div class="email-verification-header">
+                    <svg class="email-verification-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <h2 class="email-verification-title">Upgrade to Pro</h2>
+                    <p class="email-verification-subtitle">
+                        The Bulk SEO Editor is a premium feature. Upgrade to save time editing SEO metadata across multiple pages.
+                    </p>
+                </div>
+                
+                <div id="plans-display-container" class="plans-display">
+                    <div class="loading-spinner">
+                        <p>Loading plans...</p>
+                    </div>
+                </div>
+
+                <div class="email-verification-text" style="text-align: center; margin-top: 1.5rem;">
+                    <p>Already have a subscription? <a href="/admin/settings/subscription-settings/">Manage Subscription</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Protected Content -->
+    <div id="bulk-editor-protected-content" style="display: none;">
+        {{ block.super }}
+    </div>
+{% endblock %}
+

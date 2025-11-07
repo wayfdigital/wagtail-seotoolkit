@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wagtail-seotoolkit"
-version = "v0.1.3"
-description = "A comprehensive SEO toolkit for Wagtail CMS"
+version = "0.2.0"
+description = "A comprehensive SEO toolkit for Wagtail CMS (Dual License: MIT for core, Proprietary for pro features)"
 readme = "README.md"
 authors = [
     {name = "WAYF", email = "hello@wayfdigital.com"}
@@ -13,7 +13,8 @@ authors = [
 maintainers = [
     {name = "WAYF", email = "hello@wayfdigital.com"}
 ]
-license = "MIT"
+license = "MIT AND LicenseRef-Proprietary"
+license-files = ["LICENSE", "LICENSE-MIT", "LICENSE-PROPRIETARY"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Framework :: Django",

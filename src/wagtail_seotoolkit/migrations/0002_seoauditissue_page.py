@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("wagtail_seotoolkit", "0001_initial"),
         ("wagtailcore", "0001_initial"),
@@ -13,8 +12,15 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name='seoauditissue',
-            name='page',
-            field=models.ForeignKey(blank=True, help_text='The page this issue relates to', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='seo_issues', to='wagtailcore.page'),
+            model_name="seoauditissue",
+            name="page",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="The page this issue relates to",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="seo_issues",
+                to="wagtailcore.page",
+            ),
         ),
     ]

@@ -1,0 +1,139 @@
+WAYF Proprietary License
+
+Version 1.0, November 2025
+
+Copyright (c) 2025 WAYF DIGITAL SP. Z O.O. All rights reserved.
+
+---
+
+TERMS AND CONDITIONS
+
+This license governs the use of the Pro features of Wagtail SEO Toolkit
+(the "Software"), which includes but is not limited to:
+- Bulk metadata editor
+- Subscription and license management system
+- SEO metadata templates
+- Middleware for metadata processing
+- Advanced placeholder utilities
+- All files in src/wagtail_seotoolkit/pro/
+
+1. GRANT OF LICENSE
+
+   Subject to the terms and conditions of this license and payment of applicable
+   subscription fees, WAYF DIGITAL SP. Z O.O. ("WAYF") grants you a limited,
+   non-exclusive, non-transferable license to:
+
+   a) Use the Software in your commercial or non-commercial projects
+   b) Download and install the Software from official distribution channels
+      provided by WAYF (PyPI, GitHub releases, etc.)
+
+2. RESTRICTIONS
+
+   You may NOT, without prior written permission from WAYF:
+
+   a) Modify, alter, adapt, or create derivative works of the Software
+   b) Redistribute, sublicense, sell, lease, or transfer the Software
+   c) Remove or alter any proprietary notices or labels on the Software
+   d) Use the Software if you do not have an active, paid subscription
+
+   Exception: Bug fixes and improvements may be contributed to the official
+   repository via pull requests, subject to Section 4 (Contributions).
+
+3. SOURCE AVAILABILITY
+
+   The source code is made available for:
+   a) Reference and learning purposes
+   b) Transparency and security review
+   c) Debugging and integration with your applications
+
+   Source availability does NOT grant you rights to modify or redistribute
+   the Software outside the terms of this license.
+
+4. CONTRIBUTIONS
+
+   If you submit contributions (pull requests, patches, suggestions) to the
+   Software:
+
+   a) You must sign off your commits using the Developer Certificate of Origin
+      (DCO) by including "Signed-off-by" in your commit messages
+   b) You grant WAYF a perpetual, worldwide, non-exclusive, royalty-free license
+      to use, modify, sublicense, and distribute your contributions
+   c) Contributions to Pro features require explicit approval from WAYF before
+      submission
+   d) You represent that you have the right to grant this license
+
+5. SUBSCRIPTION REQUIREMENTS
+
+   Use of the Pro features requires an active, paid subscription obtained from
+   WAYF. Subscription terms, pricing, and conditions are available at:
+   https://github.com/wayfdigital/wagtail-seotoolkit
+
+   Note: This package is distributed as a single unit containing both core
+   features (MIT License) and pro features (this Proprietary License). Without
+   an active subscription, you may use all core features freely under the MIT
+   License. The pro features code will be present in the package but may not be
+   used without a valid subscription
+
+6. TERMINATION
+
+   This license terminates automatically if:
+   a) Your subscription expires or is cancelled
+   b) You breach any terms of this license
+   c) WAYF terminates the license in writing
+
+   Upon termination, you must cease all use of the Pro features and may be
+   required to uninstall them.
+
+7. NO WARRANTY
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   WAYF BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+   ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+   WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+8. LIMITATION OF LIABILITY
+
+   IN NO EVENT SHALL WAYF BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL,
+   CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING OUT OF OR RELATED TO THIS LICENSE
+   OR USE OF THE SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+9. PERMISSIONS AND EXCEPTIONS
+
+   For permissions beyond the scope of this license, including but not limited to:
+   - Modification rights for custom deployments
+   - Redistribution rights
+   - Use without an active subscription
+   - Commercial licensing arrangements
+
+   Please contact: hello@wayfdigital.com
+
+10. GOVERNING LAW
+
+    This license shall be governed by and construed in accordance with the laws
+    of Poland, without regard to its conflict of law provisions.
+
+---
+
+Developer Certificate of Origin (DCO)
+
+By contributing to this project, you certify that:
+
+(a) The contribution was created in whole or in part by you and you have the
+    right to submit it under the license indicated in the file; or
+
+(b) The contribution is based upon previous work that, to the best of your
+    knowledge, is covered under an appropriate license and you have the right
+    under that license to submit that work with modifications, whether created
+    in whole or in part by you, under the same license (unless you are permitted
+    to submit under a different license); or
+
+(c) The contribution was provided directly to you by some other person who
+    certified (a), (b) or (c) and you have not modified it.
+
+(d) You understand and agree that this project and the contribution are public
+    and that a record of the contribution (including all personal information
+    you submit with it, including your sign-off) is maintained indefinitely and
+    may be redistributed consistent with this project or the license(s) involved.
+

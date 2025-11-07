@@ -1,0 +1,118 @@
+{% load i18n wagtailadmin_tags %}
+
+<form id="bulk-edit-form" action="{% url 'bulk_edit_action' %}" method="get">
+    <div class="bulk-actions-container" style="margin-bottom: 1rem;">
+        <div class="bulk-actions-left">
+            <label class="bulk-action-checkbox-label">
+                <input type="checkbox" id="select-all-checkbox" />
+                <span>{% trans "Select all" %}</span>
+            </label>
+            <span id="selected-count" style="margin-left: 1rem;">0 {% trans "selected" %}</span>
+        </div>
+        <div class="bulk-actions-right" style="margin-left: auto;">
+            <button type="submit" name="action" value="edit_title" class="button button-secondary" id="edit-title-btn" disabled>
+                {% trans "Edit Titles" %}
+            </button>
+            <button type="submit" name="action" value="edit_description" class="button button-secondary" id="edit-description-btn" disabled>
+                {% trans "Edit Meta Descriptions" %}
+            </button>
+        </div>
+    </div>
+
+    <table class="listing">
+        <col width="5%" />
+        <col width="25%" />
+        <col width="10%" />
+        <col width="25%" />
+        <col width="20%" />
+        <col width="10%" />
+        <col width="10%" />
+        <thead>
+            <tr class="table-headers">
+                <th class="bulk-action-checkbox-header"></th>
+                <th class="title">
+                    {% trans 'Title' %}
+                </th>
+                <th class="type">
+                    {% trans 'Type' %}
+                </th>
+                <th class="seo-title">
+                    {% trans 'SEO Title' %}
+                </th>
+                <th class="seo-description">
+                    {% trans 'Meta Description' %}
+                </th>
+                <th class="updated">
+                    {% trans 'Updated' %}
+                </th>
+                <th class="status">
+                    {% trans 'Status' %}
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for page in pages %}
+            {% page_permissions page as page_perms %}
+            <tr class="{% if not page.live %}unpublished{% endif %}">
+                <td class="bulk-action-checkbox-cell">
+                    <input type="checkbox" 
+                           name="page_ids" 
+                           value="{{ page.id }}"
+                           data-page-status="{% if page.live %}live{% else %}draft{% endif %}" 
+                           data-object-id="{{ page.id }}" 
+                           data-bulk-action-checkbox="" 
+                           class="bulk-action-checkbox show" 
+                           aria-label="{% trans 'Select' %}" 
+                           aria-describedby="page_{{ page.id }}_title">
+                </td>
+                <td class="title" valign="top" data-listing-page-title>
+                    <div class="title-wrapper">
+                        {% if page_perms.can_edit %}
+                            <a href="{% url 'wagtailadmin_pages:edit' page.id %}" title="{% trans 'Edit this page' %}" id="page_{{ page.id }}_title">
+                                {{ page.get_admin_display_title }}
+                            </a>
+                        {% else %}
+                            <span id="page_{{ page.id }}_title">{{ page.get_admin_display_title }}</span>
+                        {% endif %}
+                        {% i18n_enabled as show_locale_labels %}
+                        {% if show_locale_labels and page.locale %}
+                            <span class="w-status w-status--label">{{ page.locale.get_display_name }}</span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td class="type" valign="top">
+                    {{ page.page_type_display_name }}
+                </td>
+                <td class="seo-title" valign="top">
+                    <div class="seo-title-preview" title="{% if page.seo_title %}{{ page.seo_title }}{% else %}Not set{% endif %}">
+                        {% if page.seo_title %}
+                            {{ page.seo_title|truncatechars:40 }}
+                        {% else %}
+                            <span class="status-tag secondary">{% trans "Not set" %}</span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td class="seo-description" valign="top">
+                    <div class="seo-description-preview" title="{% if page.search_description %}{{ page.search_description }}{% else %}Not set{% endif %}">
+                        {% if page.search_description %}
+                            {{ page.search_description|truncatechars:50 }}
+                        {% else %}
+                            <span class="status-tag secondary">{% trans "Not set" %}</span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td class="updated" valign="top">
+                    {% if page.last_published_at %}
+                        {% human_readable_date page.last_published_at %}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td class="status" valign="top">
+                    {% include "wagtailadmin/shared/page_status_tag.html" with page=page %}
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</form>

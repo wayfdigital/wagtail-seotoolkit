@@ -4,15 +4,22 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('wagtail_seotoolkit', '0003_alter_seoauditissue_issue_severity'),
+        ("wagtail_seotoolkit", "0003_alter_seoauditissue_issue_severity"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='seoauditrun',
-            name='status',
-            field=models.CharField(choices=[('scheduled', 'Scheduled'), ('running', 'Running'), ('completed', 'Completed'), ('failed', 'Failed')], max_length=255),
+            model_name="seoauditrun",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("scheduled", "Scheduled"),
+                    ("running", "Running"),
+                    ("completed", "Completed"),
+                    ("failed", "Failed"),
+                ],
+                max_length=255,
+            ),
         ),
     ]

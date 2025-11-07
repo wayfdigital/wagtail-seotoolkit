@@ -1,8 +1,8 @@
 from django.core.management.base import BaseCommand, CommandError
 from wagtail.models import Page
 
-from wagtail_seotoolkit.models import SEOAuditRun
-from wagtail_seotoolkit.utils.seo_audit import execute_audit_run
+from wagtail_seotoolkit.core.models import SEOAuditRun
+from wagtail_seotoolkit.core.utils.seo_audit import execute_audit_run
 
 
 class Command(BaseCommand):
@@ -10,21 +10,16 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--pages',
+            "--pages",
             type=int,
             default=None,
-            help='Limit the number of pages to audit (default: all pages)'
+            help="Limit the number of pages to audit (default: all pages)",
         )
         parser.add_argument(
-            '--page-id',
-            type=int,
-            default=None,
-            help='Audit a specific page by ID'
+            "--page-id", type=int, default=None, help="Audit a specific page by ID"
         )
         parser.add_argument(
-            '--no-progress',
-            action='store_true',
-            help='Disable progress bar'
+            "--no-progress", action="store_true", help="Disable progress bar"
         )
         parser.add_argument(
             "--skip-pagespeed",
@@ -43,7 +38,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        self.stdout.write(self.style.SUCCESS('Starting SEO audit...'))
+        self.stdout.write(self.style.SUCCESS("Starting SEO audit..."))
 
         # Handle dry-run mode by updating settings temporarily
         if options.get("dry_run"):
@@ -113,20 +108,20 @@ class Command(BaseCommand):
             audit_run.status = "failed"
             audit_run.save()
             raise CommandError(f"Audit failed: {str(e)}")
-    
+
     def get_pages_to_audit(self, options):
         """Get the list of pages to audit based on command options."""
-        if options['page_id']:
+        if options["page_id"]:
             # Audit specific page
             try:
-                page = Page.objects.get(id=options['page_id']).specific
+                page = Page.objects.get(id=options["page_id"]).specific
                 return [page]
             except Page.DoesNotExist:
                 raise CommandError(f"Page with ID {options['page_id']} not found")
-        
+
         # Get all live pages
         pages = Page.objects.live().public().specific()
-        
+
         # Exclude root and system pages
         pages = pages.exclude(depth__lte=2)
 
@@ -145,18 +140,23 @@ class Command(BaseCommand):
             pages = pages[: options["pages"]]
 
         return list(pages)
-    
+
     def display_summary(self, results):
         """Display audit results summary."""
-        self.stdout.write(self.style.SUCCESS('\n' + '='*60))
-        self.stdout.write(self.style.SUCCESS('SEO AUDIT COMPLETED'))
-        self.stdout.write(self.style.SUCCESS('='*60))
+        self.stdout.write(self.style.SUCCESS("\n" + "=" * 60))
+        self.stdout.write(self.style.SUCCESS("SEO AUDIT COMPLETED"))
+        self.stdout.write(self.style.SUCCESS("=" * 60))
         self.stdout.write(f"Pages analyzed: {results['total_pages']}")
         self.stdout.write(f"Total issues found: {results['total_issues']}")
         self.stdout.write(f"Overall score: {results['overall_score']}/100")
-        
+
         # Break down by severity
-        self.stdout.write(self.style.ERROR(f"  High severity: {results['high_issues']}"))
-        self.stdout.write(self.style.WARNING(f"  Medium severity: {results['medium_issues']}"))
+        self.stdout.write(
+            self.style.ERROR(f"  High severity: {results['high_issues']}")
+        )
+        self.stdout.write(
+            self.style.WARNING(f"  Medium severity: {results['medium_issues']}")
+        )
         self.stdout.write(f"  Low severity: {results['low_issues']}")
-        self.stdout.write(self.style.SUCCESS('='*60))
+        self.stdout.write(self.style.SUCCESS("=" * 60))
+

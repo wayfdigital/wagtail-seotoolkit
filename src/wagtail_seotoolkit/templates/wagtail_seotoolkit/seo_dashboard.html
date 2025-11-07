@@ -5,9 +5,10 @@
 {% block bodyclass %}seo-dashboard{% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/seo_dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/seo_dashboard.css' %}?v=2">
     <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/dev_badge.css' %}">
     <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/email_verification.css' %}">
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/subscription_banner.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -15,6 +16,12 @@
     {% include "wagtailadmin/shared/header.html" with title=title_str icon="chart-bar" %}
     
     {% csrf_token %}
+    
+    <!-- Subscription Badge -->
+    <div id="subscription-status-badge" class="nice-padding" style="padding-bottom: 0;"></div>
+    
+    <!-- Dashboard Message -->
+    <div id="dashboard-message-container" class="nice-padding" style="padding-top: 0; display: none;"></div>
     
     <!-- Email Verification Gate -->
     <div id="verification-gate"></div>
@@ -85,6 +92,12 @@
                                             </span>
                                         {% endif %}
                                     </div>
+                                    {% if issue.is_bulk_editable %}
+                                        <a href="{% url 'bulk_edit' %}?{% for related_type in issue.related_types %}issue_type={{ related_type }}&{% endfor %}action={{ issue.bulk_edit_action }}" class="seo-dashboard__issue-link">
+                                            <svg class="icon icon-edit" aria-hidden="true"><use href="#icon-edit"></use></svg>
+                                            {% trans "Fix in Bulk Editor" %}
+                                        </a>
+                                    {% endif %}
                                 </div>
                                 <span class="seo-dashboard__issue-count">{{ issue.count }}</span>
                             </div>
@@ -133,6 +146,21 @@
 
 {% block extra_js %}
     <script src="{% static 'wagtail_seotoolkit/js/email_verification.js' %}"></script>
+    <script src="{% static 'wagtail_seotoolkit/js/subscription_status.js' %}"></script>
+    <script src="{% static 'wagtail_seotoolkit/js/dashboard_message.js' %}"></script>
+    <script>
+        // Display subscription status badge using shared module
+        document.addEventListener('DOMContentLoaded', function() {
+            // Only show badge if email is configured
+            const storedEmail = '{{ stored_email }}';
+            if (storedEmail && storedEmail !== 'None') {
+                SubscriptionStatus.displayBadge('subscription-status-badge', {
+                    showManageLink: true,
+                    inline: true
+                });
+            }
+        });
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const requestBtn = document.getElementById('request-audit-btn');

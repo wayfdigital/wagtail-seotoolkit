@@ -51,6 +51,13 @@ A comprehensive SEO auditing and optimization plugin for Wagtail CMS that helps 
 - **Button Visibility**: Control audit button visibility in admin
 - **Dev Fix Filtering**: Show only content-editable issues
 
+### 🤩 **[PRO] Bulk meta editor**
+- **Multi-Page Editing**: Edit SEO titles and meta descriptions for hundreds of pages at once instead of manually editing each one
+- **Smart Templates**: Use placeholders like `{title} | {site_name}` or `{introduction[:100]}` to create consistent metadata patterns across your site
+- **Issue-Based Filtering**: Jump directly to pages with specific SEO issues from the dashboard for quick fixes
+- **Live Validation**: Real-time character counting and validation ensures your metadata meets SEO best practices
+- **Automatic Template Integration**: Enable middleware to automatically apply bulk editor changes to rendered meta tags without modifying your existing template tags across multiple pages
+
 ## 📸 Screenshots
 
 ### SEO Dashboard
@@ -64,7 +71,8 @@ A comprehensive SEO auditing and optimization plugin for Wagtail CMS that helps 
 ### Page Sidebar
 ![Sidebar](https://github.com/wayfdigital/wagtail-seotoolkit/blob/main/static/sidebar.png?raw=True)
 
-*Real-time SEO insights directly in the Wagtail page editor*
+### Bulk editor
+![Bulk editor](https://github.com/wayfdigital/wagtail-seotoolkit/blob/main/static/bulk_editor.png?raw=True)
 
 ## 🛠 Installation
 
@@ -92,6 +100,20 @@ INSTALLED_APPS = [
 ```bash
 python manage.py migrate
 ```
+
+### (Optional) Enable middleware
+```python
+MIDDLEWARE = [
+    ...
+    # SEO Toolkit Middleware - Must be after Wagtail's middleware
+    "wagtail_seotoolkit.middleware.SEOMetadataMiddleware",
+]
+```
+
+**How the bulk editor works with middleware:**
+
+The bulk editor works on the basic page fields `seo_title` and `search_description`. When the middleware is enabled, it will replace the rendered meta tags in your HTML output with the new versions applied from the bulk editor. This enables you to start using bulk editor features without modifying all of the template tags across multiple pages - the middleware automatically intercepts and updates the meta tags at render time.
+
 
 
 ## ⚙️ Configuration
@@ -199,7 +221,7 @@ WAGTAIL_SEOTOOLKIT_PAGESPEED_PER_PAGE_TYPE = True  # Enable optimization (defaul
 
 ### Setting up Development Environment
 
-You can start developing with this plugin using the Wagtail Bakery demo project that includes this plugin enabled:
+You can start developing with this plugin using the [bakerydemo](https://github.com/wagtail/bakerydemo) project that includes this plugin enabled:
 
 ```bash
 # Clone the repository
@@ -228,9 +250,7 @@ This is **Phase 1** - the free tier that shows you what's broken.
 
 ### Coming Very Soon (Phase 2 - Pro Tier)
 
-- **Bulk Editor** - Fix 100+ pages at once instead of manually editing each one
-- **Template System** - Apply consistent meta tag patterns across your site (e.g., `{title} | {site_name}`)
-- **Auto-Suggestions** - Generate meta descriptions from page content
+- **JSON-LD Editor** - Visual editor for structured data 
 - **Daily Monitoring** - Automated audits with email alerts when issues are detected
 - **Historical Tracking** - See how your SEO health improves over time
 
@@ -257,7 +277,7 @@ This is an early release and we want your feedback!
 
 - Are the checks finding real, actionable issues?
 - What SEO checks are we missing?
-- Would bulk fixing be worth paying for?
+- Does the bulk fixing is worth paying for?
 - How's the performance on large sites (1000+ pages)?
 
 ---
@@ -286,11 +306,53 @@ This is an early release and we want your feedback!
 ### Version 0.1.3
 - Further improvements to CSRF fixes
 
+### Version 0.2.0
+- First pro feature - Bulk editor!
+- Subscription management from the plugin
+- License update
+
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see [LICENSE](LICENSE) for full details.
+This project uses **dual licensing**:
+
+### Core Features (MIT License)
+
+The following features are licensed under the **MIT License** and are **free and open source**:
+
+- ✅ SEO audit engine and all checkers (title, meta, content, headers, images, schema, mobile, links, freshness, PageSpeed)
+- ✅ Management commands (`seoaudit`, `run_scheduled_audits`)
+- ✅ SEO audit models and data structures
+- ✅ Dashboard and issues reporting (read-only views)
+- ✅ Side panels showing SEO checks on page editor
+
+**License:** See [LICENSE-MIT](LICENSE-MIT) for full MIT license text.
+
+### Pro Features (WAYF Proprietary License)
+
+The following features require a **paid subscription** and are licensed under the **WAYF Proprietary License**:
+
+- 🔒 **Bulk Metadata Editor** - Edit SEO titles and meta descriptions for hundreds of pages at once
+- 🔒 **SEO Templates** - Create reusable metadata templates with placeholders
+- 🔒 **Metadata Middleware** - Automatically apply bulk editor changes to rendered pages
+- 🔒 **Subscription Management** - License verification and instance management
+- 🔒 **Advanced Placeholder System** - Dynamic field placeholders for metadata templates
+
+**License:** See [LICENSE-PROPRIETARY](LICENSE-PROPRIETARY) for full proprietary license terms.
+
+**Source Available:** The source code for pro features is available for reference, security review, and transparency, but modification and redistribution are prohibited without permission from WAYF.
+
+### Usage Rights
+
+- ✅ **Core features:** Free to use, modify, and redistribute under MIT license
+- ✅ **Pro features:** Free to use with a valid subscription, but modification and redistribution are restricted
+- ✅ **Commercial use:** Both core and pro features can be used in commercial projects
+- ✅ **Contributions:** Welcome for core features; pro feature contributions require WAYF approval (see [CONTRIBUTING.md](CONTRIBUTING.md))
+
+### Getting a Pro License
+
+Pro features require an active subscription. You can obtain the pro license directly from the plugin UI after installation.
 
 **Author:** [WAYF](https://wayfdigital.com)
 
@@ -303,6 +365,8 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) for full
 - Built for the Wagtail CMS community
 - Inspired by modern SEO best practices
 - Special thanks to early testers and contributors
+- Special thanks to all the contributors to the [bakerydemo](https://github.com/wagtail/bakerydemo)
+  - Bakery demo is used only for the development environment for this project, it's not redistributed with the package
 
 ---
 

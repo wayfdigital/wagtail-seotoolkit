@@ -92,6 +92,8 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "wagtail.contrib.redirects.middleware.RedirectMiddleware",
+    # SEO Toolkit Middleware - Must be after Wagtail's middleware
+    "wagtail_seotoolkit.middleware.SEOMetadataMiddleware",
 ]
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
