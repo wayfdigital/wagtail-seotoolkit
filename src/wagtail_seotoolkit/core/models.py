@@ -119,6 +119,12 @@ class SEOAuditIssueType(models.TextChoices):
         "PageSpeed Insights: Lighthouse Audit Failed",
     )
 
+    # Placeholder processing issues
+    PLACEHOLDER_UNPROCESSED = (
+        "placeholder_unprocessed",
+        "Unprocessed Placeholders Detected",
+    )
+
     @classmethod
     def get_description_template(cls, issue_type):
         """Get the description template for an issue type"""
@@ -162,6 +168,8 @@ class SEOAuditIssueType(models.TextChoices):
             cls.PAGESPEED_SEO_SCORE_LOW: "SEO score is {score}/100. Improve meta tags, structured data, and content optimization.",
             cls.PAGESPEED_SEO_SCORE_CRITICAL: "SEO score is critically low ({score}/100). Major SEO issues affecting search visibility.",
             cls.PAGESPEED_LIGHTHOUSE_AUDIT_FAILED: "Lighthouse audit failed: {audit_title}. {audit_description}",
+            # Placeholder processing issues
+            cls.PLACEHOLDER_UNPROCESSED: "SEO metadata contains unprocessed placeholders ({placeholders}). Middleware processing is disabled. Re-apply templates in bulk editor to process placeholders.",
         }
         return descriptions.get(issue_type, "")
 
@@ -245,6 +253,8 @@ class SEOAuditIssueType(models.TextChoices):
             cls.PAGESPEED_SEO_SCORE_LOW: SEOAuditIssueSeverity.MEDIUM,
             cls.PAGESPEED_SEO_SCORE_CRITICAL: SEOAuditIssueSeverity.HIGH,
             cls.PAGESPEED_LIGHTHOUSE_AUDIT_FAILED: SEOAuditIssueSeverity.MEDIUM,
+            # Placeholder processing issues
+            cls.PLACEHOLDER_UNPROCESSED: SEOAuditIssueSeverity.HIGH,
         }
         return severity_mapping.get(issue_type, SEOAuditIssueSeverity.MEDIUM)
 
@@ -260,6 +270,7 @@ class SEOAuditIssueType(models.TextChoices):
             cls.META_DESCRIPTION_TOO_LONG,
             cls.META_DESCRIPTION_DUPLICATE,
             cls.META_DESCRIPTION_NO_CTA,
+            cls.PLACEHOLDER_UNPROCESSED,
         }
         return issue_type in bulk_edit_issues
 

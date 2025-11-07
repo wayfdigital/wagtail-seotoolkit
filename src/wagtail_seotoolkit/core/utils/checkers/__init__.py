@@ -13,6 +13,9 @@ from wagtail_seotoolkit.core.utils.checkers.link_checker import LinkChecker
 from wagtail_seotoolkit.core.utils.checkers.meta_checker import MetaChecker
 from wagtail_seotoolkit.core.utils.checkers.mobile_checker import MobileChecker
 from wagtail_seotoolkit.core.utils.checkers.pagespeed_checker import PageSpeedChecker
+from wagtail_seotoolkit.core.utils.checkers.placeholder_checker import (
+    PlaceholderChecker,
+)
 from wagtail_seotoolkit.core.utils.checkers.schema_checker import SchemaChecker
 from wagtail_seotoolkit.core.utils.checkers.title_checker import TitleChecker
 
@@ -28,4 +31,5 @@ __all__ = [
     "LinkChecker",
     "FreshnessChecker",
     "PageSpeedChecker",
+    "PlaceholderChecker",
 ]

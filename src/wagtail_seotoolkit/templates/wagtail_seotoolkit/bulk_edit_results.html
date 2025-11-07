@@ -2,6 +2,27 @@
 {% load i18n %}
 
 {% block results %}
+    {% if has_placeholder_issues %}
+    <div class="help-block help-warning" style="margin-bottom: 20px; padding: 15px; background-color: #fef0cd; border-left: 4px solid #f0ad4e; border-radius: 4px;">
+        <h3 style="margin-top: 0; color: #8a6d3b;">
+            <svg style="width: 20px; height: 20px; vertical-align: middle; margin-right: 5px;" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+            </svg>
+            Unprocessed Placeholders Detected
+        </h3>
+        <p style="margin-bottom: 10px;">
+            <strong>{{ placeholder_issues_count }}</strong> page(s) have unprocessed placeholders in their SEO metadata (e.g., <code>{title}</code>, <code>{site_name}</code>).
+        </p>
+        <p style="margin-bottom: 10px;">
+            Since <code>WAGTAIL_SEOTOOLKIT_PROCESS_PLACEHOLDERS</code> is set to <code>False</code>, placeholders are not processed at runtime.
+            Please re-apply templates in the bulk editor to replace placeholders with actual values.
+        </p>
+        <p style="margin-bottom: 0;">
+            <a href="/admin/seo-toolkit/bulk-edit/?issue_type=placeholder_unprocessed" style="font-weight: bold; text-decoration: underline;">Show pages with placeholder issues</a> and re-apply templates to fix them.
+        </p>
+    </div>
+    {% endif %}
+    
     {% include 'wagtail_seotoolkit/_list_bulk_edit_pages.html' %}
 {% endblock %}
 

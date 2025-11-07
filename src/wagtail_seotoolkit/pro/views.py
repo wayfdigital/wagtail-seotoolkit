@@ -942,6 +942,31 @@ class BulkEditView(ReportView):
         context["subscription_email"] = email
         context["subscription_instance_id"] = instance_id
 
+        # Check for unprocessed placeholder issues in latest audit
+        from django.conf import settings
+
+        from wagtail_seotoolkit.core.models import SEOAuditIssueType, SEOAuditRun
+        
+        # Only check if middleware processing is disabled
+        process_placeholders_enabled = getattr(
+            settings, "WAGTAIL_SEOTOOLKIT_PROCESS_PLACEHOLDERS", True
+        )
+        
+        if not process_placeholders_enabled:
+            latest_audit = SEOAuditRun.objects.filter(status="completed").order_by("-created_at").first()
+            if latest_audit:
+                placeholder_issues_count = latest_audit.issues.filter(
+                    issue_type=SEOAuditIssueType.PLACEHOLDER_UNPROCESSED
+                ).count()
+                context["has_placeholder_issues"] = placeholder_issues_count > 0
+                context["placeholder_issues_count"] = placeholder_issues_count
+            else:
+                context["has_placeholder_issues"] = False
+                context["placeholder_issues_count"] = 0
+        else:
+            context["has_placeholder_issues"] = False
+            context["placeholder_issues_count"] = 0
+
         return context
 
 
@@ -1081,9 +1106,15 @@ def validate_metadata_bulk(request):
 def bulk_apply_metadata(request):
     """
     API endpoint to apply bulk metadata changes.
-    Saves templates with placeholders to page fields via revisions.
+    
+    Behavior depends on WAGTAIL_SEOTOOLKIT_PROCESS_PLACEHOLDERS setting:
+    - If True (default): Saves templates with placeholders; middleware processes them at runtime
+    - If False: Processes placeholders immediately and saves the final values
+    
     Automatically publishes revisions for live pages without unpublished changes.
     """
+    from django.conf import settings
+    
     try:
         page_ids = request.POST.getlist("page_ids")
         action = request.POST.get("action")
@@ -1093,6 +1124,13 @@ def bulk_apply_metadata(request):
             return JsonResponse(
                 {"success": False, "error": "Missing required parameters"}, status=400
             )
+
+        # Check if middleware processing is enabled
+        # If True: save templates with placeholders (middleware will process them)
+        # If False: process placeholders now and save final values
+        process_placeholders_enabled = getattr(
+            settings, "WAGTAIL_SEOTOOLKIT_PROCESS_PLACEHOLDERS", True
+        )
 
         pages = Page.objects.filter(id__in=page_ids)
 
@@ -1114,13 +1152,19 @@ def bulk_apply_metadata(request):
                 # No unpublished changes - use live page to ensure all fields are current
                 page_instance = page.specific
 
-            # Update the appropriate field with template (containing placeholders)
+            # Determine the value to save based on setting
+            if process_placeholders_enabled:
+                # Save template with placeholders (middleware will process at runtime)
+                value_to_save = content_template
+            else:
+                # Process placeholders now and save final value
+                value_to_save = process_placeholders(content_template, page_instance, request)
+
+            # Update the appropriate field
             if action == "edit_title":
-                page_instance.seo_title = content_template[:255]  # Respect max_length
+                page_instance.seo_title = value_to_save[:255]  # Respect max_length
             elif action == "edit_description":
-                page_instance.search_description = content_template[
-                    :320
-                ]  # Respect max_length
+                page_instance.search_description = value_to_save[:320]  # Respect max_length
 
             # Save as a new revision with proper log entry
             new_revision = page_instance.save_revision(

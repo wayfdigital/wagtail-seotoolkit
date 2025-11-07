@@ -114,6 +114,14 @@ MIDDLEWARE = [
 
 The bulk editor works on the basic page fields `seo_title` and `search_description`. When the middleware is enabled, it will replace the rendered meta tags in your HTML output with the new versions applied from the bulk editor. This enables you to start using bulk editor features without modifying all of the template tags across multiple pages - the middleware automatically intercepts and updates the meta tags at render time.
 
+**Placeholder Processing Modes:**
+
+You can control how placeholders (like `{title}`, `{site_name}`, etc.) are processed using the `WAGTAIL_SEOTOOLKIT_PROCESS_PLACEHOLDERS` setting:
+
+- **`True` (default, recommended)**: Placeholders are stored in the database and processed at runtime by the middleware. This means your SEO metadata stays dynamic - if a page title changes, the SEO title automatically updates. Requires middleware to be enabled.
+
+- **`False`**: Placeholders are processed immediately when saving and the final values are stored in the database. This creates static metadata that won't update if page content changes. Use this if you don't want to use the middleware or need static values.
+
 
 
 ## ⚙️ Configuration
@@ -126,6 +134,10 @@ The bulk editor works on the basic page fields `seo_title` and `search_descripti
 # SEO Toolkit Configuration
 WAGTAIL_SEOTOOLKIT_SHOW_AUDIT_BUTTON = True  # Show audit button in admin (default: False)
 WAGTAIL_SEOTOOLKIT_INCLUDE_DEV_FIXES = True  # Include developer-required fixes (default: True)
+
+# Bulk Editor / Middleware Configuration
+WAGTAIL_SEOTOOLKIT_PROCESS_PLACEHOLDERS = True  # Process placeholders at runtime via middleware (default: True)
+                                                  # If False, placeholders are processed once when saving
 
 # PageSpeed Insights Configuration (Optional - must be manually enabled)
 # Note: PageSpeed checks are disabled by default and must be manually enabled

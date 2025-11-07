@@ -240,6 +240,8 @@ WAGTAIL_SEOTOOLKIT_SHOW_AUDIT_BUTTON = (
     True  # Show "Request Audit" button in Wagtail admin
 )
 
+WAGTAIL_SEOTOOLKIT_PROCESS_PLACEHOLDERS = True
+
 # Content Security policy settings
 # http://django-csp.readthedocs.io/en/latest/configuration.html
 

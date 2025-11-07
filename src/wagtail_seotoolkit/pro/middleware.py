@@ -18,11 +18,13 @@ Uses regex for performance instead of full HTML parsing.
 Licensed under the WAYF Proprietary License.
 """
 
+import logging
 import re
 
 from django.utils.deprecation import MiddlewareMixin
 from wagtail.models import Page
 
+logger = logging.getLogger(__name__)
 
 class SEOMetadataMiddleware(MiddlewareMixin):
     """
@@ -34,6 +36,9 @@ class SEOMetadataMiddleware(MiddlewareMixin):
         """
         Process the response and replace SEO metadata if needed.
 
+        Only processes placeholders if WAGTAIL_SEOTOOLKIT_PROCESS_PLACEHOLDERS is True (default).
+        If False, assumes values are already processed and saved to the database.
+
         Args:
             request: The HTTP request
             response: The HTTP response
@@ -41,6 +46,18 @@ class SEOMetadataMiddleware(MiddlewareMixin):
         Returns:
             Modified response with replaced SEO metadata
         """
+        from django.conf import settings
+
+        # Check if placeholder processing is enabled
+        # If disabled, values are already processed and saved, so skip middleware processing
+        process_placeholders_enabled = getattr(
+            settings, "WAGTAIL_SEOTOOLKIT_PROCESS_PLACEHOLDERS", True
+        )
+
+        if not process_placeholders_enabled:
+            logger.info(f"Skipping placeholder processing for {request.path} because it's disabled")
+            return response
+
         # Only process HTML responses
         content_type = response.get("Content-Type", "")
         if "text/html" not in content_type:

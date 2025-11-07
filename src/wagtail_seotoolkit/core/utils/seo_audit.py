@@ -294,6 +294,7 @@ def audit_single_page(
         List of issues found
     """
     from wagtail_seotoolkit.core.models import SEOAuditIssue, SEOAuditIssueType
+    from wagtail_seotoolkit.core.utils.checkers import PlaceholderChecker
 
     # Get HTML content
     html = get_page_html(page)
@@ -314,6 +315,11 @@ def audit_single_page(
         skip_pagespeed=skip_pagespeed,
     )
     issues = auditor.run_all_checks()
+
+    # Check for unprocessed placeholders (database field check)
+    placeholder_checker = PlaceholderChecker(page)
+    placeholder_issues = placeholder_checker.check()
+    issues.extend(placeholder_issues)
 
     # Create issue records
     for issue_data in issues:
@@ -666,7 +672,7 @@ def execute_audit_run(
     audit_run.save()
 
     try:
-        # Run the audit
+        # Run the audit (includes placeholder check in audit_single_page)
         results = run_audit_on_pages(
             pages,
             audit_run,
@@ -674,6 +680,7 @@ def execute_audit_run(
             debug=debug,
             skip_pagespeed=skip_pagespeed,
         )
+
         return results
 
     except Exception as e:
