@@ -871,9 +871,10 @@ class BulkEditView(ReportView):
     ]
 
     def get_queryset(self):
-        # Get all pages, excluding the root page
+        # Get all pages, excluding the root page and alias pages
         return (
             Page.objects.exclude(depth=1)
+            .exclude(alias_of_id__isnull=False)  # Exclude alias pages
             .select_related("locale", "content_type")
             .prefetch_related("seo_issues")
             .order_by("-last_published_at")
@@ -1137,8 +1138,18 @@ def bulk_apply_metadata(request):
         # Track which pages to publish (must check BEFORE creating revisions)
         pages_to_publish = []
         pages_to_leave_draft = []
+        skipped_pages = []  # Track pages that couldn't be processed
 
         for page in pages:
+            # Skip alias pages - they cannot have revisions
+            if page.alias_of_id:
+                skipped_pages.append({
+                    "id": page.id,
+                    "title": page.title,
+                    "reason": "Alias pages cannot be edited through bulk metadata editor. Please edit the original page instead."
+                })
+                continue
+            
             # Check if page should be auto-published
             # Must check has_unpublished_changes BEFORE creating revision
             should_publish = page.live and not page.has_unpublished_changes
@@ -1148,6 +1159,48 @@ def bulk_apply_metadata(request):
             # - If page has no unpublished changes: use live page (page.specific) to ensure all data is current
             if page.has_unpublished_changes:
                 page_instance = page.get_latest_revision_as_object()
+                
+                # IMPORTANT: Check if revision is missing required fields and copy them from live page
+                # This happens when revisions are older than new required fields
+                if page.live:
+                    live_page = page.specific
+                    for field in page_instance._meta.get_fields():
+                        # Skip relation fields
+                        if field.is_relation and not field.concrete:
+                            continue
+                        # Check if field is required and empty in revision
+                        if hasattr(field, 'blank') and hasattr(field, 'null'):
+                            if not field.blank and not field.null and hasattr(page_instance, field.name):
+                                field_value = getattr(page_instance, field.name, None)
+                                if field_value is None or (isinstance(field_value, str) and field_value == ""):
+                                    # Try to get value from live page
+                                    live_value = getattr(live_page, field.name, None)
+                                    if live_value:
+                                        setattr(page_instance, field.name, live_value)
+                else:
+                    # Page is not live, check for empty required fields
+                    has_empty_required = False
+                    empty_fields = []
+                    for field in page_instance._meta.get_fields():
+                        # Skip relation fields
+                        if field.is_relation and not field.concrete:
+                            continue
+                        # Check if field is required and empty
+                        if hasattr(field, 'blank') and hasattr(field, 'null'):
+                            if not field.blank and not field.null and hasattr(page_instance, field.name):
+                                field_value = getattr(page_instance, field.name, None)
+                                if field_value is None or (isinstance(field_value, str) and field_value == ""):
+                                    has_empty_required = True
+                                    empty_fields.append(field.name)
+                    
+                    if has_empty_required:
+                        error_msg = f"Page has empty required fields ({', '.join(empty_fields)}) and is not live. Please complete the page before applying SEO metadata."
+                        skipped_pages.append({
+                            "id": page.id,
+                            "title": page.title,
+                            "reason": error_msg
+                        })
+                        continue  # Skip this page
             else:
                 # No unpublished changes - use live page to ensure all fields are current
                 page_instance = page.specific
@@ -1194,15 +1247,36 @@ def bulk_apply_metadata(request):
                     }
                 )
 
+        total_processed = len(pages_to_publish) + len(pages_to_leave_draft)
+
+        # Build message
+        message_parts = []
+        if total_processed > 0:
+            message_parts.append(f"Successfully updated {total_processed} page{'s' if total_processed != 1 else ''}")
+            details = []
+            if len(pages_to_publish) > 0:
+                details.append(f"{len(pages_to_publish)} published")
+            if len(pages_to_leave_draft) > 0:
+                details.append(f"{len(pages_to_leave_draft)} left as draft")
+            if details:
+                message_parts.append(f"({', '.join(details)})")
+        
+        if len(skipped_pages) > 0:
+            if message_parts:
+                message_parts.append(". ")
+            message_parts.append(f"{len(skipped_pages)} page{'s' if len(skipped_pages) != 1 else ''} skipped due to errors")
+
         return JsonResponse(
             {
                 "success": True,
-                "updated": len(pages),
+                "updated": total_processed,
                 "published": len(pages_to_publish),
                 "draft": len(pages_to_leave_draft),
+                "skipped": len(skipped_pages),
                 "published_pages": pages_to_publish,
                 "draft_pages": pages_to_leave_draft,
-                "message": f"Successfully updated {len(pages)} pages ({len(pages_to_publish)} published, {len(pages_to_leave_draft)} left as draft)",
+                "skipped_pages": skipped_pages,
+                "message": ''.join(message_parts) if message_parts else "No pages processed",
             }
         )
 
@@ -1583,8 +1657,8 @@ class BulkEditActionView(TemplateView):
         page_ids = self.request.GET.getlist("page_ids")
         action = self.request.GET.get("action", "edit_title")
 
-        # Get the selected pages
-        pages = Page.objects.filter(id__in=page_ids).select_related("content_type")
+        # Get the selected pages (excluding alias pages)
+        pages = Page.objects.filter(id__in=page_ids).exclude(alias_of_id__isnull=False).select_related("content_type")
 
         # Process current values with placeholders
         pages_with_processed = []

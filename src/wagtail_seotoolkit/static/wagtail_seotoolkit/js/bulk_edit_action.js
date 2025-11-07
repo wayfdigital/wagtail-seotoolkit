@@ -59,6 +59,31 @@
             detailsHtml += '</ul>';
         }
 
+        // Show warning section for skipped pages if any
+        let skippedPagesHtml = '';
+        if (data && data.skipped > 0 && data.skipped_pages) {
+            skippedPagesHtml = `
+                <div style="margin-top: 20px; padding: 15px; background-color: #fef0cd; border-left: 4px solid #f0ad4e; border-radius: 4px;">
+                    <h3 style="margin-top: 0; color: #8a6d3b; font-size: 16px;">
+                        <svg style="width: 18px; height: 18px; vertical-align: middle; margin-right: 5px;" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                        </svg>
+                        ${data.skipped} page(s) skipped
+                    </h3>
+                    <p style="margin-bottom: 10px; color: #8a6d3b;">The following pages could not be updated and require manual attention:</p>
+                    <ul style="margin: 10px 0; padding-left: 20px; max-height: 300px; overflow-y: auto;">
+                        ${data.skipped_pages.map(page => `
+                            <li style="margin-bottom: 8px;">
+                                <strong><a href="/admin/pages/${page.id}/edit/" target="_blank" style="text-decoration: underline;">${escapeHtml(page.title)}</a></strong>
+                                <br>
+                                <span style="color: #666; font-size: 13px;">${escapeHtml(page.reason)}</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
         // Add optional back button if redirect URL provided
         let backButtonHtml = '';
         if (redirectUrl) {
@@ -80,11 +105,21 @@
                         </svg>
                         ${message}
                         ${detailsHtml}
+                        ${skippedPagesHtml}
                         ${backButtonHtml}
                     </li>
                 </ul>
             </div>
         `;
+    }
+
+    /**
+     * Escape HTML to prevent XSS
+     */
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     /**
