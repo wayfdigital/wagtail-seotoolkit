@@ -4,15 +4,17 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('wagtail_seotoolkit', '0004_alter_seoauditrun_status'),
+        ("wagtail_seotoolkit", "0004_alter_seoauditrun_status"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='seoauditissue',
-            name='requires_dev_fix',
-            field=models.BooleanField(default=False, help_text='Whether this issue requires developer attention and cannot be fixed by content editors'),
+            model_name="seoauditissue",
+            name="requires_dev_fix",
+            field=models.BooleanField(
+                default=False,
+                help_text="Whether this issue requires developer attention and cannot be fixed by content editors",
+            ),
         ),
     ]

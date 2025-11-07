@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('wagtail_seotoolkit', '0002_seoauditissue_page'),
+        ("wagtail_seotoolkit", "0002_seoauditissue_page"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='seoauditissue',
-            name='issue_severity',
-            field=models.IntegerField(choices=[(1, 'Low'), (2, 'Medium'), (3, 'High')]),
+            model_name="seoauditissue",
+            name="issue_severity",
+            field=models.IntegerField(choices=[(1, "Low"), (2, "Medium"), (3, "High")]),
         ),
     ]

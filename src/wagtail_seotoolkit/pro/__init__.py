@@ -8,14 +8,10 @@
 # For permissions: hello@wayfdigital.com
 
 """
-SEO Metadata Middleware - Pro Feature
+Wagtail SEO Toolkit - Pro Features
 
-This middleware is licensed under the WAYF Proprietary License.
-It requires an active subscription to use.
-
-For backward compatibility, this module imports from the pro package.
+Pro features including bulk editor, subscriptions, and templates.
+Licensed under the WAYF Proprietary License.
 """
 
-from wagtail_seotoolkit.pro.middleware import SEOMetadataMiddleware
-
-__all__ = ["SEOMetadataMiddleware"]
+__all__ = ["models", "views", "middleware"]

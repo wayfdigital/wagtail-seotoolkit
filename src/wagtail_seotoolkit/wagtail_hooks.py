@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
 from wagtail.admin.menu import MenuItem
 
-from .views import (
+from wagtail_seotoolkit.views import (
     BulkEditActionView,
     BulkEditView,
     DeleteEmailVerificationView,
@@ -224,7 +224,7 @@ def register_seo_admin_urls():
     ]
 
 
-@hooks.register('register_admin_menu_item')
+@hooks.register("register_admin_menu_item")
 def register_seo_toolkit_menu_item():
     """
     Add SEO Toolkit menu item to Wagtail admin

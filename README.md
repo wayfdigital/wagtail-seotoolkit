@@ -310,7 +310,44 @@ This is an early release and we want your feedback!
 
 ## 📄 License
 
-This project is licensed under the MIT License - see [LICENSE](LICENSE) for full details.
+This project uses **dual licensing**:
+
+### Core Features (MIT License)
+
+The following features are licensed under the **MIT License** and are **free and open source**:
+
+- ✅ SEO audit engine and all checkers (title, meta, content, headers, images, schema, mobile, links, freshness, PageSpeed)
+- ✅ Management commands (`seoaudit`, `run_scheduled_audits`)
+- ✅ SEO audit models and data structures
+- ✅ Dashboard and issues reporting (read-only views)
+- ✅ Side panels showing SEO checks on page editor
+
+**License:** See [LICENSE-MIT](LICENSE-MIT) for full MIT license text.
+
+### Pro Features (WAYF Proprietary License)
+
+The following features require a **paid subscription** and are licensed under the **WAYF Proprietary License**:
+
+- 🔒 **Bulk Metadata Editor** - Edit SEO titles and meta descriptions for hundreds of pages at once
+- 🔒 **SEO Templates** - Create reusable metadata templates with placeholders
+- 🔒 **Metadata Middleware** - Automatically apply bulk editor changes to rendered pages
+- 🔒 **Subscription Management** - License verification and instance management
+- 🔒 **Advanced Placeholder System** - Dynamic field placeholders for metadata templates
+
+**License:** See [LICENSE-PROPRIETARY](LICENSE-PROPRIETARY) for full proprietary license terms.
+
+**Source Available:** The source code for pro features is available for reference, security review, and transparency, but modification and redistribution are prohibited without permission from WAYF.
+
+### Usage Rights
+
+- ✅ **Core features:** Free to use, modify, and redistribute under MIT license
+- ✅ **Pro features:** Free to use with a valid subscription, but modification and redistribution are restricted
+- ✅ **Commercial use:** Both core and pro features can be used in commercial projects
+- ✅ **Contributions:** Welcome for core features; pro feature contributions require WAYF approval (see [CONTRIBUTING.md](CONTRIBUTING.md))
+
+### Getting a Pro License
+
+Pro features require an active subscription. Visit our [GitHub repository](https://github.com/wayfdigital/wagtail-seotoolkit) for pricing and subscription information.
 
 **Author:** [WAYF](https://wayfdigital.com)
 

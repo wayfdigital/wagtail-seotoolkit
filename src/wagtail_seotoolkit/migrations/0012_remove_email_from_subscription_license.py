@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('wagtail_seotoolkit', '0011_subscriptionlicense'),
+        ("wagtail_seotoolkit", "0011_subscriptionlicense"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='subscriptionlicense',
-            name='email',
+            model_name="subscriptionlicense",
+            name="email",
         ),
     ]

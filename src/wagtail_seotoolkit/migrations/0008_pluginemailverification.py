@@ -4,24 +4,31 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('wagtail_seotoolkit', '0007_update_pagespeed_issue_type_names'),
+        ("wagtail_seotoolkit", "0007_update_pagespeed_issue_type_names"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='PluginEmailVerification',
+            name="PluginEmailVerification",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('email', models.EmailField(max_length=254, unique=True)),
-                ('is_verified', models.BooleanField(default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("email", models.EmailField(max_length=254, unique=True)),
+                ("is_verified", models.BooleanField(default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'Plugin Email Verification',
-                'verbose_name_plural': 'Plugin Email Verifications',
+                "verbose_name": "Plugin Email Verification",
+                "verbose_name_plural": "Plugin Email Verifications",
             },
         ),
     ]
