@@ -221,7 +221,7 @@ WAGTAIL_SEOTOOLKIT_PAGESPEED_PER_PAGE_TYPE = True  # Enable optimization (defaul
 
 ### Setting up Development Environment
 
-You can start developing with this plugin using the Wagtail Bakery demo project that includes this plugin enabled:
+You can start developing with this plugin using the [bakerydemo](https://github.com/wagtail/bakerydemo) project that includes this plugin enabled:
 
 ```bash
 # Clone the repository
@@ -306,6 +306,11 @@ This is an early release and we want your feedback!
 ### Version 0.1.3
 - Further improvements to CSRF fixes
 
+### Version 0.2.0
+- First pro feature - Bulk editor!
+- Subscription management from the plugin
+- License update
+
 ---
 
 ## 📄 License
@@ -360,6 +365,8 @@ Pro features require an active subscription. You can obtain the pro license dire
 - Built for the Wagtail CMS community
 - Inspired by modern SEO best practices
 - Special thanks to early testers and contributors
+- Special thanks to all the contributors to the [bakerydemo](https://github.com/wagtail/bakerydemo)
+  - Bakery demo is used only for the development environment for this project, it's not redistributed with the package
 
 ---
 
