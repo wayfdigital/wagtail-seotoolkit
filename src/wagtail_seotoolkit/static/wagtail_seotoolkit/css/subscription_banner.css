@@ -1,0 +1,735 @@
+/* Subscription Banner Styles */
+
+.upgrade-banner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    margin: 1rem 0 2rem 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.upgrade-banner-content {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.upgrade-banner-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.upgrade-icon {
+    font-size: 3rem;
+    flex-shrink: 0;
+}
+
+.upgrade-text h2 {
+    margin: 0 0 0.5rem 0;
+    color: white;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.upgrade-text p {
+    margin: 0;
+    opacity: 0.95;
+    font-size: 1.1rem;
+}
+
+.upgrade-features {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1.5rem;
+    border-radius: 6px;
+    margin-bottom: 2rem;
+}
+
+.upgrade-features h3 {
+    color: white;
+    margin: 0 0 1rem 0;
+    font-size: 1.2rem;
+}
+
+.features-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 0.75rem;
+}
+
+.features-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.feature-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: #10b981;
+}
+
+/* Plans Display */
+.plans-display {
+    margin: 2rem 0;
+}
+
+/* Plans flex container for settings - no centering */
+.plans-flex {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+/* Plans flex container for bulk editor upgrade banner - centered */
+.plans-flex-centered {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-top: 1rem;
+    justify-content: center;
+}
+
+.plan-card {
+    background: var(--w-color-surface-dashboard-panel);
+    color: var(--w-color-text-label);
+    border: 1px solid var(--w-color-border-furniture);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    display: flex;
+    flex-direction: column;
+    flex: 0 1 280px;
+    min-width: 280px;
+}
+
+.plan-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: var(--w-color-primary);
+}
+
+.plan-header {
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--w-color-border-furniture);
+    padding-bottom: 1rem;
+}
+
+.plan-card h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--w-color-text-label);
+}
+
+.tier-description {
+    font-size: 0.9rem;
+    color: var(--w-color-text-meta);
+    margin: 0.5rem 0 1rem 0;
+}
+
+/* Interval Toggle */
+.interval-toggle {
+    display: flex;
+    gap: 0.5rem;
+    margin: 1rem 0 1.5rem 0;
+    justify-content: center;
+}
+
+.interval-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--w-color-border-furniture);
+    background: var(--w-color-surface-field);
+    color: var(--w-color-text-label);
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.interval-btn:hover {
+    border-color: var(--w-color-primary);
+}
+
+.interval-btn-active {
+    background: var(--w-color-primary);
+    color: var(--w-color-text-button);
+    border-color: var(--w-color-primary);
+}
+
+.plan-pricing {
+    margin-top: 0.5rem;
+    text-align: center;
+}
+
+.plan-price {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--w-color-text-label);
+    margin: 0.5rem 0;
+}
+
+.plan-interval {
+    font-size: 0.9rem;
+    color: var(--w-color-text-meta);
+    margin-bottom: 0.5rem;
+}
+
+.plan-savings {
+    display: inline-block;
+    background: var(--w-color-primary-200);
+    color: var(--w-color-text-button);
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin: 0.5rem 0;
+}
+
+.plan-features {
+    flex: 1;
+    margin-bottom: 1rem;
+}
+
+.plan-features p {
+    margin: 0.5rem 0;
+    color: var(--w-color-text-meta);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.plan-card .button {
+    width: 100%;
+    justify-content: center;
+    margin-top: auto;
+}
+
+.purchase-plan-btn {
+    cursor: pointer;
+}
+
+/* Tier Sections */
+.tier-section {
+    margin-bottom: 2rem;
+}
+
+.tier-section h3 {
+    color: white;
+    margin: 0 0 1rem 0;
+    font-size: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Upgrade CTA */
+.upgrade-cta {
+    text-align: center;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.cta-text {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.cta-text a {
+    color: white;
+    text-decoration: underline;
+    font-weight: 600;
+}
+
+.cta-text a:hover {
+    opacity: 0.8;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    text-align: center;
+    padding: 2rem;
+}
+
+.loading-spinner p {
+    margin: 0;
+    opacity: 0.9;
+}
+
+/* Subscription Settings Page Styles */
+.subscription-settings-container {
+    max-width: 1200px;
+}
+
+.subscription-section {
+    background: var(--w-color-surface-dashboard-panel);
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--w-color-border-furniture);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.subscription-section h2 {
+    margin: 0 0 1rem 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--w-color-text-label);
+}
+
+.info-box {
+    background: var(--w-color-surface-field);
+    padding: 1rem;
+    border-radius: 0.375rem;
+    border: 1px solid var(--w-color-border-furniture);
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+}
+
+.info-row:not(:last-child) {
+    border-bottom: 1px solid var(--w-color-border-furniture);
+}
+
+.info-row strong {
+    color: var(--w-color-text-label);
+    font-weight: 600;
+}
+
+.info-row.warning {
+    background: var(--w-color-warning-100);
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    margin-top: 0.5rem;
+    border: 1px solid var(--w-color-border-furniture);
+}
+
+.info-row.warning strong {
+    color: var(--w-color-text-label);
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+.status-badge.status-active {
+    background: var(--w-color-primary);
+    color: var(--w-color-text-button);
+}
+
+.status-badge.status-warning {
+    background: var(--w-color-warning);
+    color: var(--w-color-text-button);
+}
+
+.status-badge.status-inactive {
+    background: var(--w-color-text-meta);
+    color: var(--w-color-text-button);
+}
+
+/* Subscription Details */
+.subscription-active,
+.subscription-inactive,
+.subscription-warning {
+    padding: 1rem;
+}
+
+.subscription-details {
+    background: var(--w-color-surface-field);
+    padding: 1rem;
+    border-radius: 0.375rem;
+    margin-top: 1rem;
+    border: 1px solid var(--w-color-border-furniture);
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.action-buttons .button {
+    flex: 0 0 auto;
+}
+
+/* Subscription Form */
+.subscription-form {
+    max-width: 500px;
+}
+
+.subscription-form .field {
+    margin-bottom: 1rem;
+}
+
+.subscription-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--w-color-text-label);
+}
+
+.subscription-form input[type="email"] {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--w-color-border-field-default);
+    border-radius: 0.375rem;
+    font-size: 1rem;
+    background: var(--w-color-surface-field);
+    color: var(--w-color-text-input);
+}
+
+.subscription-form input[type="email"]:focus {
+    outline: none;
+    border-color: var(--w-color-primary);
+    box-shadow: 0 0 0 3px var(--w-color-primary-200);
+}
+
+/* Messages */
+.success-message {
+    background: var(--w-color-positive-100);
+    color: var(--w-color-text-label);
+    padding: 1rem;
+    border-radius: 0.375rem;
+    margin-top: 1rem;
+    border: 1px solid var(--w-color-border-furniture);
+}
+
+.error-message {
+    background: var(--w-color-critical-100);
+    color: var(--w-color-text-label);
+    padding: 1rem;
+    border-radius: 0.375rem;
+    margin-top: 1rem;
+    border: 1px solid var(--w-color-border-furniture);
+}
+
+/* Instance Management */
+.instances-list {
+    margin-top: 1rem;
+}
+
+.instance-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--w-color-surface-field);
+    border: 1px solid var(--w-color-border-furniture);
+    border-radius: 0.375rem;
+    margin-bottom: 0.75rem;
+}
+
+.instance-item.current-instance {
+    border-color: var(--w-color-primary);
+    background: var(--w-color-primary-100);
+}
+
+.instance-info {
+    flex: 1;
+}
+
+.instance-info strong {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: var(--w-color-text-label);
+    font-weight: 600;
+}
+
+.instance-meta {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.25rem;
+}
+
+.instance-meta small {
+    color: var(--w-color-text-meta);
+    font-size: 0.85rem;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background: var(--w-color-primary);
+    color: var(--w-color-text-button);
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+}
+
+/* Instance Management Styles */
+.instances-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    padding: 1.5rem;
+    background: var(--w-color-surface-page);
+    border: 1px solid var(--w-color-border-field);
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.summary-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.summary-row strong {
+    color: var(--w-color-text-meta);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.summary-row span {
+    color: var(--w-color-text-label);
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.seats-badge {
+    color: var(--w-color-text-label);
+    font-weight: 700;
+}
+
+.warning-text {
+    color: var(--w-color-warning, #f59e0b);
+}
+
+.error-text {
+    color: var(--w-color-critical, #dc2626);
+}
+
+.success-text {
+    color: var(--w-color-positive, #059669);
+}
+
+.warning-box {
+    padding: 1rem;
+    border: 1px solid var(--w-color-warning, #f59e0b);
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.warning-box strong {
+    color: var(--w-color-warning-dark, #92400e);
+}
+
+.instances-actions {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.instances-table-container {
+    overflow-x: auto;
+    border: 1px solid var(--w-color-border-field);
+    border-radius: 0.5rem;
+}
+
+.instances-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--w-color-surface-page);
+}
+
+.instances-table thead {
+    background: var(--w-color-surface-header);
+    border-bottom: 2px solid var(--w-color-border-field);
+}
+
+.instances-table th {
+    padding: 0.875rem 1rem;
+    text-align: left;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--w-color-text-label);
+}
+
+.instances-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--w-color-border-field);
+}
+
+.instances-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.instances-table tbody tr:hover {
+    background: var(--w-color-surface-hover, rgba(0, 0, 0, 0.02));
+}
+
+.instance-row.current-instance-row {
+    background: var(--w-color-primary-light, rgba(59, 130, 246, 0.05));
+}
+
+.checkbox-col {
+    width: 3rem;
+    text-align: center;
+}
+
+.checkbox-col input[type="checkbox"] {
+    cursor: pointer;
+    width: 1rem;
+    height: 1rem;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.status-active {
+    background: var(--w-color-positive-bg, #d1fae5);
+    color: var(--w-color-positive, #059669);
+}
+
+.status-inactive {
+    background: var(--w-color-surface-menu-item-active, #f3f4f6);
+    color: var(--w-color-text-meta);
+}
+
+.site-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.badge-current {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background: var(--w-color-primary);
+    color: white;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.instance-id-short {
+    font-family: var(--w-font-mono, monospace);
+    font-size: 0.875rem;
+    background: var(--w-color-surface-menu-item-active, #f3f4f6);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    color: white;
+}
+
+.text-muted {
+    color: var(--w-color-text-meta);
+}
+
+.subscriptions-list {
+    margin-bottom: 1rem;
+}
+
+.subscription-items {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0 0;
+}
+
+.subscription-items li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--w-color-border-field);
+}
+
+.subscription-items li:last-child {
+    border-bottom: none;
+}
+
+.sub-name {
+    font-weight: 600;
+    color: var(--w-color-text-label);
+}
+
+.sub-seats {
+    color: var(--w-color-text-meta);
+    font-size: 0.875rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .upgrade-banner-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .features-list {
+        grid-template-columns: 1fr;
+    }
+
+    .plans-flex,
+    .plans-flex-centered {
+        flex-direction: column;
+    }
+    
+    .plan-card {
+        flex: 1 1 auto;
+        max-width: 100%;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .action-buttons .button {
+        width: 100%;
+    }
+
+    .instance-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .instances-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .instances-actions {
+        flex-direction: column;
+    }
+
+    .instances-actions .button {
+        width: 100%;
+    }
+
+    .instances-table-container {
+        overflow-x: scroll;
+    }
+
+    .instances-table th,
+    .instances-table td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.875rem;
+    }
+}
+

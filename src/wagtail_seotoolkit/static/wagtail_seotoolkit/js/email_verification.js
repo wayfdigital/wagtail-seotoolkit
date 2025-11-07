@@ -91,6 +91,32 @@
     }
 
     /**
+     * Delete email from Django backend
+     * Used when user wants to change their email
+     */
+    async function deleteEmail() {
+        try {
+            const response = await fetch('/admin/api/email-verification/delete/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                }
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                console.log('Email verification data deleted successfully');
+                currentEmail = null; // Clear current email
+            }
+            return data.success;
+        } catch (error) {
+            console.error('Failed to delete email:', error);
+            return false;
+        }
+    }
+
+    /**
      * Check if email is verified via Django proxy
      */
     async function checkVerificationStatus(email) {
@@ -299,8 +325,9 @@
             handleResendVerification(email);
         });
         
-        document.getElementById('change-email')?.addEventListener('click', () => {
+        document.getElementById('change-email')?.addEventListener('click', async () => {
             stopPolling();
+            await deleteEmail();
             showVerificationForm();
         });
 

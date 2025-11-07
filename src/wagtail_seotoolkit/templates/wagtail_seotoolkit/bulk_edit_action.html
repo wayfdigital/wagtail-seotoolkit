@@ -61,9 +61,15 @@
                     </select>
                 </div>
                 {% if templates %}
-                    <p class="help">{% trans "Choose a saved template to auto-fill the content below" %}</p>
+                    <p class="help">
+                        {% trans "Choose a saved template to auto-fill the content below" %} | 
+                        <a href="{% url 'seo_template_list' %}" target="_blank">{% trans "Manage templates" %}</a>
+                    </p>
                 {% else %}
-                    <p class="help">{% trans "No templates available for this page type." %}</p>
+                    <p class="help">
+                        {% trans "No templates available for this page type." %} | 
+                        <a href="{% url 'seo_template_list' %}" target="_blank">{% trans "Manage templates" %}</a>
+                    </p>
                 {% endif %}
             </div>
 

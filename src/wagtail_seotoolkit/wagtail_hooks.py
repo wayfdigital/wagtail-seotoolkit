@@ -10,14 +10,27 @@ from wagtail.admin.menu import MenuItem
 from .views import (
     BulkEditActionView,
     BulkEditView,
+    DeleteEmailVerificationView,
     GetEmailVerificationView,
+    ProxyCheckSubscriptionView,
     ProxyCheckVerifiedView,
+    ProxyClearActiveInstancesView,
+    ProxyCreateCheckoutView,
+    ProxyCreatePortalView,
+    ProxyGetActiveInstancesView,
+    ProxyGetDashboardMessageView,
+    ProxyGetPlansView,
+    ProxyListInstancesView,
+    ProxyRegisterInstanceView,
+    ProxyRemoveInstanceView,
     ProxyResendVerificationView,
     ProxySendVerificationView,
+    ProxySetActiveInstancesView,
     RequestAuditView,
     SaveEmailVerificationView,
     SEODashboardView,
     SEOIssuesReportView,
+    SubscriptionSettingsView,
     TemplateCreateView,
     TemplateDeleteView,
     TemplateEditView,
@@ -97,6 +110,11 @@ def register_seo_admin_urls():
             name="save_email_verification",
         ),
         path(
+            "api/email-verification/delete/",
+            DeleteEmailVerificationView.as_view(),
+            name="delete_email_verification",
+        ),
+        path(
             "api/proxy/send-verification/",
             ProxySendVerificationView.as_view(),
             name="proxy_send_verification",
@@ -107,9 +125,71 @@ def register_seo_admin_urls():
             name="proxy_check_verified",
         ),
         path(
+            "api/proxy/get-dashboard-message/",
+            ProxyGetDashboardMessageView.as_view(),
+            name="proxy_get_dashboard_message",
+        ),
+        path(
             "api/proxy/resend-verification/",
             ProxyResendVerificationView.as_view(),
             name="proxy_resend_verification",
+        ),
+        # Subscription proxy API endpoints
+        path(
+            "api/proxy/get-plans/",
+            ProxyGetPlansView.as_view(),
+            name="proxy_get_plans",
+        ),
+        path(
+            "api/proxy/check-subscription/",
+            ProxyCheckSubscriptionView.as_view(),
+            name="proxy_check_subscription",
+        ),
+        path(
+            "api/proxy/create-checkout/",
+            ProxyCreateCheckoutView.as_view(),
+            name="proxy_create_checkout",
+        ),
+        path(
+            "api/proxy/register-instance/",
+            ProxyRegisterInstanceView.as_view(),
+            name="proxy_register_instance",
+        ),
+        path(
+            "api/proxy/list-instances/",
+            ProxyListInstancesView.as_view(),
+            name="proxy_list_instances",
+        ),
+        path(
+            "api/proxy/remove-instance/",
+            ProxyRemoveInstanceView.as_view(),
+            name="proxy_remove_instance",
+        ),
+        path(
+            "api/proxy/create-portal/",
+            ProxyCreatePortalView.as_view(),
+            name="proxy_create_portal",
+        ),
+        path(
+            "api/proxy/get-active-instances/",
+            ProxyGetActiveInstancesView.as_view(),
+            name="proxy_get_active_instances",
+        ),
+        path(
+            "api/proxy/set-active-instances/",
+            ProxySetActiveInstancesView.as_view(),
+            name="proxy_set_active_instances",
+        ),
+        path(
+            "api/proxy/clear-active-instances/",
+            ProxyClearActiveInstancesView.as_view(),
+            name="proxy_clear_active_instances",
+        ),
+        # Subscription settings page
+        path(
+            "settings/subscription-settings/",
+            SubscriptionSettingsView.as_view(),
+            name="subscription_settings",
         ),
         path(
             "seo-toolkit/templates/",
@@ -170,14 +250,27 @@ def register_bulk_edit_menu_item():
     )
 
 
-@hooks.register("register_admin_menu_item")
+@hooks.register("register_settings_menu_item")
 def register_templates_menu_item():
     """
-    Add SEO Templates to admin menu
+    Add SEO Templates to settings menu
     """
     return MenuItem(
         _("SEO Templates"),
         reverse("seo_template_list"),
         icon_name="snippet",
-        order=1002,
+        order=9998,
+    )
+
+
+@hooks.register("register_settings_menu_item")
+def register_subscription_settings_menu_item():
+    """
+    Add Subscription Settings to Wagtail settings menu
+    """
+    return MenuItem(
+        _("SEO Toolkit Subscription"),
+        reverse("subscription_settings"),
+        icon_name="lock",
+        order=9999,
     )

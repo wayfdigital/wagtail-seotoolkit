@@ -32,6 +32,9 @@ from .utils.placeholder_utils import (
     validate_template_placeholders,
 )
 
+# License server API base URL
+LICENSE_SERVER_API_URL = "wagtail-seotoolkit-license-server.vercel.app"
+
 
 class SEODashboardView(TemplateView):
     """
@@ -344,16 +347,31 @@ class GetEmailVerificationView(View):
 
     def get(self, request):
         try:
+            from .models import SubscriptionLicense
+
             verification = PluginEmailVerification.objects.first()
+            subscription_license = SubscriptionLicense.objects.first()
+
             if verification:
                 return JsonResponse(
                     {
                         "success": True,
                         "email": verification.email,
+                        "instance_id": str(subscription_license.instance_id)
+                        if subscription_license
+                        else None,
                     }
                 )
             else:
-                return JsonResponse({"success": True, "email": None})
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "email": None,
+                        "instance_id": str(subscription_license.instance_id)
+                        if subscription_license
+                        else None,
+                    }
+                )
         except Exception as e:
             return JsonResponse(
                 {"success": False, "error": f"Failed to retrieve email: {str(e)}"},
@@ -382,11 +400,56 @@ class SaveEmailVerificationView(View):
                 email=email
             )
 
+            # Also ensure SubscriptionLicense exists (with instance_id)
+            # This allows subscription checks to work immediately after email verification
+            from .models import SubscriptionLicense
+
+            subscription_license, license_created = (
+                SubscriptionLicense.objects.get_or_create()
+            )
+
+            # Automatically register this instance with the license server
+            # This allows users to access pro features immediately after purchasing
+            instance_id = str(subscription_license.instance_id)
+            site_url = request.build_absolute_uri("/").rstrip("/")
+
+            try:
+                # Call register-instance API endpoint
+                register_response = requests.post(
+                    f"{LICENSE_SERVER_API_URL}/api/register-instance",
+                    json={
+                        "email": email,
+                        "instanceId": instance_id,
+                        "siteUrl": site_url,
+                    },
+                    headers={"Content-Type": "application/json"},
+                    timeout=10,
+                )
+
+                # Clear subscription cache so UI updates immediately
+                # (Cache is disabled in DEBUG mode, so this is a no-op there)
+                if register_response.status_code == 200:
+                    from django.conf import settings
+                    from django.core.cache import cache
+
+                    if not getattr(settings, "DEBUG", False):
+                        cache_key = f"subscription:{email}:{instance_id}"
+                        cache.delete(cache_key)
+                else:
+                    # Log registration attempt but don't fail if it doesn't work
+                    print(
+                        f"Warning: Failed to auto-register instance: {register_response.text}"
+                    )
+            except Exception as reg_error:
+                # Don't fail email verification if registration fails
+                print(f"Warning: Failed to auto-register instance: {str(reg_error)}")
+
             return JsonResponse(
                 {
                     "success": True,
                     "message": "Email saved successfully",
                     "email": verification.email,
+                    "instance_id": instance_id,
                 }
             )
 
@@ -399,13 +462,76 @@ class SaveEmailVerificationView(View):
             )
 
 
+class DeleteEmailVerificationView(View):
+    """
+    API endpoint to delete stored email verification data.
+    Used when user wants to change their email.
+    """
+
+    def post(self, request):
+        try:
+            # Delete all email verification records
+            deleted_count = PluginEmailVerification.objects.all().delete()[0]
+
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": "Email verification data deleted successfully",
+                    "deleted_count": deleted_count,
+                }
+            )
+
+        except Exception as e:
+            return JsonResponse(
+                {"success": False, "error": f"Failed to delete email: {str(e)}"},
+                status=500,
+            )
+
+
+class ProxyGetDashboardMessageView(View):
+    """
+    Proxy endpoint to get dashboard message from external API.
+    Avoids CORS issues by making server-to-server request.
+    """
+
+    def get(self, request):
+        try:
+            # Make request to external API
+            response = requests.get(
+                f"{LICENSE_SERVER_API_URL}/api/get-dashboard-message",
+                timeout=5,
+            )
+
+            # Return the external API response
+            return JsonResponse(response.json(), status=response.status_code)
+
+        except requests.RequestException as e:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": None,
+                    "hasMessage": False,
+                    "error": f"Failed to fetch message: {str(e)}",
+                },
+                status=500,
+            )
+        except Exception as e:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": None,
+                    "hasMessage": False,
+                    "error": str(e),
+                },
+                status=500,
+            )
+
+
 class ProxySendVerificationView(View):
     """
     Proxy endpoint to send verification email via external API.
     Avoids CORS issues by making server-to-server request.
     """
-
-    API_BASE_URL = "https://wagtail-seotoolkit-license-server.vercel.app"
 
     def post(self, request):
         try:
@@ -419,7 +545,7 @@ class ProxySendVerificationView(View):
 
             # Make request to external API
             response = requests.post(
-                f"{self.API_BASE_URL}/api/send-verification",
+                f"{LICENSE_SERVER_API_URL}/api/send-verification",
                 json={"email": email},
                 headers={"Content-Type": "application/json"},
                 timeout=10,
@@ -447,8 +573,6 @@ class ProxyCheckVerifiedView(View):
     Avoids CORS issues by making server-to-server request.
     """
 
-    API_BASE_URL = "https://wagtail-seotoolkit-license-server.vercel.app"
-
     def get(self, request):
         email = request.GET.get("email")
 
@@ -461,7 +585,7 @@ class ProxyCheckVerifiedView(View):
         try:
             # Make request to external API
             response = requests.get(
-                f"{self.API_BASE_URL}/api/check-verified",
+                f"{LICENSE_SERVER_API_URL}/api/check-verified",
                 params={"email": email},
                 timeout=10,
             )
@@ -491,8 +615,6 @@ class ProxyResendVerificationView(View):
     Avoids CORS issues by making server-to-server request.
     """
 
-    API_BASE_URL = "https://wagtail-seotoolkit-license-server.vercel.app"
-
     def post(self, request):
         try:
             data = json.loads(request.body)
@@ -505,7 +627,7 @@ class ProxyResendVerificationView(View):
 
             # Make request to external API
             response = requests.post(
-                f"{self.API_BASE_URL}/api/resend-verification",
+                f"{LICENSE_SERVER_API_URL}/api/resend-verification",
                 json={"email": email},
                 headers={"Content-Type": "application/json"},
                 timeout=10,
@@ -527,6 +649,464 @@ class ProxyResendVerificationView(View):
         except Exception as e:
             return JsonResponse(
                 {"success": False, "message": f"Error: {str(e)}"}, status=500
+            )
+
+
+class ProxyGetPlansView(View):
+    """
+    Proxy endpoint to get available subscription plans via external API.
+    Avoids CORS issues by making server-to-server request.
+    """
+
+    def get(self, request):
+        try:
+            # Make request to external API
+            response = requests.get(
+                f"{LICENSE_SERVER_API_URL}/api/get-plans",
+                timeout=10,
+            )
+
+            # Return the external API response
+            return JsonResponse(response.json(), status=response.status_code)
+
+        except requests.RequestException as e:
+            return JsonResponse(
+                {"success": False, "error": f"Failed to get plans: {str(e)}"},
+                status=500,
+            )
+        except Exception as e:
+            return JsonResponse(
+                {"success": False, "error": f"Error: {str(e)}"}, status=500
+            )
+
+
+class ProxyCheckSubscriptionView(View):
+    """
+    Proxy endpoint to check subscription status via external API.
+
+    Caching behavior:
+    - Production: Only Pro responses are cached for 24 hours
+    - Non-Pro responses are never cached (immediate feedback on upgrades)
+    - DEBUG mode: All caching is disabled for development
+
+    Avoids CORS issues by making server-to-server request.
+    """
+
+    def get(self, request):
+        from django.conf import settings
+        from django.core.cache import cache
+
+        email = request.GET.get("email")
+        instance_id = request.GET.get("instanceId")
+
+        if not email or not instance_id:
+            return JsonResponse(
+                {"pro": False, "error": "Email and instanceId are required"},
+                status=400,
+            )
+
+        try:
+            # Skip caching in DEBUG mode for development
+            use_cache = not getattr(settings, "DEBUG", False)
+
+            # Check cache first (24 hour TTL) - only if not in DEBUG mode
+            # Note: We only cache Pro responses, so non-pro users get immediate feedback on upgrade
+            cache_key = f"subscription:{email}:{instance_id}"
+            if use_cache:
+                cached_data = cache.get(cache_key)
+                if cached_data:
+                    return JsonResponse(cached_data)
+
+            # Make request to external API
+            response = requests.get(
+                f"{LICENSE_SERVER_API_URL}/api/check-subscription",
+                params={"email": email, "instanceId": instance_id},
+                timeout=10,
+            )
+
+            data = response.json()
+
+            # Cache ONLY Pro responses for 24 hours (86400 seconds) in production
+            # Non-pro responses are never cached so users see upgrades immediately
+            if use_cache and response.status_code == 200 and data.get("pro") is True:
+                cache.set(cache_key, data, 86400)
+
+            return JsonResponse(data, status=response.status_code)
+
+        except requests.RequestException as e:
+            return JsonResponse(
+                {"pro": False, "error": f"Failed to check subscription: {str(e)}"},
+                status=500,
+            )
+        except Exception as e:
+            return JsonResponse({"pro": False, "error": f"Error: {str(e)}"}, status=500)
+
+
+class ProxyCreateCheckoutView(View):
+    """
+    Proxy endpoint to create Stripe checkout session via external API.
+    Avoids CORS issues by making server-to-server request.
+    """
+
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            email = data.get("email")
+            price_id = data.get("priceId")
+            return_url = data.get("returnUrl")
+
+            if not email or not price_id or not return_url:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "Email, priceId, and returnUrl are required",
+                    },
+                    status=400,
+                )
+
+            # Make request to external API
+            response = requests.post(
+                f"{LICENSE_SERVER_API_URL}/api/create-checkout-session",
+                json={"email": email, "priceId": price_id, "returnUrl": return_url},
+                headers={"Content-Type": "application/json"},
+                timeout=10,
+            )
+
+            # Return the external API response
+            return JsonResponse(response.json(), status=response.status_code)
+
+        except requests.RequestException as e:
+            return JsonResponse(
+                {"success": False, "error": f"Failed to create checkout: {str(e)}"},
+                status=500,
+            )
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+        except Exception as e:
+            return JsonResponse(
+                {"success": False, "error": f"Error: {str(e)}"}, status=500
+            )
+
+
+class ProxyRegisterInstanceView(View):
+    """
+    Proxy endpoint to register instance to subscription via external API.
+    Avoids CORS issues by making server-to-server request.
+    """
+
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            email = data.get("email")
+            instance_id = data.get("instanceId")
+            site_url = data.get("siteUrl", "")
+
+            if not email or not instance_id:
+                return JsonResponse(
+                    {"success": False, "error": "Email and instanceId are required"},
+                    status=400,
+                )
+
+            # Make request to external API
+            response = requests.post(
+                f"{LICENSE_SERVER_API_URL}/api/register-instance",
+                json={"email": email, "instanceId": instance_id, "siteUrl": site_url},
+                headers={"Content-Type": "application/json"},
+                timeout=10,
+            )
+
+            # Clear cache on successful registration
+            # (Cache is disabled in DEBUG mode, so this is a no-op there)
+            if response.status_code == 200:
+                from django.conf import settings
+                from django.core.cache import cache
+
+                if not getattr(settings, "DEBUG", False):
+                    cache_key = f"subscription:{email}:{instance_id}"
+                    cache.delete(cache_key)
+
+            # Return the external API response
+            return JsonResponse(response.json(), status=response.status_code)
+
+        except requests.RequestException as e:
+            return JsonResponse(
+                {"success": False, "error": f"Failed to register instance: {str(e)}"},
+                status=500,
+            )
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+        except Exception as e:
+            return JsonResponse(
+                {"success": False, "error": f"Error: {str(e)}"}, status=500
+            )
+
+
+class ProxyListInstancesView(View):
+    """
+    Proxy endpoint to list all instances for an email via external API.
+    Avoids CORS issues by making server-to-server request.
+    """
+
+    def get(self, request):
+        email = request.GET.get("email")
+
+        if not email:
+            return JsonResponse(
+                {"success": False, "error": "Email is required"}, status=400
+            )
+
+        try:
+            # Make request to external API
+            response = requests.get(
+                f"{LICENSE_SERVER_API_URL}/api/list-instances",
+                params={"email": email},
+                timeout=10,
+            )
+
+            # Return the external API response
+            return JsonResponse(response.json(), status=response.status_code)
+
+        except requests.RequestException as e:
+            return JsonResponse(
+                {"success": False, "error": f"Failed to list instances: {str(e)}"},
+                status=500,
+            )
+        except Exception as e:
+            return JsonResponse(
+                {"success": False, "error": f"Error: {str(e)}"}, status=500
+            )
+
+
+class ProxyRemoveInstanceView(View):
+    """
+    Proxy endpoint to remove instance from subscription via external API.
+    Avoids CORS issues by making server-to-server request.
+    """
+
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            email = data.get("email")
+            instance_id = data.get("instanceId")
+
+            if not email or not instance_id:
+                return JsonResponse(
+                    {"success": False, "error": "Email and instanceId are required"},
+                    status=400,
+                )
+
+            # Make request to external API
+            response = requests.post(
+                f"{LICENSE_SERVER_API_URL}/api/remove-instance",
+                json={"email": email, "instanceId": instance_id},
+                headers={"Content-Type": "application/json"},
+                timeout=10,
+            )
+
+            # Clear cache on successful removal
+            # (Cache is disabled in DEBUG mode, so this is a no-op there)
+            if response.status_code == 200:
+                from django.conf import settings
+                from django.core.cache import cache
+
+                if not getattr(settings, "DEBUG", False):
+                    cache_key = f"subscription:{email}:{instance_id}"
+                    cache.delete(cache_key)
+
+            # Return the external API response
+            return JsonResponse(response.json(), status=response.status_code)
+
+        except requests.RequestException as e:
+            return JsonResponse(
+                {"success": False, "error": f"Failed to remove instance: {str(e)}"},
+                status=500,
+            )
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+        except Exception as e:
+            return JsonResponse(
+                {"success": False, "error": f"Error: {str(e)}"}, status=500
+            )
+
+
+class ProxyCreatePortalView(View):
+    """
+    Proxy endpoint to create Stripe customer portal session via external API.
+    Avoids CORS issues by making server-to-server request.
+    """
+
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            email = data.get("email")
+            instance_id = data.get("instanceId")
+            return_url = data.get("returnUrl")
+
+            if not email or not instance_id or not return_url:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "Email, instanceId, and returnUrl are required",
+                    },
+                    status=400,
+                )
+
+            # Make request to external API
+            response = requests.post(
+                f"{LICENSE_SERVER_API_URL}/api/create-portal-session",
+                json={
+                    "email": email,
+                    "instanceId": instance_id,
+                    "returnUrl": return_url,
+                },
+                headers={"Content-Type": "application/json"},
+                timeout=10,
+            )
+
+            # Return the external API response
+            return JsonResponse(response.json(), status=response.status_code)
+
+        except requests.RequestException as e:
+            return JsonResponse(
+                {"success": False, "error": f"Failed to create portal: {str(e)}"},
+                status=500,
+            )
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+        except Exception as e:
+            return JsonResponse(
+                {"success": False, "error": f"Error: {str(e)}"}, status=500
+            )
+
+
+class ProxyGetActiveInstancesView(View):
+    """
+    Proxy endpoint to get active instances via external API.
+    Avoids CORS issues by making server-to-server request.
+    """
+
+    def get(self, request):
+        email = request.GET.get("email")
+
+        if not email:
+            return JsonResponse(
+                {"success": False, "error": "Email is required"}, status=400
+            )
+
+        try:
+            # Make request to external API
+            response = requests.get(
+                f"{LICENSE_SERVER_API_URL}/api/get-active-instances",
+                params={"email": email},
+                timeout=10,
+            )
+
+            # Return the external API response
+            return JsonResponse(response.json(), status=response.status_code)
+
+        except requests.RequestException as e:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": f"Failed to get active instances: {str(e)}",
+                },
+                status=500,
+            )
+        except Exception as e:
+            return JsonResponse(
+                {"success": False, "error": f"Error: {str(e)}"}, status=500
+            )
+
+
+class ProxySetActiveInstancesView(View):
+    """
+    Proxy endpoint to set active instances via external API.
+    Avoids CORS issues by making server-to-server request.
+    """
+
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            email = data.get("email")
+            instance_ids = data.get("instanceIds")
+
+            if not email or instance_ids is None:
+                return JsonResponse(
+                    {"success": False, "error": "Email and instanceIds are required"},
+                    status=400,
+                )
+
+            # Make request to external API
+            response = requests.post(
+                f"{LICENSE_SERVER_API_URL}/api/set-active-instances",
+                json={"email": email, "instanceIds": instance_ids},
+                headers={"Content-Type": "application/json"},
+                timeout=10,
+            )
+
+            # Note: Cache clearing for active instances is handled by TTL
+            # Individual instance checks will refresh on next request
+
+            # Return the external API response
+            return JsonResponse(response.json(), status=response.status_code)
+
+        except requests.RequestException as e:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": f"Failed to set active instances: {str(e)}",
+                },
+                status=500,
+            )
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+        except Exception as e:
+            return JsonResponse(
+                {"success": False, "error": f"Error: {str(e)}"}, status=500
+            )
+
+
+class ProxyClearActiveInstancesView(View):
+    """
+    Proxy endpoint to clear active instances via external API.
+    Avoids CORS issues by making server-to-server request.
+    """
+
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            email = data.get("email")
+
+            if not email:
+                return JsonResponse(
+                    {"success": False, "error": "Email is required"},
+                    status=400,
+                )
+
+            # Make request to external API
+            response = requests.post(
+                f"{LICENSE_SERVER_API_URL}/api/clear-active-instances",
+                json={"email": email},
+                headers={"Content-Type": "application/json"},
+                timeout=10,
+            )
+
+            # Return the external API response
+            return JsonResponse(response.json(), status=response.status_code)
+
+        except requests.RequestException as e:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": f"Failed to clear active instances: {str(e)}",
+                },
+                status=500,
+            )
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+        except Exception as e:
+            return JsonResponse(
+                {"success": False, "error": f"Error: {str(e)}"}, status=500
             )
 
 
@@ -612,6 +1192,45 @@ class BulkEditView(ReportView):
 
         # Alias object_list for template consistency
         context["pages"] = context.get("object_list", [])
+
+        # Check subscription status for bulk editor access
+        from .models import PluginEmailVerification, SubscriptionLicense
+
+        # Get email from PluginEmailVerification (single source of truth)
+        verification = PluginEmailVerification.objects.first()
+        email = verification.email if verification else None
+
+        # Get or create instance ID from SubscriptionLicense
+        # Ensures instance_id exists even if email was verified before subscription system was added
+        if email and not SubscriptionLicense.objects.exists():
+            license = SubscriptionLicense.objects.create()
+
+            # Auto-register this instance with the license server
+            try:
+                instance_id = str(license.instance_id)
+                site_url = self.request.build_absolute_uri("/").rstrip("/")
+
+                requests.post(
+                    f"{LICENSE_SERVER_API_URL}/api/register-instance",
+                    json={
+                        "email": email,
+                        "instanceId": instance_id,
+                        "siteUrl": site_url,
+                    },
+                    headers={"Content-Type": "application/json"},
+                    timeout=10,
+                )
+            except Exception as e:
+                # Don't fail page load if registration fails
+                print(
+                    f"Warning: Failed to auto-register instance in BulkEditView: {str(e)}"
+                )
+
+        license = SubscriptionLicense.objects.first()
+        instance_id = str(license.instance_id) if license else None
+
+        context["subscription_email"] = email
+        context["subscription_instance_id"] = instance_id
 
         return context
 
@@ -1270,6 +1889,61 @@ class BulkEditActionView(TemplateView):
                 "templates": templates,
                 "content_type_id": content_type_id,
                 "template_type": template_type,
+            }
+        )
+
+        return context
+
+
+class SubscriptionSettingsView(TemplateView):
+    """
+    View for managing subscription and instance registration.
+    Displays subscription status, instance management, and purchase options.
+    """
+
+    template_name = "wagtail_seotoolkit/subscription_settings.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from .models import PluginEmailVerification, SubscriptionLicense
+
+        # Get email from PluginEmailVerification (single source of truth)
+        verification = PluginEmailVerification.objects.first()
+        email = verification.email if verification else None
+
+        # Get or create instance ID from SubscriptionLicense
+        # Ensures instance_id exists even if email was verified before subscription system was added
+        if email and not SubscriptionLicense.objects.exists():
+            license = SubscriptionLicense.objects.create()
+
+            # Auto-register this instance with the license server
+            try:
+                instance_id = str(license.instance_id)
+                site_url = self.request.build_absolute_uri("/").rstrip("/")
+
+                requests.post(
+                    f"{LICENSE_SERVER_API_URL}/api/register-instance",
+                    json={
+                        "email": email,
+                        "instanceId": instance_id,
+                        "siteUrl": site_url,
+                    },
+                    headers={"Content-Type": "application/json"},
+                    timeout=10,
+                )
+            except Exception as e:
+                # Don't fail page load if registration fails
+                print(
+                    f"Warning: Failed to auto-register instance in SubscriptionSettingsView: {str(e)}"
+                )
+
+        license = SubscriptionLicense.objects.first()
+
+        context.update(
+            {
+                "license": license,
+                "email": email,
+                "instance_id": str(license.instance_id) if license else None,
             }
         )
 

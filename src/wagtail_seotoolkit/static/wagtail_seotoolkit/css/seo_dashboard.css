@@ -267,3 +267,40 @@
     }
 }
 
+/* Dashboard Message Styles */
+.dashboard-message-box {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    background: var(--w-color-surface-dashboard-panel);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--w-color-border-field);
+}
+
+.dashboard-message-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.5rem;
+    color: var(--w-color-text-label);
+}
+
+.dashboard-message-icon .icon {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.dashboard-message-content {
+    flex: 1;
+    color: var(--w-color-text-label);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+}
+

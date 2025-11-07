@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 
 SEO_AUDIT_RUN_STATUSES = [
@@ -357,6 +359,33 @@ class PluginEmailVerification(models.Model):
 
     def __str__(self):
         return self.email
+
+
+class SubscriptionLicense(models.Model):
+    """
+    Stores ONLY instance_id for this Wagtail instance.
+    Email is synced from PluginEmailVerification (single source of truth).
+    Subscription status is ALWAYS checked via external API (never stored locally).
+    This prevents local tampering - follows PluginEmailVerification pattern.
+    """
+
+    instance_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Subscription License"
+        verbose_name_plural = "Subscription Licenses"
+
+    @property
+    def email(self):
+        """Get email from PluginEmailVerification (single source of truth)"""
+        verification = PluginEmailVerification.objects.first()
+        return verification.email if verification else None
+
+    def __str__(self):
+        email = self.email or "No email configured"
+        return f"{email} - {self.instance_id}"
 
 
 class SEOMetadataTemplate(models.Model):
