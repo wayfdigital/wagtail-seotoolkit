@@ -347,7 +347,7 @@ The following features require a **paid subscription** and are licensed under th
 
 ### Getting a Pro License
 
-Pro features require an active subscription. Visit our [GitHub repository](https://github.com/wayfdigital/wagtail-seotoolkit) for pricing and subscription information.
+Pro features require an active subscription. You can obtain the pro license directly from the plugin UI after installation.
 
 **Author:** [WAYF](https://wayfdigital.com)
 
