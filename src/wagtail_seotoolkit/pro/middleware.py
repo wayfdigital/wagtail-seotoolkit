@@ -56,22 +56,10 @@ class SEOMetadataMiddleware(MiddlewareMixin):
 
         # Resolve the page from the URL using Wagtail's routing
         try:
-            from wagtail.models import Site
+            # Use Wagtail's built-in method to find the page for this request
+            page = Page.find_for_request(request, request.path)
 
-            site = Site.find_for_request(request)
-            if not site:
-                return response
-
-            # Get path components for routing
-            path = request.path.rstrip("/")
-            if not path:
-                path = "/"
-            path_components = [component for component in path.split("/") if component]
-
-            # Route to the page
-            page, args, kwargs = site.root_page.specific.route(request, path_components)
-
-            if not page or not isinstance(page, Page):
+            if not page:
                 return response
 
         except Exception:
