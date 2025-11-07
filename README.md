@@ -51,6 +51,15 @@ A comprehensive SEO auditing and optimization plugin for Wagtail CMS that helps 
 - **Button Visibility**: Control audit button visibility in admin
 - **Dev Fix Filtering**: Show only content-editable issues
 
+### 🤩 **[PRO] Bulk meta editor**
+- **Multi-Page Editing**: Edit SEO titles and meta descriptions for hundreds of pages at once instead of manually editing each one
+- **Smart Templates**: Use placeholders like `{title} | {site_name}` or `{introduction[:100]}` to create consistent metadata patterns across your site
+- **Dynamic Placeholders**: Automatically pull content from page fields (title, introduction, body text, etc.) with optional truncation
+- **Issue-Based Filtering**: Jump directly to pages with specific SEO issues from the dashboard for quick fixes
+- **Auto-Publishing**: Automatically publishes changes for live pages, keeping your site up-to-date without manual intervention
+- **Live Validation**: Real-time character counting and validation ensures your metadata meets SEO best practices
+- **Automatic apply**: Optionally you can enable middleware that will automatically set the meta tags **without modiffying templates**
+
 ## 📸 Screenshots
 
 ### SEO Dashboard
@@ -64,7 +73,8 @@ A comprehensive SEO auditing and optimization plugin for Wagtail CMS that helps 
 ### Page Sidebar
 ![Sidebar](https://github.com/wayfdigital/wagtail-seotoolkit/blob/main/static/sidebar.png?raw=True)
 
-*Real-time SEO insights directly in the Wagtail page editor*
+### Bulk editor
+![Bulk editor](https://github.com/wayfdigital/wagtail-seotoolkit/blob/main/static/bulk_editor.png?raw=True)
 
 ## 🛠 Installation
 
@@ -92,6 +102,20 @@ INSTALLED_APPS = [
 ```bash
 python manage.py migrate
 ```
+
+### (Optional) Enable middleware
+```python
+MIDDLEWARE = [
+    ...
+    # SEO Toolkit Middleware - Must be after Wagtail's middleware
+    "wagtail_seotoolkit.middleware.SEOMetadataMiddleware",
+]
+```
+
+**How the bulk editor works with middleware:**
+
+The bulk editor works on the basic page fields `seo_title` and `search_description`. When the middleware is enabled, it will replace the rendered meta tags in your HTML output with the new versions applied from the bulk editor. This enables you to start using bulk editor features without modifying all of the template tags across multiple pages - the middleware automatically intercepts and updates the meta tags at render time.
+
 
 
 ## ⚙️ Configuration
@@ -228,9 +252,7 @@ This is **Phase 1** - the free tier that shows you what's broken.
 
 ### Coming Very Soon (Phase 2 - Pro Tier)
 
-- **Bulk Editor** - Fix 100+ pages at once instead of manually editing each one
-- **Template System** - Apply consistent meta tag patterns across your site (e.g., `{title} | {site_name}`)
-- **Auto-Suggestions** - Generate meta descriptions from page content
+- **JSON-LD Editor** - Visual editor for structured data 
 - **Daily Monitoring** - Automated audits with email alerts when issues are detected
 - **Historical Tracking** - See how your SEO health improves over time
 
@@ -257,7 +279,7 @@ This is an early release and we want your feedback!
 
 - Are the checks finding real, actionable issues?
 - What SEO checks are we missing?
-- Would bulk fixing be worth paying for?
+- Does the bulk fixing is worth paying for?
 - How's the performance on large sites (1000+ pages)?
 
 ---
