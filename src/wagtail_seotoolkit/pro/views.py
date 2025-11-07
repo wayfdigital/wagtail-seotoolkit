@@ -1105,11 +1105,13 @@ def bulk_apply_metadata(request):
             # Must check has_unpublished_changes BEFORE creating revision
             should_publish = page.live and not page.has_unpublished_changes
 
-            # Get the latest revision to base our changes on
-            latest_revision = page.get_latest_revision()
-            if latest_revision:
-                page_instance = latest_revision.as_object()
+            # Determine which version to use as base:
+            # - If page has unpublished changes: use latest revision to preserve those changes
+            # - If page has no unpublished changes: use live page (page.specific) to ensure all data is current
+            if page.has_unpublished_changes:
+                page_instance = page.get_latest_revision_as_object()
             else:
+                # No unpublished changes - use live page to ensure all fields are current
                 page_instance = page.specific
 
             # Update the appropriate field with template (containing placeholders)
