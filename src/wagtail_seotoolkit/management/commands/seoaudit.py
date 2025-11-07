@@ -159,3 +159,4 @@ class Command(BaseCommand):
         )
         self.stdout.write(f"  Low severity: {results['low_issues']}")
         self.stdout.write(self.style.SUCCESS("=" * 60))
+
