@@ -239,7 +239,7 @@
 .seo-dashboard__code {
     background: var(--w-color-surface-menus);
     border: 1px solid var(--w-color-border-furniture);
-    color: var(--w-color-text-label);
+    color: white;
     padding: 0.875rem 1rem;
     border-radius: 0.375rem;
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
