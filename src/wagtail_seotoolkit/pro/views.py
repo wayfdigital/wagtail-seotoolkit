@@ -823,6 +823,7 @@ class BulkEditFilterSet(WagtailFilterSet):
     issue_type = django_filters.MultipleChoiceFilter(
         label=_("Issue Type"),
         field_name="seo_issues__issue_type",
+        method="filter_issue_type",
         choices=list(
             filter(
                 lambda x: SEOAuditIssueType.is_bulk_edit_issue(x[0]),
@@ -842,6 +843,29 @@ class BulkEditFilterSet(WagtailFilterSet):
         field_name="content_type",
         widget=forms.CheckboxSelectMultiple,
     )
+
+    def filter_issue_type(self, queryset, name, value):
+        """Filter pages by issue types from the latest audit run only"""
+        if not value:
+            return queryset
+
+        # Get the latest completed audit run
+        from wagtail_seotoolkit.core.models import SEOAuditRun
+
+        latest_audit = (
+            SEOAuditRun.objects.filter(status="completed")
+            .order_by("-created_at")
+            .first()
+        )
+
+        if not latest_audit:
+            # No completed audit yet, return empty queryset
+            return queryset.none()
+
+        # Filter pages that have the selected issue types in the latest audit run
+        return queryset.filter(
+            seo_issues__audit_run=latest_audit, seo_issues__issue_type__in=value
+        ).distinct()
 
     class Meta:
         model = Page

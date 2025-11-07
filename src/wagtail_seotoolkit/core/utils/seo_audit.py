@@ -187,13 +187,17 @@ def get_page_html(page) -> str:
     Get HTML content for a Wagtail page.
 
     Attempts to render the page using Wagtail's render method.
+    If WAGTAIL_SEOTOOLKIT_PROCESS_PLACEHOLDERS is True, processes placeholders
+    in SEO metadata before returning HTML.
 
     Args:
         page: The Wagtail page to get HTML from
 
     Returns:
-        HTML string
+        HTML string with placeholders processed if enabled
     """
+    from django.conf import settings
+    
     try:
         request = HttpRequest()
         site = page.get_site()
@@ -205,11 +209,28 @@ def get_page_html(page) -> str:
         if hasattr(response, "render"):
             response = response.render()
             if isinstance(response.content, bytes):
-                return response.content.decode("utf-8")
+                html = response.content.decode("utf-8")
             else:
-                return str(response.content)
+                html = str(response.content)
         else:
-            return str(response)
+            html = str(response)
+            
+        # Process placeholders if enabled
+        process_placeholders_enabled = getattr(
+            settings, "WAGTAIL_SEOTOOLKIT_PROCESS_PLACEHOLDERS", True
+        )
+        
+        if process_placeholders_enabled:
+            try:
+                from wagtail_seotoolkit.pro.utils.placeholder_utils import (
+                    process_html_with_placeholders,
+                )
+                html = process_html_with_placeholders(html, page, request)
+            except ImportError:
+                # Pro package not available, skip placeholder processing
+                pass
+                
+        return html
     except Exception as e:
         # Last resort: return empty HTML to continue with the audit
         tqdm.write(f"  ⚠️  Could not render {page.title}: {e}")

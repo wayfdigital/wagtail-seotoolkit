@@ -209,3 +209,104 @@ def validate_template_placeholders(template_string, content_type_id=None):
     invalid = [p for p in template_placeholders if p not in available_names]
 
     return (len(invalid) == 0, invalid)
+
+
+def process_html_with_placeholders(html_content, page, request=None):
+    """
+    Process HTML content and replace SEO metadata (title and meta description) with
+    values from page fields, processing any placeholders they contain.
+
+    This function extracts the core HTML processing logic used by the middleware,
+    making it reusable for SEO audits and other contexts.
+
+    Args:
+        html_content: HTML string to process
+        page: Wagtail page instance (will be converted to specific if needed)
+        request: Optional Django request object (needed for site_name placeholder)
+
+    Returns:
+        Processed HTML string with placeholders replaced in title and meta description
+
+    Example:
+        >>> html = '<html><head><title>Old</title></head></html>'
+        >>> page.seo_title = "{title} | {site_name}"
+        >>> process_html_with_placeholders(html, page, request)
+        '<html><head><title>About Us | Bakery Demo</title></head></html>'
+    """
+    # Get specific page instance
+    page_instance = page.specific if hasattr(page, 'specific') else page
+
+    # Get SEO metadata from page fields
+    seo_title = getattr(page_instance, 'seo_title', None)
+    search_description = getattr(page_instance, 'search_description', None)
+
+    # If no custom metadata, return unchanged HTML
+    if not seo_title and not search_description:
+        return html_content
+
+    content = html_content
+    modified = False
+
+    # Replace title tag if we have a custom title
+    if seo_title:
+        # Process placeholders in the title template
+        processed_title = process_placeholders(seo_title, page_instance, request)
+
+        # Match <title>...</title> including multiline and whitespace
+        title_pattern = r"<title[^>]*>.*?</title>"
+        new_title = f"<title>{processed_title}</title>"
+
+        if re.search(title_pattern, content, re.IGNORECASE | re.DOTALL):
+            content = re.sub(
+                title_pattern,
+                new_title,
+                content,
+                count=1,
+                flags=re.IGNORECASE | re.DOTALL,
+            )
+            modified = True
+
+    # Replace meta description if we have a custom description
+    if search_description:
+        # Process placeholders in the description template
+        processed_description = process_placeholders(
+            search_description, page_instance, request
+        )
+
+        # Escape any quotes in the description for HTML attribute
+        escaped_description = processed_description.replace('"', "&quot;")
+        new_meta = f'<meta name="description" content="{escaped_description}">'
+
+        # Multiple regex patterns to catch various meta description formats
+        meta_patterns = [
+            r'<meta\s+name="description"\s+content="[^"]*"\s*/?>',
+            r"<meta\s+name='description'\s+content='[^']*'\s*/?>",
+            r'<meta\s+content="[^"]*"\s+name="description"\s*/?>',
+            r"<meta\s+content='[^']*'\s+name='description'\s*/?>",
+            r'<meta\s+[^>]*name=["\']description["\'][^>]*>',
+        ]
+
+        meta_replaced = False
+        for pattern in meta_patterns:
+            if re.search(pattern, content, re.IGNORECASE):
+                content = re.sub(
+                    pattern, new_meta, content, count=1, flags=re.IGNORECASE
+                )
+                modified = True
+                meta_replaced = True
+                break
+
+        # If no existing meta description tag found, inject after <head>
+        if not meta_replaced:
+            head_pattern = r"<head[^>]*>"
+            if re.search(head_pattern, content, re.IGNORECASE):
+                content = re.sub(
+                    head_pattern,
+                    lambda m: f"{m.group(0)}\n    {new_meta}",
+                    content,
+                    count=1,
+                    flags=re.IGNORECASE,
+                )
+                modified = True
+
+    return content
