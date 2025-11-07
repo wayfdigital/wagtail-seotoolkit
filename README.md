@@ -246,9 +246,9 @@ docker-compose up
 
 ## 🗺️ Roadmap
 
-This is **Phase 1** - the free tier that shows you what's broken.
+We are in the **Phase 2** - free tier showing you what's broken and first pro feature Bulk editor.
 
-### Coming Very Soon (Phase 2 - Pro Tier)
+### Coming Very Soon (Phase 2 Further development - Pro Tier)
 
 - **JSON-LD Editor** - Visual editor for structured data 
 - **Daily Monitoring** - Automated audits with email alerts when issues are detected
@@ -310,6 +310,9 @@ This is an early release and we want your feedback!
 - First pro feature - Bulk editor!
 - Subscription management from the plugin
 - License update
+
+### Version 0.2.1
+- README update
 
 ---
 
