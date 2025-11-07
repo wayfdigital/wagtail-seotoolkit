@@ -54,11 +54,9 @@ A comprehensive SEO auditing and optimization plugin for Wagtail CMS that helps 
 ### 🤩 **[PRO] Bulk meta editor**
 - **Multi-Page Editing**: Edit SEO titles and meta descriptions for hundreds of pages at once instead of manually editing each one
 - **Smart Templates**: Use placeholders like `{title} | {site_name}` or `{introduction[:100]}` to create consistent metadata patterns across your site
-- **Dynamic Placeholders**: Automatically pull content from page fields (title, introduction, body text, etc.) with optional truncation
 - **Issue-Based Filtering**: Jump directly to pages with specific SEO issues from the dashboard for quick fixes
-- **Auto-Publishing**: Automatically publishes changes for live pages, keeping your site up-to-date without manual intervention
 - **Live Validation**: Real-time character counting and validation ensures your metadata meets SEO best practices
-- **Automatic apply**: Optionally you can enable middleware that will automatically set the meta tags **without modiffying templates**
+- **Automatic Template Integration**: Enable middleware to automatically apply bulk editor changes to rendered meta tags without modifying your existing template tags across multiple pages
 
 ## 📸 Screenshots
 
