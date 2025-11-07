@@ -33,7 +33,7 @@ from .utils.placeholder_utils import (
 )
 
 # License server API base URL
-LICENSE_SERVER_API_URL = "wagtail-seotoolkit-license-server.vercel.app"
+LICENSE_SERVER_API_URL = "https://wagtail-seotoolkit-license-server.vercel.app"
 
 
 class SEODashboardView(TemplateView):
