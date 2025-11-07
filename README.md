@@ -329,6 +329,9 @@ This is an early release and we want your feedback!
 ### Version 0.2.2
 - Bulk editor fixes
 
+### Version 0.2.3
+- Fix checks bypassing the middleware processing resulting in false positives
+
 ---
 
 ## 📄 License
