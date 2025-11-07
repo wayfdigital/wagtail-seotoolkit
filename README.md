@@ -326,6 +326,9 @@ This is an early release and we want your feedback!
 ### Version 0.2.1
 - README update
 
+### Version 0.2.2
+- Bulk editor fixes
+
 ---
 
 ## 📄 License

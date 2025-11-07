@@ -8,7 +8,7 @@ This package uses dual licensing:
 For more information, see LICENSE in the project root.
 """
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 # Ensure hooks are loaded
 default_app_config = "wagtail_seotoolkit.apps.WagtailSEOToolkitConfig"
