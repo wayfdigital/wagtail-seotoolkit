@@ -242,6 +242,10 @@ WAGTAIL_SEOTOOLKIT_SHOW_AUDIT_BUTTON = (
 
 WAGTAIL_SEOTOOLKIT_PROCESS_PLACEHOLDERS = True
 
+WAGTAIL_SEOTOOLKIT_REPORT_INTERVAL = "14d"
+
+WAGTAIL_SEOTOOLKIT_REPORT_EMAIL_RECIPIENTS = ["test@example.com"]
+
 # Content Security policy settings
 # http://django-csp.readthedocs.io/en/latest/configuration.html
 

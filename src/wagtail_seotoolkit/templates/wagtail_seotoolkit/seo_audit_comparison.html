@@ -1,0 +1,313 @@
+{% extends "wagtailadmin/base.html" %}
+{% load i18n static wagtailadmin_tags %}
+
+{% block titletag %}{% trans "SEO Audit Comparison" %}{% endblock %}
+{% block bodyclass %}seo-audit-comparison{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/seo_dashboard.css' %}?v=2">
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/dev_badge.css' %}">
+{% endblock %}
+
+{% block content %}
+    {% trans "SEO Audit Comparison" as title_str %}
+    {% include "wagtailadmin/shared/header.html" with title=title_str icon="chart-bar" %}
+    
+    <div class="seo-comparison nice-padding">
+        {% if has_report %}
+            <!-- Score Comparison Card -->
+            <div class="seo-dashboard__main-card">
+                <h2 class="seo-dashboard__title">{% trans "Score Comparison" %}</h2>
+                
+                <div class="seo-comparison__score-overview">
+                    <div class="seo-comparison__score-column">
+                        <div class="seo-comparison__score-header">
+                            <h3>{% trans "Previous Audit" %}</h3>
+                            <p class="seo-comparison__date">{{ report.previous_audit.created_at|date:"M d, Y H:i" }}</p>
+                        </div>
+                        <div class="seo-dashboard__score {% if report.previous_audit.overall_score >= 80 %}seo-dashboard__score--good{% elif report.previous_audit.overall_score >= 50 %}seo-dashboard__score--warning{% else %}seo-dashboard__score--critical{% endif %}">
+                            {{ report.previous_audit.overall_score }}/100
+                        </div>
+                        <div class="seo-comparison__stats">
+                            <div class="seo-comparison__stat">
+                                <span class="seo-comparison__stat-label">{% trans "Pages" %}</span>
+                                <span class="seo-comparison__stat-value">{{ report.previous_audit.pages_analyzed }}</span>
+                            </div>
+                            <div class="seo-comparison__stat">
+                                <span class="seo-comparison__stat-label">{% trans "Critical" %}</span>
+                                <span class="seo-comparison__stat-value seo-comparison__stat-value--critical">{{ prev_high_count }}</span>
+                            </div>
+                            <div class="seo-comparison__stat">
+                                <span class="seo-comparison__stat-label">{% trans "Warnings" %}</span>
+                                <span class="seo-comparison__stat-value seo-comparison__stat-value--warning">{{ prev_medium_count }}</span>
+                            </div>
+                            <div class="seo-comparison__stat">
+                                <span class="seo-comparison__stat-label">{% trans "Suggestions" %}</span>
+                                <span class="seo-comparison__stat-value">{{ prev_low_count }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="seo-comparison__change-indicator">
+                        <div class="seo-dashboard__score-change-indicator {% if score_trend == 'up' %}seo-dashboard__score-change--positive{% elif score_trend == 'down' %}seo-dashboard__score-change--negative{% else %}seo-dashboard__score-change--neutral{% endif %}">
+                            {% if score_trend == 'up' %}
+                                <span class="seo-comparison__change-text">↑ +{{ report.score_change }}</span>
+                            {% elif score_trend == 'down' %}
+                                <span class="seo-comparison__change-text">↓ {{ report.score_change }}</span>
+                            {% else %}
+                                <span class="seo-comparison__change-text">→ 0</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="seo-comparison__score-column">
+                        <div class="seo-comparison__score-header">
+                            <h3>{% trans "Current Audit" %}</h3>
+                            <p class="seo-comparison__date">{{ report.current_audit.created_at|date:"M d, Y H:i" }}</p>
+                        </div>
+                        <div class="seo-dashboard__score {% if report.current_audit.overall_score >= 80 %}seo-dashboard__score--good{% elif report.current_audit.overall_score >= 50 %}seo-dashboard__score--warning{% else %}seo-dashboard__score--critical{% endif %}">
+                            {{ report.current_audit.overall_score }}/100
+                        </div>
+                        <div class="seo-comparison__stats">
+                            <div class="seo-comparison__stat">
+                                <span class="seo-comparison__stat-label">{% trans "Pages" %}</span>
+                                <span class="seo-comparison__stat-value">{{ report.current_audit.pages_analyzed }}</span>
+                            </div>
+                            <div class="seo-comparison__stat">
+                                <span class="seo-comparison__stat-label">{% trans "Critical" %}</span>
+                                <span class="seo-comparison__stat-value seo-comparison__stat-value--critical">{{ curr_high_count }}</span>
+                            </div>
+                            <div class="seo-comparison__stat">
+                                <span class="seo-comparison__stat-label">{% trans "Warnings" %}</span>
+                                <span class="seo-comparison__stat-value seo-comparison__stat-value--warning">{{ curr_medium_count }}</span>
+                            </div>
+                            <div class="seo-comparison__stat">
+                                <span class="seo-comparison__stat-label">{% trans "Suggestions" %}</span>
+                                <span class="seo-comparison__stat-value">{{ curr_low_count }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Issue Changes Summary -->
+            <div class="seo-dashboard__main-card">
+                <h2 class="seo-dashboard__title">{% trans "Issue Changes Summary" %}</h2>
+                <div class="seo-comparison__summary-grid">
+                    <div class="seo-comparison__summary-item seo-comparison__summary-item--fixed">
+                        <span class="seo-comparison__summary-value">{{ report.fixed_issues_count }}</span>
+                        <span class="seo-comparison__summary-label">{% trans "Issues Fixed" %}</span>
+                    </div>
+                    <div class="seo-comparison__summary-item seo-comparison__summary-item--new">
+                        <span class="seo-comparison__summary-value">{{ report.new_issues_count }}</span>
+                        <span class="seo-comparison__summary-label">{% trans "New Issues" %}</span>
+                    </div>
+                    <div class="seo-comparison__summary-item">
+                        <span class="seo-comparison__summary-value">{{ report.new_issues_old_pages_count }}</span>
+                        <span class="seo-comparison__summary-label">{% trans "New Issues on Existing Pages" %}</span>
+                    </div>
+                    <div class="seo-comparison__summary-item">
+                        <span class="seo-comparison__summary-value">{{ report.new_issues_new_pages_count }}</span>
+                        <span class="seo-comparison__summary-label">{% trans "New Issues on New Pages" %}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Fixed Issues -->
+            {% if top_fixed_issues %}
+            <div class="seo-dashboard__main-card">
+                <h2 class="seo-dashboard__title">{% trans "Fixed Issues" %}</h2>
+                <div class="seo-comparison__issue-table">
+                    <table class="listing">
+                        <thead>
+                            <tr>
+                                <th>{% trans "Severity" %}</th>
+                                <th>{% trans "Issue Type" %}</th>
+                                <th>{% trans "Page" %}</th>
+                                <th>{% trans "URL" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for issue in top_fixed_issues %}
+                            <tr>
+                                <td>
+                                    <span class="seo-comparison__severity-badge {% if issue.issue_severity == SEVERITY_HIGH %}seo-comparison__severity-badge--high{% elif issue.issue_severity == SEVERITY_MEDIUM %}seo-comparison__severity-badge--medium{% else %}seo-comparison__severity-badge--low{% endif %}">
+                                        {{ issue.get_issue_severity_display }}
+                                    </span>
+                                </td>
+                                <td>{{ issue.get_issue_type_display }}</td>
+                                <td>
+                                    {% if issue.page %}
+                                        {% page_permissions issue.page as page_perms %}
+                                        {% if page_perms.can_edit %}
+                                            <a href="{% url 'wagtailadmin_pages:edit' issue.page.id %}" title="{% trans 'Edit this page' %}">
+                                                {{ issue.page.get_admin_display_title|truncatewords:8 }}
+                                            </a>
+                                        {% else %}
+                                            {{ issue.page.get_admin_display_title|truncatewords:8 }}
+                                        {% endif %}
+                                    {% else %}
+                                        {{ issue.page_title|truncatewords:8 }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if issue.page and issue.page.live %}
+                                        <a href="{{ issue.page_url }}" target="_blank" class="w-status w-status--primary" title="{{ issue.page_url }}">
+                                            {% trans "Live" %}
+                                        </a>
+                                    {% elif issue.page_url %}
+                                        <span class="seo-comparison__url-text" title="{{ issue.page_url }}">{{ issue.page_url|truncatechars:30 }}</span>
+                                    {% else %}
+                                        <span class="seo-comparison__url-text">—</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- New Issues on Existing Pages -->
+            {% if new_issues_old_pages %}
+            <div class="seo-dashboard__main-card">
+                <h2 class="seo-dashboard__title">{% trans "New Issues on Existing Pages" %}</h2>
+                <div class="seo-comparison__issue-table">
+                    <table class="listing">
+                        <thead>
+                            <tr>
+                                <th>{% trans "Severity" %}</th>
+                                <th>{% trans "Issue Type" %}</th>
+                                <th>{% trans "Page" %}</th>
+                                <th>{% trans "URL" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for issue in new_issues_old_pages %}
+                            <tr>
+                                <td>
+                                    <span class="seo-comparison__severity-badge {% if issue.issue_severity == SEVERITY_HIGH %}seo-comparison__severity-badge--high{% elif issue.issue_severity == SEVERITY_MEDIUM %}seo-comparison__severity-badge--medium{% else %}seo-comparison__severity-badge--low{% endif %}">
+                                        {{ issue.get_issue_severity_display }}
+                                    </span>
+                                </td>
+                                <td>{{ issue.get_issue_type_display }}</td>
+                                <td>
+                                    {% if issue.page %}
+                                        {% page_permissions issue.page as page_perms %}
+                                        {% if page_perms.can_edit %}
+                                            <a href="{% url 'wagtailadmin_pages:edit' issue.page.id %}" title="{% trans 'Edit this page' %}">
+                                                {{ issue.page.get_admin_display_title|truncatewords:8 }}
+                                            </a>
+                                        {% else %}
+                                            {{ issue.page.get_admin_display_title|truncatewords:8 }}
+                                        {% endif %}
+                                    {% else %}
+                                        {{ issue.page_title|truncatewords:8 }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if issue.page and issue.page.live %}
+                                        <a href="{{ issue.page_url }}" target="_blank" class="w-status w-status--primary" title="{{ issue.page_url }}">
+                                            {% trans "Live" %}
+                                        </a>
+                                    {% elif issue.page_url %}
+                                        <span class="seo-comparison__url-text" title="{{ issue.page_url }}">{{ issue.page_url|truncatechars:30 }}</span>
+                                    {% else %}
+                                        <span class="seo-comparison__url-text">—</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- New Issues on New Pages -->
+            {% if new_issues_new_pages %}
+            <div class="seo-dashboard__main-card">
+                <h2 class="seo-dashboard__title">{% trans "New Issues on New Pages" %}</h2>
+                <div class="seo-comparison__issue-table">
+                    <table class="listing">
+                        <thead>
+                            <tr>
+                                <th>{% trans "Severity" %}</th>
+                                <th>{% trans "Issue Type" %}</th>
+                                <th>{% trans "Page" %}</th>
+                                <th>{% trans "URL" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for issue in new_issues_new_pages %}
+                            <tr>
+                                <td>
+                                    <span class="seo-comparison__severity-badge {% if issue.issue_severity == SEVERITY_HIGH %}seo-comparison__severity-badge--high{% elif issue.issue_severity == SEVERITY_MEDIUM %}seo-comparison__severity-badge--medium{% else %}seo-comparison__severity-badge--low{% endif %}">
+                                        {{ issue.get_issue_severity_display }}
+                                    </span>
+                                </td>
+                                <td>{{ issue.get_issue_type_display }}</td>
+                                <td>
+                                    {% if issue.page %}
+                                        {% page_permissions issue.page as page_perms %}
+                                        {% if page_perms.can_edit %}
+                                            <a href="{% url 'wagtailadmin_pages:edit' issue.page.id %}" title="{% trans 'Edit this page' %}">
+                                                {{ issue.page.get_admin_display_title|truncatewords:8 }}
+                                            </a>
+                                        {% else %}
+                                            {{ issue.page.get_admin_display_title|truncatewords:8 }}
+                                        {% endif %}
+                                    {% else %}
+                                        {{ issue.page_title|truncatewords:8 }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if issue.page and issue.page.live %}
+                                        <a href="{{ issue.page_url }}" target="_blank" class="w-status w-status--primary" title="{{ issue.page_url }}">
+                                            {% trans "Live" %}
+                                        </a>
+                                    {% elif issue.page_url %}
+                                        <span class="seo-comparison__url-text" title="{{ issue.page_url }}">{{ issue.page_url|truncatechars:30 }}</span>
+                                    {% else %}
+                                        <span class="seo-comparison__url-text">—</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Navigation -->
+            <div class="seo-dashboard__actions">
+                <a href="{% url 'seo_audit_reports_list' %}" class="button button-secondary">
+                    {% trans "View All Reports" %}
+                </a>
+                <a href="{% url 'seo_dashboard' %}" class="button button-secondary">
+                    {% trans "Back to Dashboard" %}
+                </a>
+            </div>
+            
+        {% else %}
+            <!-- No Report Available -->
+            <div class="seo-dashboard__no-data">
+                <h2 class="seo-dashboard__no-data-title">
+                    {% trans "No comparison report available" %}
+                </h2>
+                <p class="seo-dashboard__no-data-text">
+                    {% trans "Historical reports are generated automatically after running multiple audits." %}
+                </p>
+                <p class="seo-dashboard__no-data-text">
+                    {% trans "Run at least two audits to see comparison data." %}
+                </p>
+                <a href="{% url 'seo_dashboard' %}" class="button button-primary">
+                    {% trans "Back to Dashboard" %}
+                </a>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+

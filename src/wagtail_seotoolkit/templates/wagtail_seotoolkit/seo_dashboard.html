@@ -71,7 +71,6 @@
                     </div>
                 </div>
                 
-                <hr class="seo-dashboard__divider">
                 
                 <!-- Top Issues -->
                 {% if top_issues %}
@@ -103,6 +102,79 @@
                             </div>
                         {% endfor %}
                     </div>
+                {% endif %}
+                
+                <!-- Historical Performance Section -->
+                {% if has_historical_data or chart_data_json %}
+                    <hr class="seo-dashboard__divider">
+                    
+                    <h3 class="seo-dashboard__section-title">{% trans "Historical Performance" %}</h3>
+                    
+                    <!-- Score Progression Chart -->
+                    <div class="seo-dashboard__chart-container">
+                        <canvas id="scoreProgressionChart"></canvas>
+                    </div>
+                    
+                    {% if has_historical_data %}
+                    <!-- Interval Header -->
+                    <div class="seo-dashboard__interval-header">
+                        <h4 class="seo-dashboard__interval-title">
+                            {% trans "Latest Performance Comparison" %}
+                        </h4>
+                        <p class="seo-dashboard__interval-description">
+                            {% blocktrans with interval=report_interval %}Comparing audits from {{ interval }} intervals{% endblocktrans %}
+                        </p>
+                    </div>
+                    
+                    <div class="seo-dashboard__historical-card">
+                        <div class="seo-dashboard__historical-overview">
+                            <div class="seo-dashboard__score-comparison">
+                                <div class="seo-dashboard__score-item">
+                                    <span class="seo-dashboard__score-label">{% trans "Previous" %}</span>
+                                    <span class="seo-dashboard__score-value">{{ latest_report.previous_audit.overall_score }}</span>
+                                </div>
+                                <div class="seo-dashboard__score-change-indicator {% if score_trend == 'up' %}seo-dashboard__score-change--positive{% elif score_trend == 'down' %}seo-dashboard__score-change--negative{% else %}seo-dashboard__score-change--neutral{% endif %}">
+                                    {% if score_trend == 'up' %}
+                                        ↑ +{{ latest_report.score_change }}
+                                    {% elif score_trend == 'down' %}
+                                        ↓ {{ latest_report.score_change }}
+                                    {% else %}
+                                        → 0
+                                    {% endif %}
+                                </div>
+                                <div class="seo-dashboard__score-item">
+                                    <span class="seo-dashboard__score-label">{% trans "Current" %}</span>
+                                    <span class="seo-dashboard__score-value">{{ latest_report.current_audit.overall_score }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="seo-dashboard__issue-changes">
+                                <div class="seo-dashboard__change-item seo-dashboard__change-item--fixed">
+                                    <span class="seo-dashboard__change-value">{{ latest_report.fixed_issues_count }}</span>
+                                    <span class="seo-dashboard__change-label">{% trans "Issues Fixed" %}</span>
+                                </div>
+                                <div class="seo-dashboard__change-item seo-dashboard__change-item--new">
+                                    <span class="seo-dashboard__change-value">{{ latest_report.new_issues_count }}</span>
+                                    <span class="seo-dashboard__change-label">{% trans "New Issues" %}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="seo-dashboard__historical-meta">
+                            <p class="seo-dashboard__report-date">
+                                {% trans "Compared with audit from" %} {{ latest_report.previous_audit.created_at|date:"M d, Y" }}
+                            </p>
+                            <div class="seo-dashboard__historical-actions">
+                                <a href="{% url 'seo_audit_comparison' %}" class="button button-secondary button-small">
+                                    {% trans "View Latest Report" %}
+                                </a>
+                                <a href="{% url 'seo_audit_reports_list' %}" class="button button-secondary button-small">
+                                    {% trans "View All Reports" %}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
                 {% endif %}
                 
                 <!-- Action Buttons -->
@@ -202,6 +274,89 @@
                         requestBtn.textContent = '{% trans "Request an Audit" %}';
                         alert('Error: ' + error.message);
                     });
+                });
+            }
+        });
+    </script>
+    
+    <!-- Chart.js for Score Progression -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chartData = {{ chart_data_json|safe }};
+            
+            if (chartData && chartData.labels && chartData.labels.length > 0) {
+                const ctx = document.getElementById('scoreProgressionChart').getContext('2d');
+                
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: chartData.labels,
+                        datasets: [{
+                            label: '{% trans "SEO Score" %}',
+                            data: chartData.scores,
+                            borderColor: 'rgb(0, 125, 126)',
+                            backgroundColor: 'rgba(0, 125, 126, 0.1)',
+                            tension: 0.3,
+                            fill: true,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            pointBackgroundColor: 'rgb(0, 125, 126)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointHoverBackgroundColor: 'rgb(0, 125, 126)',
+                            pointHoverBorderColor: '#fff',
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                padding: 12,
+                                titleFont: {
+                                    size: 14
+                                },
+                                bodyFont: {
+                                    size: 16,
+                                    weight: 'bold'
+                                },
+                                callbacks: {
+                                    label: function(context) {
+                                        return '{% trans "Score" %}: ' + context.parsed.y + '/100';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    stepSize: 20,
+                                    callback: function(value) {
+                                        return value;
+                                    }
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 45
+                                }
+                            }
+                        }
+                    }
                 });
             }
         });

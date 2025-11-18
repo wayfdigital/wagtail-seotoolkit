@@ -197,7 +197,7 @@ def get_page_html(page) -> str:
         HTML string with placeholders processed if enabled
     """
     from django.conf import settings
-    
+
     try:
         request = HttpRequest()
         site = page.get_site()
@@ -214,22 +214,23 @@ def get_page_html(page) -> str:
                 html = str(response.content)
         else:
             html = str(response)
-            
+
         # Process placeholders if enabled
         process_placeholders_enabled = getattr(
             settings, "WAGTAIL_SEOTOOLKIT_PROCESS_PLACEHOLDERS", True
         )
-        
+
         if process_placeholders_enabled:
             try:
                 from wagtail_seotoolkit.pro.utils.placeholder_utils import (
                     process_html_with_placeholders,
                 )
+
                 html = process_html_with_placeholders(html, page, request)
             except ImportError:
                 # Pro package not available, skip placeholder processing
                 pass
-                
+
         return html
     except Exception as e:
         # Last resort: return empty HTML to continue with the audit

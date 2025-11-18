@@ -96,6 +96,9 @@ class Command(BaseCommand):
             # Display summary
             self.display_summary(results)
 
+            # Generate historical report if interval condition is met
+            self.generate_report_if_needed(audit_run)
+
         except KeyboardInterrupt:
             # Handle user cancellation (Ctrl+C)
             audit_run.status = "failed"
@@ -160,3 +163,107 @@ class Command(BaseCommand):
         self.stdout.write(f"  Low severity: {results['low_issues']}")
         self.stdout.write(self.style.SUCCESS("=" * 60))
 
+    def generate_report_if_needed(self, audit_run):
+        """Generate historical report if the configured interval has been met."""
+        from django.conf import settings
+
+        from wagtail_seotoolkit.core.utils.reporting import (
+            check_email_configured,
+            create_report_record,
+            generate_report_data,
+            send_report_email,
+            should_generate_report,
+        )
+
+        self.stdout.write("\n" + "=" * 60)
+        self.stdout.write("CHECKING HISTORICAL REPORT GENERATION")
+        self.stdout.write("=" * 60)
+
+        # Check if we should generate a report
+        should_generate, previous_audit = should_generate_report(audit_run)
+
+        if not should_generate:
+            self.stdout.write(
+                "No report generated (interval not met or no previous audit)"
+            )
+            self.stdout.write("=" * 60)
+            return
+
+        self.stdout.write(
+            f"Generating report comparing with audit from {previous_audit.created_at.strftime('%Y-%m-%d %H:%M')}"
+        )
+
+        try:
+            # Generate report data
+            report_data = generate_report_data(previous_audit, audit_run)
+
+            # Create report record
+            report = create_report_record(audit_run, previous_audit, report_data)
+
+            # Display report summary
+            score_change_indicator = ""
+            if report.score_change > 0:
+                score_change_indicator = f"📈 +{report.score_change}"
+                self.stdout.write(
+                    self.style.SUCCESS(f"Score change: {score_change_indicator}")
+                )
+            elif report.score_change < 0:
+                score_change_indicator = f"📉 {report.score_change}"
+                self.stdout.write(
+                    self.style.ERROR(f"Score change: {score_change_indicator}")
+                )
+            else:
+                score_change_indicator = "➡️  No change"
+                self.stdout.write(f"Score change: {score_change_indicator}")
+
+            self.stdout.write(f"Fixed issues: {report.fixed_issues_count}")
+            self.stdout.write(f"New issues: {report.new_issues_count}")
+            self.stdout.write(
+                f"  - On existing pages: {report.new_issues_old_pages_count}"
+            )
+            self.stdout.write(f"  - On new pages: {report.new_issues_new_pages_count}")
+
+            # Check if email notification should be sent
+            recipients = getattr(
+                settings, "WAGTAIL_SEOTOOLKIT_REPORT_EMAIL_RECIPIENTS", []
+            )
+
+            if recipients:
+                self.stdout.write(
+                    f"\nSending email notification to {len(recipients)} recipient(s)..."
+                )
+
+                if check_email_configured():
+                    # Send email
+                    email_sent = send_report_email(report, recipients, report_data)
+
+                    if email_sent:
+                        self.stdout.write(
+                            self.style.SUCCESS(
+                                "✅ Email notification sent successfully"
+                            )
+                        )
+                    else:
+                        self.stdout.write(
+                            self.style.WARNING("⚠️  Failed to send email notification")
+                        )
+                else:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            "⚠️  Email not configured. Skipping email notification.\n"
+                            "   Configure EMAIL_HOST and EMAIL_BACKEND in settings to enable emails."
+                        )
+                    )
+            else:
+                self.stdout.write(
+                    "\nNo email recipients configured (WAGTAIL_SEOTOOLKIT_REPORT_EMAIL_RECIPIENTS)"
+                )
+
+            self.stdout.write(
+                self.style.SUCCESS("\n✅ Report generated and saved to database")
+            )
+            self.stdout.write("=" * 60)
+
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"Error generating report: {str(e)}"))
+            self.stdout.write("=" * 60)

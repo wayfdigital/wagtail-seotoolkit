@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #007d7e; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
+        .header h1 { margin: 0; font-size: 24px; }
+        .content { background-color: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; }
+        .score-card { background-color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .score-change { font-size: 32px; font-weight: bold; margin: 10px 0; }
+        .score-change.positive { color: #28a745; }
+        .score-change.negative { color: #dc3545; }
+        .score-change.neutral { color: #6c757d; }
+        .stats { display: flex; justify-content: space-between; margin: 20px 0; flex-wrap: wrap; gap: 10px; }
+        .stat { text-align: center; flex: 1; min-width: 100px; }
+        .stat-value { font-size: 24px; font-weight: bold; color: #007d7e; }
+        .stat-label { font-size: 12px; color: #6c757d; text-transform: uppercase; }
+        .issue-list { background-color: white; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .issue-item { padding: 10px; border-left: 3px solid #007d7e; margin: 5px 0; background-color: #f8f9fa; }
+        .issue-high { border-left-color: #dc3545; }
+        .issue-medium { border-left-color: #ffc107; }
+        .issue-low { border-left-color: #17a2b8; }
+        .severity-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+        .severity-high { background-color: #dc3545; color: white; }
+        .severity-medium { background-color: #ffc107; color: #333; }
+        .severity-low { background-color: #17a2b8; color: white; }
+        .footer { text-align: center; padding: 20px; color: #6c757d; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 SEO Audit Report</h1>
+        </div>
+        <div class="content">
+            <div class="score-card">
+                <h2>Score Overview</h2>
+                <div class="score-change {{ score_class }}">
+                    {{ score_indicator }}
+                </div>
+                <p>Previous Score: <strong>{{ report.previous_audit.overall_score }}/100</strong> → Current Score: <strong>{{ report.current_audit.overall_score }}/100</strong></p>
+            </div>
+            
+            <div class="score-card">
+                <h2>New Issues Summary</h2>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value">{{ report.new_issues_count }}</div>
+                        <div class="stat-label">Total New Issues</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">{{ report.new_issues_old_pages_count }}</div>
+                        <div class="stat-label">On Existing Pages</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">{{ report.new_issues_new_pages_count }}</div>
+                        <div class="stat-label">On New Pages</div>
+                    </div>
+                </div>
+            </div>
+
+            {% if new_issues %}
+            <div class="issue-list">
+                <h3>New Issues</h3>
+                {% for issue in new_issues %}
+                <div class="issue-item issue-{{ issue.get_issue_severity_display|lower }}">
+                    <span class="severity-badge severity-{{ issue.get_issue_severity_display|lower }}">{{ issue.get_issue_severity_display }}</span>
+                    <strong>{{ issue.get_issue_type_display }}</strong><br>
+                    <small>{{ issue.page_title }}</small>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        <div class="footer">
+            <p>View the detailed report in your admin dashboard to see all changes.</p>
+            <p>This is an automated email from your SEO Toolkit.</p>
+        </div>
+    </div>
+</body>
+</html>
+

@@ -222,7 +222,7 @@
     padding: 0.875rem 1rem;
     font-size: 0.8125rem;
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
-    color: var(--w-color-text-label);
+    color: var(--w-color-text-button);
     overflow-x: auto;
     margin: 0;
 }

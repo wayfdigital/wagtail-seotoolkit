@@ -357,3 +357,57 @@ class SEOAuditIssue(models.Model):
 
     def __str__(self):
         return f"{self.get_issue_type_display()} - {self.get_issue_severity_display()}"
+
+
+class SEOAuditReport(models.Model):
+    """
+    Historical comparison report between two audit runs.
+
+    Generated when the configured reporting interval is met.
+    Contains aggregated metrics and flags for email notification status.
+    """
+
+    current_audit = models.ForeignKey(
+        SEOAuditRun,
+        on_delete=models.CASCADE,
+        related_name="reports_as_current",
+        help_text="The more recent audit run",
+    )
+    previous_audit = models.ForeignKey(
+        SEOAuditRun,
+        on_delete=models.CASCADE,
+        related_name="reports_as_previous",
+        help_text="The older audit run being compared against",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    # Aggregated metrics
+    score_change = models.IntegerField(
+        help_text="Change in overall score (can be negative)"
+    )
+    new_issues_count = models.IntegerField(
+        default=0, help_text="Total number of new issues in current audit"
+    )
+    fixed_issues_count = models.IntegerField(
+        default=0, help_text="Total number of issues fixed since previous audit"
+    )
+    new_issues_old_pages_count = models.IntegerField(
+        default=0, help_text="New issues on pages that existed in previous audit"
+    )
+    new_issues_new_pages_count = models.IntegerField(
+        default=0, help_text="New issues on pages created after previous audit"
+    )
+
+    # Email notification tracking
+    email_sent = models.BooleanField(
+        default=False, help_text="Whether email notification was sent for this report"
+    )
+    email_sent_at = models.DateTimeField(
+        null=True, blank=True, help_text="When the email notification was sent"
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Report: {self.previous_audit.created_at.strftime('%Y-%m-%d')} → {self.current_audit.created_at.strftime('%Y-%m-%d')}"

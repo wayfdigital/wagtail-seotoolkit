@@ -1,0 +1,95 @@
+{% load i18n wagtailadmin_tags %}
+
+<div class="seo-reports-list__timeline nice-padding">
+    {% for report in reports %}
+    <div class="seo-reports-list__row">
+        <div class="seo-reports-list__timeline-marker">
+            <div class="seo-reports-list__timeline-dot"></div>
+            {% if not forloop.last %}
+                <div class="seo-reports-list__timeline-line"></div>
+            {% endif %}
+        </div>
+        
+        <div class="seo-reports-list__content">
+            <div class="seo-reports-list__main">
+                <!-- Date Range -->
+                <div class="seo-reports-list__dates">
+                    <div class="seo-reports-list__date">
+                        <span class="seo-reports-list__date-label">{% trans "From" %}</span>
+                        <span class="seo-reports-list__date-value">{{ report.previous_audit.created_at|date:"M d, Y" }}</span>
+                    </div>
+                    <svg class="seo-reports-list__arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                    <div class="seo-reports-list__date">
+                        <span class="seo-reports-list__date-label">{% trans "To" %}</span>
+                        <span class="seo-reports-list__date-value">{{ report.current_audit.created_at|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+                
+                <!-- Score Progression -->
+                <div class="seo-reports-list__scores">
+                    <div class="seo-reports-list__score-item">
+                        <div class="seo-reports-list__score-badge {% if report.previous_audit.overall_score >= 80 %}seo-reports-list__score-badge--good{% elif report.previous_audit.overall_score >= 50 %}seo-reports-list__score-badge--warning{% else %}seo-reports-list__score-badge--critical{% endif %}">
+                            {{ report.previous_audit.overall_score }}
+                        </div>
+                    </div>
+                    
+                    <div class="seo-reports-list__change {% if report.score_change > 0 %}seo-reports-list__change--positive{% elif report.score_change < 0 %}seo-reports-list__change--negative{% else %}seo-reports-list__change--neutral{% endif %}">
+                        {% if report.score_change > 0 %}
+                            <span class="seo-reports-list__change-icon">↑</span>
+                            <span class="seo-reports-list__change-text">+{{ report.score_change }}</span>
+                        {% elif report.score_change < 0 %}
+                            <span class="seo-reports-list__change-icon">↓</span>
+                            <span class="seo-reports-list__change-text">{{ report.score_change }}</span>
+                        {% else %}
+                            <span class="seo-reports-list__change-icon">→</span>
+                            <span class="seo-reports-list__change-text">0</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="seo-reports-list__score-item">
+                        <div class="seo-reports-list__score-badge {% if report.current_audit.overall_score >= 80 %}seo-reports-list__score-badge--good{% elif report.current_audit.overall_score >= 50 %}seo-reports-list__score-badge--warning{% else %}seo-reports-list__score-badge--critical{% endif %}">
+                            {{ report.current_audit.overall_score }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Issues Summary -->
+                <div class="seo-reports-list__issues">
+                    <div class="seo-reports-list__issue-stat seo-reports-list__issue-stat--fixed">
+                        <span class="seo-reports-list__issue-number">{{ report.fixed_issues_count }}</span>
+                        <span class="seo-reports-list__issue-text">{% trans "Fixed" %}</span>
+                    </div>
+                    <div class="seo-reports-list__issue-stat seo-reports-list__issue-stat--new">
+                        <span class="seo-reports-list__issue-number">{{ report.new_issues_count }}</span>
+                        <span class="seo-reports-list__issue-text">{% trans "New" %}</span>
+                    </div>
+                </div>
+                
+                <!-- Meta Info -->
+                <div class="seo-reports-list__info">
+                    <span class="seo-reports-list__generated">
+                        {% trans "Generated" %} {{ report.created_at|date:"M d, Y H:i" }}
+                    </span>
+                    {% if report.email_sent %}
+                        <span class="seo-reports-list__badge" title="{% trans 'Email sent' %} {{ report.email_sent_at|date:'M d, Y H:i' }}">
+                            <svg class="icon icon-mail" aria-hidden="true"><use href="#icon-mail"></use></svg>
+                            {% trans "Email sent" %}
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Action Button -->
+            <div class="seo-reports-list__actions">
+                <a href="{% url 'seo_audit_comparison_detail' report.id %}" class="button">
+                    {% trans "View Details" %}
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+

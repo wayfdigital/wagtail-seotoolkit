@@ -18,6 +18,7 @@ from wagtail_seotoolkit.core.models import (
     SEOAuditIssue,
     SEOAuditIssueSeverity,
     SEOAuditIssueType,
+    SEOAuditReport,
     SEOAuditRun,
 )
 
@@ -163,6 +164,87 @@ class SEODashboardView(TemplateView):
             context["stored_email"] = verification.email if verification else None
         except ImportError:
             context["stored_email"] = None
+
+        # Add historical report data
+        import json
+
+        from wagtail_seotoolkit.core.models import SEOAuditReport
+
+        latest_report = SEOAuditReport.objects.order_by("-created_at").first()
+
+        # Get historical audit runs for chart (last 15 completed audits)
+        audit_runs = SEOAuditRun.objects.filter(status="completed").order_by(
+            "-created_at"
+        )[:15]
+
+        # Build chart data (reverse to show oldest to newest)
+        chart_data = {
+            "labels": [],
+            "scores": [],
+        }
+
+        if audit_runs:
+            for audit in reversed(audit_runs):
+                chart_data["labels"].append(audit.created_at.strftime("%b %d, %Y"))
+                chart_data["scores"].append(audit.overall_score)
+
+        # Format the reporting interval for display
+        from django.conf import settings as django_settings
+
+        from wagtail_seotoolkit.core.utils.reporting import parse_interval
+
+        interval_str = getattr(
+            django_settings, "WAGTAIL_SEOTOOLKIT_REPORT_INTERVAL", "7d"
+        )
+
+        try:
+            interval = parse_interval(interval_str)
+            # Format interval nicely
+            days = interval.days
+            if days == 1:
+                interval_display = "daily"
+            elif days == 7:
+                interval_display = "weekly"
+            elif days == 14:
+                interval_display = "every 2 weeks"
+            elif days == 30 or days == 31:
+                interval_display = "monthly"
+            elif days % 7 == 0:
+                weeks = days // 7
+                interval_display = f"every {weeks} weeks"
+            else:
+                interval_display = f"every {days} days"
+        except ValueError:
+            interval_display = "periodic"
+
+        if latest_report:
+            # Determine trend indicator
+            if latest_report.score_change > 0:
+                score_trend = "up"
+            elif latest_report.score_change < 0:
+                score_trend = "down"
+            else:
+                score_trend = "same"
+
+            context.update(
+                {
+                    "latest_report": latest_report,
+                    "score_trend": score_trend,
+                    "has_historical_data": True,
+                    "chart_data_json": json.dumps(chart_data),
+                    "report_interval": interval_display,
+                }
+            )
+        else:
+            context.update(
+                {
+                    "latest_report": None,
+                    "score_trend": None,
+                    "has_historical_data": False,
+                    "chart_data_json": json.dumps(chart_data),
+                    "report_interval": interval_display,
+                }
+            )
 
         return context
 
@@ -332,3 +414,185 @@ class RequestAuditView(View):
                 {"success": False, "error": f"Failed to schedule audit: {str(e)}"},
                 status=500,
             )
+
+
+class SEOAuditReportsListView(ReportView):
+    """
+    Report view showing all historical comparison reports with pagination.
+
+    Displays a chronological archive of all generated audit comparison reports
+    using Wagtail's built-in ReportView for pagination and filtering.
+    """
+
+    index_url_name = "seo_audit_reports_list"
+    index_results_url_name = "seo_audit_reports_list_results"
+    page_title = _("Historical Reports")
+    header_icon = "doc-full-inverse"
+    template_name = "wagtail_seotoolkit/seo_audit_reports_base.html"
+    results_template_name = "wagtail_seotoolkit/seo_audit_reports_results.html"
+
+    model = SEOAuditReport
+    paginate_by = 20
+
+    list_export = [
+        "created_at",
+        "previous_audit__created_at",
+        "current_audit__created_at",
+        "score_change",
+        "new_issues_count",
+        "fixed_issues_count",
+    ]
+
+    def get_queryset(self):
+        from wagtail_seotoolkit.core.models import SEOAuditReport
+
+        return SEOAuditReport.objects.select_related(
+            "current_audit", "previous_audit"
+        ).order_by("-created_at")
+
+    def get_breadcrumbs_items(self):
+        """Add SEO Dashboard to breadcrumbs"""
+        from django.urls import reverse
+
+        return [
+            {
+                "url": reverse("seo_dashboard"),
+                "label": _("SEO Dashboard"),
+            },
+            {"url": None, "label": _("Historical Reports")},
+        ]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Alias object_list for template
+        context["reports"] = context.get("object_list", [])
+
+        return context
+
+
+class SEOAuditComparisonView(TemplateView):
+    """
+    Detailed comparison view showing changes between two audit runs.
+
+    Displays comprehensive comparison including score changes, new issues,
+    fixed issues, and breakdowns by page type.
+    """
+
+    template_name = "wagtail_seotoolkit/seo_audit_comparison.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        from wagtail_seotoolkit.core.models import SEOAuditReport
+        from wagtail_seotoolkit.core.utils.reporting import generate_report_data
+
+        # Get report ID from URL parameter, or use latest report
+        report_id = kwargs.get("report_id", None)
+
+        if report_id:
+            report = SEOAuditReport.objects.filter(id=report_id).first()
+        else:
+            report = SEOAuditReport.objects.order_by("-created_at").first()
+
+        if not report:
+            context.update(
+                {
+                    "report": None,
+                    "has_report": False,
+                }
+            )
+            return context
+
+        # Generate detailed report data
+        detailed_data = generate_report_data(
+            report.previous_audit, report.current_audit
+        )
+
+        # Determine score trend
+        if report.score_change > 0:
+            score_trend = "up"
+        elif report.score_change < 0:
+            score_trend = "down"
+        else:
+            score_trend = "same"
+
+        # Get top new issues (limit to 10)
+        top_new_issues = (
+            detailed_data["all_new_issues"]
+            .select_related("page")
+            .order_by("-issue_severity", "issue_type")[:10]
+        )
+
+        # Get top fixed issues (limit to 10)
+        top_fixed_issues = (
+            detailed_data["all_fixed_issues"]
+            .select_related("page")
+            .order_by("-issue_severity", "issue_type")[:10]
+        )
+
+        # Get new issues for old pages (limit to 10)
+        new_issues_old_pages = (
+            detailed_data["new_issues_old_pages"]
+            .select_related("page")
+            .order_by("-issue_severity", "issue_type")[:10]
+        )
+
+        # Get new issues for new pages (limit to 10)
+        new_issues_new_pages = (
+            detailed_data["new_issues_new_pages"]
+            .select_related("page")
+            .order_by("-issue_severity", "issue_type")[:10]
+        )
+
+        # Get issue counts by severity for both audits
+        previous_issues_by_severity = report.previous_audit.issues.values(
+            "issue_severity"
+        ).annotate(count=Count("id"))
+        current_issues_by_severity = report.current_audit.issues.values(
+            "issue_severity"
+        ).annotate(count=Count("id"))
+
+        # Convert to dictionaries for easy access
+        prev_severity_counts = {
+            item["issue_severity"]: item["count"]
+            for item in previous_issues_by_severity
+        }
+        curr_severity_counts = {
+            item["issue_severity"]: item["count"] for item in current_issues_by_severity
+        }
+
+        context.update(
+            {
+                "report": report,
+                "has_report": True,
+                "score_trend": score_trend,
+                "top_new_issues": top_new_issues,
+                "top_fixed_issues": top_fixed_issues,
+                "new_issues_old_pages": new_issues_old_pages,
+                "new_issues_new_pages": new_issues_new_pages,
+                "prev_high_count": prev_severity_counts.get(
+                    SEOAuditIssueSeverity.HIGH, 0
+                ),
+                "prev_medium_count": prev_severity_counts.get(
+                    SEOAuditIssueSeverity.MEDIUM, 0
+                ),
+                "prev_low_count": prev_severity_counts.get(
+                    SEOAuditIssueSeverity.LOW, 0
+                ),
+                "curr_high_count": curr_severity_counts.get(
+                    SEOAuditIssueSeverity.HIGH, 0
+                ),
+                "curr_medium_count": curr_severity_counts.get(
+                    SEOAuditIssueSeverity.MEDIUM, 0
+                ),
+                "curr_low_count": curr_severity_counts.get(
+                    SEOAuditIssueSeverity.LOW, 0
+                ),
+                "SEVERITY_LOW": SEOAuditIssueSeverity.LOW,
+                "SEVERITY_MEDIUM": SEOAuditIssueSeverity.MEDIUM,
+                "SEVERITY_HIGH": SEOAuditIssueSeverity.HIGH,
+            }
+        )
+
+        return context
