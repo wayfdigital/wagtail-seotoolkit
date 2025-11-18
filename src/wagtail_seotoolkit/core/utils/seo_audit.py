@@ -314,6 +314,8 @@ def audit_single_page(
     Returns:
         List of issues found
     """
+    from django.conf import settings
+
     from wagtail_seotoolkit.core.models import SEOAuditIssue, SEOAuditIssueType
     from wagtail_seotoolkit.core.utils.checkers import PlaceholderChecker
 
@@ -321,7 +323,10 @@ def audit_single_page(
     html = get_page_html(page)
 
     # Save default SEO metadata if it doesn't exist
-    save_default_seo_metadata(page, html)
+    # Only if middleware is enabled
+    # If middleware disabled the templates handle the logic and we don't want to override it
+    if "wagtail_seotoolkit.middleware.SEOMetadataMiddleware" in settings.MIDDLEWARE:
+        save_default_seo_metadata(page, html)
 
     # Get page URL and base domain
     url = page.get_full_url() if hasattr(page, "get_full_url") else page.url
