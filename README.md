@@ -81,6 +81,7 @@ _Detailed view of all SEO issues with filtering and management options_
 ### Page Sidebar
 
 ![Sidebar](https://github.com/wayfdigital/wagtail-seotoolkit/blob/main/static/sidebar.png?raw=True)
+
 _See issues directly in page edit view_
 
 ### Bulk editor
