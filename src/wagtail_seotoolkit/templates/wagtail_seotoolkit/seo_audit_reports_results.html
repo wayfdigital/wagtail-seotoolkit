@@ -1,0 +1,24 @@
+{% extends 'wagtailadmin/reports/base_report_results.html' %}
+{% load i18n %}
+
+{% block results %}
+    {% include 'wagtail_seotoolkit/_list_audit_reports.html' %}
+{% endblock %}
+
+{% block no_results_message %}
+    <div class="seo-dashboard__no-data">
+        <h2 class="seo-dashboard__no-data-title">
+            {% trans "No historical reports available" %}
+        </h2>
+        <p class="seo-dashboard__no-data-text">
+            {% trans "Historical reports are generated automatically after running multiple audits based on your configured interval." %}
+        </p>
+        <p class="seo-dashboard__no-data-text">
+            {% trans "Run at least two audits with the appropriate time interval to generate your first report." %}
+        </p>
+        <a href="{% url 'seo_dashboard' %}" class="button button-primary">
+            {% trans "Back to Dashboard" %}
+        </a>
+    </div>
+{% endblock %}
+

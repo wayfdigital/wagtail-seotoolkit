@@ -14,6 +14,8 @@ Pro views (WAYF Proprietary License):
 # Core views (MIT License)
 from wagtail_seotoolkit.core.views import (
     RequestAuditView,
+    SEOAuditComparisonView,
+    SEOAuditReportsListView,
     SEODashboardView,
     SEOIssuesFilterSet,
     SEOIssuesReportView,
@@ -56,6 +58,8 @@ from wagtail_seotoolkit.pro.views import (
 __all__ = [
     # Core
     "SEODashboardView",
+    "SEOAuditComparisonView",
+    "SEOAuditReportsListView",
     "SEOIssuesFilterSet",
     "SEOIssuesReportView",
     "RequestAuditView",

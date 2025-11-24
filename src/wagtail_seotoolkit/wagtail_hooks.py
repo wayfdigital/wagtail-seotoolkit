@@ -28,6 +28,8 @@ from wagtail_seotoolkit.views import (
     ProxySetActiveInstancesView,
     RequestAuditView,
     SaveEmailVerificationView,
+    SEOAuditComparisonView,
+    SEOAuditReportsListView,
     SEODashboardView,
     SEOIssuesReportView,
     SubscriptionSettingsView,
@@ -58,6 +60,26 @@ def register_seo_admin_urls():
             "seo-dashboard/request-audit/",
             RequestAuditView.as_view(),
             name="request_audit",
+        ),
+        path(
+            "reports/seo-audits/",
+            SEOAuditReportsListView.as_view(),
+            name="seo_audit_reports_list",
+        ),
+        path(
+            "reports/seo-audits/results/",
+            SEOAuditReportsListView.as_view(results_only=True),
+            name="seo_audit_reports_list_results",
+        ),
+        path(
+            "seo-dashboard/comparison/",
+            SEOAuditComparisonView.as_view(),
+            name="seo_audit_comparison",
+        ),
+        path(
+            "seo-dashboard/comparison/<int:report_id>/",
+            SEOAuditComparisonView.as_view(),
+            name="seo_audit_comparison_detail",
         ),
         path(
             "reports/seo-issues/",
