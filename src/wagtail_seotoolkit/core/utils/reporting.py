@@ -251,13 +251,22 @@ def send_report_email(report, recipients, detailed_data):
     try:
         html_body = format_report_email(report, detailed_data)
 
-        # Determine subject based on score change
+        # Format dates for subject
+        prev_date = report.previous_audit.created_at.strftime("%b %d")
+        curr_date = report.current_audit.created_at.strftime("%b %d, %Y")
+        date_range = f"{prev_date} → {curr_date}"
+
+        # Format issue count
+        issue_count = report.new_issues_count
+        issue_text = "issue" if issue_count == 1 else "issues"
+
+        # Determine subject based on score change and issue count
         if report.score_change > 0:
-            subject = f"✅ SEO Score Improved: +{report.score_change} points"
+            subject = f"✅ SEO Report: {issue_count} new {issue_text} (+{report.score_change} pts) - {date_range}"
         elif report.score_change < 0:
-            subject = f"⚠️ SEO Score Declined: {report.score_change} points"
+            subject = f"⚠️ SEO Report: {issue_count} new {issue_text} ({report.score_change} pts) - {date_range}"
         else:
-            subject = "📊 SEO Audit Report - No Score Change"
+            subject = f"📊 SEO Report: {issue_count} new {issue_text} - {date_range}"
 
         send_mail(
             subject=subject,
