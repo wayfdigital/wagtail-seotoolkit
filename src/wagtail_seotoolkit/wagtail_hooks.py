@@ -2,11 +2,14 @@
 Wagtail hooks for SEO Toolkit
 """
 
+from django.conf import settings
+from django.shortcuts import redirect
 from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
 from wagtail.admin.menu import MenuItem
 
+from wagtail_seotoolkit.pro.redirect_views import RedirectOnActionView
 from wagtail_seotoolkit.views import (
     BulkEditActionView,
     BulkEditView,
@@ -299,6 +302,19 @@ def register_seo_admin_urls():
             get_jsonld_placeholders_api,
             name="jsonld_placeholders_api",
         ),
+        # Redirect on delete/unpublish
+        path(
+            "pages/<int:page_id>/redirect-on-delete/",
+            RedirectOnActionView.as_view(),
+            name="redirect_on_delete",
+            kwargs={"action": "delete"},
+        ),
+        path(
+            "pages/<int:page_id>/redirect-on-unpublish/",
+            RedirectOnActionView.as_view(),
+            name="redirect_on_unpublish",
+            kwargs={"action": "unpublish"},
+        ),
     ]
 
 
@@ -365,3 +381,72 @@ def register_subscription_settings_menu_item():
         icon_name="lock",
         order=9999,
     )
+
+
+def _is_redirect_prompt_enabled():
+    """Check if the redirect prompt feature is enabled."""
+    return getattr(settings, "WAGTAIL_SEOTOOLKIT_REDIRECT_ON_DELETE", True)
+
+
+@hooks.register("before_delete_page")
+def prompt_redirect_on_delete(request, page):
+    """
+    Hook to prompt user for redirect targets before deleting a page.
+
+    If the page or its descendants are referenced elsewhere on the site,
+    this hook redirects to a form where the user can select redirect targets
+    to avoid 404 errors.
+    """
+    if not _is_redirect_prompt_enabled():
+        return None
+
+    # Only intercept POST requests (the actual delete confirmation)
+    if request.method != "POST":
+        return None
+
+    # Skip if already processed (via session flag)
+    # Check this AFTER the POST check to avoid clearing the flag on GET requests
+    session_key = f"skip_redirect_prompt_{page.id}"
+    if request.session.get(session_key):
+        del request.session[session_key]
+        return None
+
+    # Check if any pages need redirects
+    from wagtail_seotoolkit.pro.utils.redirect_utils import pages_need_redirect_prompt
+
+    if pages_need_redirect_prompt(page):
+        return redirect("redirect_on_delete", page_id=page.id)
+
+    return None
+
+
+@hooks.register("before_unpublish_page")
+def prompt_redirect_on_unpublish(request, page):
+    """
+    Hook to prompt user for redirect targets before unpublishing a page.
+
+    If the page or its descendants are referenced elsewhere on the site,
+    this hook redirects to a form where the user can select redirect targets
+    to avoid 404 errors.
+    """
+    if not _is_redirect_prompt_enabled():
+        return None
+
+    # Only intercept POST requests (the actual unpublish confirmation)
+    if request.method != "POST":
+        return None
+
+    # Skip if already processed (via session flag)
+    # Check this AFTER the POST check to avoid clearing the flag on GET requests
+    session_key = f"skip_redirect_prompt_{page.id}"
+    if request.session.get(session_key):
+        del request.session[session_key]
+        return None
+
+    # Check if any pages need redirects
+    from wagtail_seotoolkit.pro.utils.redirect_utils import pages_need_redirect_prompt
+
+    if pages_need_redirect_prompt(page):
+        return redirect("redirect_on_unpublish", page_id=page.id)
+
+    return None

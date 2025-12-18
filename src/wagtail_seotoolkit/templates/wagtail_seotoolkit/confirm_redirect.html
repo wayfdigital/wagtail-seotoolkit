@@ -1,0 +1,299 @@
+{% extends "wagtailadmin/base.html" %}
+{% load i18n wagtailadmin_tags wagtail_seotoolkit_tags %}
+
+{% block titletag %}
+    {% trans "Create Redirects Before" %} {{ action_display|capfirst }} - {{ page.title }}
+{% endblock %}
+
+{% block content %}
+    {% include "wagtailadmin/shared/header.html" with title=page.title subtitle=action_display|capfirst icon="redirect" %}
+
+    <div class="nice-padding">
+        <div class="w-mb-4">
+            <div class="help-block help-warning">
+                <p>
+                    {% if action == 'delete' %}
+                        {% blocktrans trimmed with title=page.title %}
+                            The page "<strong>{{ title }}</strong>" and/or its descendants are referenced elsewhere on this site.
+                            To avoid broken links (404 errors), you can create redirects to other pages before deleting.
+                        {% endblocktrans %}
+                    {% else %}
+                        {% blocktrans trimmed with title=page.title %}
+                            The page "<strong>{{ title }}</strong>" and/or its descendants are referenced elsewhere on this site.
+                            To avoid broken links (404 errors), you can create redirects to other pages before unpublishing.
+                        {% endblocktrans %}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            {# Main page section #}
+            {% if main_page %}
+                <section class="w-mb-6">
+                    <h2 class="w-label-1">{% trans "Main Page" %}</h2>
+                    <table class="listing">
+                        <thead>
+                            <tr>
+                                <th>{% trans "Page" %}</th>
+                                <th>{% trans "URL" %}</th>
+                                <th>{% trans "Referenced By" %}</th>
+                                <th>{% trans "Redirect To" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="title">
+                                        <h2>{{ main_page.title }}</h2>
+                                    </div>
+                                </td>
+                                <td>
+                                    <code>{{ main_page.url }}</code>
+                                </td>
+                                <td class="references-cell">
+                                    {% if main_page.references %}
+                                        <ul class="references-list">
+                                            {% for ref in main_page.references %}
+                                                <li>
+                                                    {% if ref.source_url %}
+                                                        <a href="{{ ref.source_url }}" target="_blank">{{ ref.source_title }}</a>
+                                                    {% else %}
+                                                        <span>{{ ref.source_title }}</span>
+                                                    {% endif %}
+                                                    {% if ref.field_description %}
+                                                        <span class="field-path">{{ ref.field_description }}</span>
+                                                    {% endif %}
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <span class="w-status">{% trans "No references" %}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% render_redirect_field form main_page.id %}
+                                    {% get_redirect_field_errors form main_page.id as field_errors %}
+                                    {% for error in field_errors %}
+                                        <p class="error-message">{{ error }}</p>
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+            {% endif %}
+
+            {# Children pages section #}
+            {% if children_pages %}
+                <section class="w-mb-6">
+                    <h2 class="w-label-1">{% trans "Child Pages" %}</h2>
+                    <p class="help">
+                        {% trans "The following child pages will also be affected by this action." %}
+                    </p>
+                    <table class="listing">
+                        <thead>
+                            <tr>
+                                <th>{% trans "Page" %}</th>
+                                <th>{% trans "URL" %}</th>
+                                <th>{% trans "Referenced By" %}</th>
+                                <th>{% trans "Redirect To" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for child in children_pages %}
+                                <tr>
+                                    <td>
+                                        <div class="title">
+                                            <h2>{{ child.title }}</h2>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <code>{{ child.url }}</code>
+                                    </td>
+                                    <td class="references-cell">
+                                        {% if child.references %}
+                                            <ul class="references-list">
+                                                {% for ref in child.references %}
+                                                    <li>
+                                                        {% if ref.source_url %}
+                                                            <a href="{{ ref.source_url }}" target="_blank">{{ ref.source_title }}</a>
+                                                        {% else %}
+                                                            <span>{{ ref.source_title }}</span>
+                                                        {% endif %}
+                                                        {% if ref.field_description %}
+                                                            <span class="field-path">{{ ref.field_description }}</span>
+                                                        {% endif %}
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        {% else %}
+                                            <span class="w-status">{% trans "No references" %}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% render_redirect_field form child.id %}
+                                        {% get_redirect_field_errors form child.id as field_errors %}
+                                        {% for error in field_errors %}
+                                            <p class="error-message">{{ error }}</p>
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </section>
+            {% endif %}
+
+            {# Translation pages section #}
+            {% if translation_pages %}
+                <section class="w-mb-6">
+                    <h2 class="w-label-1">{% trans "Translations" %}</h2>
+                    <p class="help">
+                        {% trans "The following translations will also be affected by this action." %}
+                    </p>
+                    <table class="listing">
+                        <thead>
+                            <tr>
+                                <th>{% trans "Page" %}</th>
+                                <th>{% trans "Language" %}</th>
+                                <th>{% trans "URL" %}</th>
+                                <th>{% trans "Referenced By" %}</th>
+                                <th>{% trans "Redirect To" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trans_page in translation_pages %}
+                                <tr>
+                                    <td>
+                                        <div class="title">
+                                            <h2>{{ trans_page.title }}</h2>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {{ trans_page.locale }}
+                                    </td>
+                                    <td>
+                                        <code>{{ trans_page.url }}</code>
+                                    </td>
+                                    <td class="references-cell">
+                                        {% if trans_page.references %}
+                                            <ul class="references-list">
+                                                {% for ref in trans_page.references %}
+                                                    <li>
+                                                        {% if ref.source_url %}
+                                                            <a href="{{ ref.source_url }}" target="_blank">{{ ref.source_title }}</a>
+                                                        {% else %}
+                                                            <span>{{ ref.source_title }}</span>
+                                                        {% endif %}
+                                                        {% if ref.field_description %}
+                                                            <span class="field-path">{{ ref.field_description }}</span>
+                                                        {% endif %}
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        {% else %}
+                                            <span class="w-status">{% trans "No references" %}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% render_redirect_field form trans_page.id %}
+                                        {% get_redirect_field_errors form trans_page.id as field_errors %}
+                                        {% for error in field_errors %}
+                                            <p class="error-message">{{ error }}</p>
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </section>
+            {% endif %}
+
+            <div class="actions">
+                <button type="submit" class="button button-longrunning" data-clicked-text="{% trans 'Creating redirects...' %}">
+                    <svg class="icon icon-redirect w-w-4 w-h-4" aria-hidden="true">
+                        <use href="#icon-redirect"></use>
+                    </svg>
+                    <em>{% trans "Create Redirects and Proceed" %}</em>
+                </button>
+
+                <button type="submit" name="skip" value="1" class="button button-secondary">
+                    {% if action == 'delete' %}
+                        {% trans "Skip and Delete Without Redirects" %}
+                    {% else %}
+                        {% trans "Skip and Unpublish Without Redirects" %}
+                    {% endif %}
+                </button>
+
+                <a href="{{ cancel_url }}" class="button button-secondary">
+                    {% trans "Cancel" %}
+                </a>
+            </div>
+        </form>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    {{ form.media.js }}
+{% endblock %}
+
+{% block extra_css %}
+    {{ block.super }}
+    {{ form.media.css }}
+    <style>
+        .listing td code {
+            background: var(--w-color-surface-menus);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+        }
+        .help-warning {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            background: var(--w-color-warning-50);
+            border: 1px solid var(--w-color-warning-100);
+            padding: 1rem;
+            border-radius: 0.5rem;
+        }
+        .help-warning .icon {
+            flex-shrink: 0;
+            color: var(--w-color-warning-100);
+        }
+        .help-warning p {
+            margin: 0;
+        }
+        .references-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .references-list li {
+            margin-bottom: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.125rem;
+        }
+        .references-list li:last-child {
+            margin-bottom: 0;
+        }
+        .references-list a {
+            font-weight: 500;
+        }
+        .references-list .field-path {
+            font-size: 0.8125rem;
+            color: var(--w-color-text-meta);
+        }
+        .references-list .field-path::before {
+            content: "→ ";
+        }
+        .references-cell {
+            vertical-align: top;
+        }
+    </style>
+{% endblock %}
