@@ -1,0 +1,303 @@
+{% extends "wagtailadmin/base.html" %}
+{% load i18n static wagtailadmin_tags wagtailcore_tags %}
+
+{% block titletag %}
+    {{ page_title }} - {% trans "SEO Toolkit" %}
+{% endblock %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/bulk_edit.css' %}">
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/jsonld_editor.css' %}">
+    {{ form.media.css }}
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script src="{% static 'wagtail_seotoolkit/js/wagtail_messages.js' %}"></script>
+    {{ form.media.js }}
+{% endblock %}
+
+{% block content %}
+    <div id="message-container"></div>
+    <header class="w-header">
+        <div class="row">
+            <div class="left">
+                <div class="col">
+                    <h1 class="w-header__title">
+                        <svg class="icon icon-code w-header__glyph" aria-hidden="true"><use href="#icon-code"></use></svg>
+                        {{ page_title }}
+                    </h1>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="nice-padding">
+        {% if error %}
+            <div class="messages">
+                <div class="message error">
+                    {{ error }}
+                </div>
+            </div>
+            <a href="{% url 'jsonld_schema_list' %}" class="button">
+                {% trans "Back to Templates" %}
+            </a>
+        {% else %}
+            <form method="post" 
+                  action="{% if is_create %}{% url 'jsonld_schema_create' %}{% else %}{% url 'jsonld_schema_edit' template.id %}{% endif %}">
+                {% csrf_token %}
+
+                <div class="jsonld-editor-layout">
+                    <!-- Main Column: Settings and Schemas -->
+                    <div class="jsonld-editor-main">
+                        <!-- Template Settings Panel -->
+                        <section class="w-panel" id="panel-template-settings-section" aria-labelledby="panel-template-settings-heading" data-panel>
+                        <div class="w-panel__header">
+                            <a class="w-panel__anchor w-panel__anchor--prefix" href="#panel-template-settings-section" data-panel-anchor aria-labelledby="panel-template-settings-heading">
+                                <svg class="icon icon-link w-panel__icon" aria-hidden="true"><use href="#icon-link"></use></svg>
+                            </a>
+                            <button class="w-panel__toggle" type="button" aria-label="{% trans 'Toggle section' %}" aria-describedby="panel-template-settings-heading" data-panel-toggle aria-controls="panel-template-settings-content" aria-expanded="true">
+                                <svg class="icon icon-cog w-panel__icon" aria-hidden="true"><use href="#icon-cog"></use></svg>
+                            </button>
+                            <h2 class="w-panel__heading w-panel__heading--label" id="panel-template-settings-heading" data-panel-heading>
+                                <span data-panel-heading-text>{% trans "Template Settings" %}</span>
+                            </h2>
+                            <a class="w-panel__anchor w-panel__anchor--suffix" href="#panel-template-settings-section" aria-labelledby="panel-template-settings-heading">
+                                <svg class="icon icon-link w-panel__icon" aria-hidden="true"><use href="#icon-link"></use></svg>
+                            </a>
+                            <div class="w-panel__divider"></div>
+                        </div>
+                        <div id="panel-template-settings-content" class="w-panel__content">
+                            <!-- Template Name Field -->
+                            <div class="w-panel__wrapper">
+                                <label class="w-field__label" for="{{ form.name.id_for_label }}" id="{{ form.name.id_for_label }}-label">
+                                    {% trans "Template Name" %}<span class="w-required-mark">*</span>
+                                </label>
+                                <div class="w-field__wrapper" data-field-wrapper>
+                                    <div class="w-field w-field--char_field w-field--text_input" data-field>
+                                        <div class="w-field__errors" data-field-errors>
+                                            {% if form.name.errors %}{{ form.name.errors }}{% endif %}
+                                        </div>
+                                        <div class="w-field__help" data-field-help>
+                                            {% if form.name.help_text %}<div class="help">{{ form.name.help_text }}</div>{% endif %}
+                                        </div>
+                                        <div class="w-field__input" data-field-input>
+                                            {{ form.name }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Page Type Field -->
+                            <div class="w-panel__wrapper">
+                                <label class="w-field__label" for="{{ form.content_type.id_for_label }}" id="{{ form.content_type.id_for_label }}-label">
+                                    {% trans "Page Type" %}
+                                </label>
+                                <div class="w-field__wrapper" data-field-wrapper>
+                                    <div class="w-field w-field--model_choice_field w-field--select" data-field>
+                                        <div class="w-field__errors" data-field-errors>
+                                            {% if form.content_type.errors %}{{ form.content_type.errors }}{% endif %}
+                                        </div>
+                                        <div class="w-field__help" data-field-help>
+                                            <div class="help">{% trans "Select a page type to apply this template to, or leave blank for a default template." %}</div>
+                                        </div>
+                                        <div class="w-field__input" data-field-input>
+                                            {{ form.content_type }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Active Checkbox -->
+                            <div class="w-panel__wrapper">
+                                <label class="w-field__label" for="{{ form.is_active.id_for_label }}" id="id_is_active-label">
+                                    {% trans "Enable this template" %}
+                                </label>
+                                <div class="w-field__wrapper" data-field-wrapper>
+                                    <div class="w-field w-field--boolean_field w-field--checkbox_input" data-field>
+                                        <div class="w-field__errors" data-field-errors></div>
+                                        <div class="w-field__help" id="id_is_active-helptext" data-field-help>
+                                            <div class="help">{% trans "When active, this template will be applied to matching pages" %}</div>
+                                        </div>
+                                        <div class="w-field__input" data-field-input>
+                                            <input type="checkbox" name="is_active" aria-describedby="id_is_active-helptext" id="id_is_active" {% if form.is_active.value %}checked{% endif %}>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Schemas Panel -->
+                    <section class="w-panel w-panel--nested" id="panel-schemas-section" aria-labelledby="panel-schemas-heading" data-panel>
+                        <div class="w-panel__header">
+                            <a class="w-panel__anchor w-panel__anchor--prefix" href="#panel-schemas-section" data-panel-anchor aria-labelledby="panel-schemas-heading">
+                                <svg class="icon icon-link w-panel__icon" aria-hidden="true"><use href="#icon-link"></use></svg>
+                            </a>
+                            <button class="w-panel__toggle" type="button" aria-label="{% trans 'Toggle section' %}" aria-describedby="panel-schemas-heading" data-panel-toggle aria-controls="panel-schemas-content" aria-expanded="true">
+                                <svg class="icon icon-code w-panel__icon" aria-hidden="true"><use href="#icon-code"></use></svg>
+                            </button>
+                            <h2 class="w-panel__heading w-panel__heading--label" id="panel-schemas-heading" data-panel-heading>
+                                <span data-panel-heading-text>{% trans "Schemas" %}</span>
+                            </h2>
+                            <a class="w-panel__anchor w-panel__anchor--suffix" href="#panel-schemas-section" aria-labelledby="panel-schemas-heading">
+                                <svg class="icon icon-link w-panel__icon" aria-hidden="true"><use href="#icon-link"></use></svg>
+                            </a>
+                            <div class="w-panel__divider"></div>
+                        </div>
+                        <div id="panel-schemas-content" class="w-panel__content">
+                            <div class="w-field__wrapper" data-field-wrapper>
+                                <div class="w-field w-field--block_field w-field--block_widget" data-field>
+                                    <div class="w-field__errors" data-field-errors>
+                                        {% if form.schemas.errors %}{{ form.schemas.errors }}{% endif %}
+                                    </div>
+                                    <div class="w-field__help" data-field-help>
+                                        <div class="help">{% trans "Add schema types (BlogPosting, Article, etc.) and configure their fields. Use {field} placeholders for dynamic values." %}</div>
+                                    </div>
+                                    <div class="w-field__input" data-field-input>
+                                        {{ form.schemas }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    </div>
+
+                    <!-- Sidebar: Placeholders -->
+                    <aside class="jsonld-editor-sidebar">
+                        <section class="w-panel" id="panel-placeholders-section" aria-labelledby="panel-placeholders-heading" data-panel>
+                            <div class="w-panel__header">
+                                <a class="w-panel__anchor w-panel__anchor--prefix" href="#panel-placeholders-section" data-panel-anchor aria-labelledby="panel-placeholders-heading">
+                                    <svg class="icon icon-link w-panel__icon" aria-hidden="true"><use href="#icon-link"></use></svg>
+                                </a>
+                                <button class="w-panel__toggle" type="button" aria-label="{% trans 'Toggle section' %}" aria-describedby="panel-placeholders-heading" data-panel-toggle aria-controls="panel-placeholders-content" aria-expanded="true">
+                                    <svg class="icon icon-snippet w-panel__icon" aria-hidden="true"><use href="#icon-snippet"></use></svg>
+                                </button>
+                                <h2 class="w-panel__heading w-panel__heading--label" id="panel-placeholders-heading" data-panel-heading>
+                                    <span data-panel-heading-text>{% trans "Available Placeholders" %}</span>
+                                </h2>
+                                <a class="w-panel__anchor w-panel__anchor--suffix" href="#panel-placeholders-section" aria-labelledby="panel-placeholders-heading">
+                                    <svg class="icon icon-link w-panel__icon" aria-hidden="true"><use href="#icon-link"></use></svg>
+                                </a>
+                                <div class="w-panel__divider"></div>
+                            </div>
+                            <div id="panel-placeholders-content" class="w-panel__content">
+                                <div class="w-field__help" data-field-help>
+                                    <div class="help">{% trans "Click to copy. Use [:N] to truncate, e.g. {title[:60]}" %}</div>
+                                </div>
+                                <div class="placeholder-cloud" id="placeholder-cloud">
+                                    {% for placeholder in placeholders %}
+                                        <span class="placeholder-badge-wrapper placeholder-badge--{{ placeholder.type }}">
+                                            <button type="button" 
+                                                    class="placeholder-badge-main" 
+                                                    data-placeholder="{{ placeholder.name }}"
+                                                    title="{% trans 'Click to copy' %} {{'{'}}{{ placeholder.name }}{{'}'}}">
+                                                {{ placeholder.label }}
+                                            </button>
+                                            <button type="button" 
+                                                    class="placeholder-truncate-btn"
+                                                    data-placeholder="{{ placeholder.name }}"
+                                                    title="{% trans 'Copy with truncation' %}">
+                                                [:N]
+                                            </button>
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </section>
+                    </aside>
+                </div>
+
+                <footer class="footer w-grid md:w-grid-flow-col">
+                    <nav class="actions actions--primary footer__container" aria-label="{% trans 'Actions' %}">
+                        <button type="submit" class="button action-save button-longrunning" data-controller="w-progress" data-action="w-progress#activate" data-w-progress-active-value="{% trans 'Saving…' %}">
+                            <svg class="icon icon-draft button-longrunning__icon" aria-hidden="true"><use href="#icon-draft"></use></svg>
+                            <svg class="icon icon-spinner" aria-hidden="true"><use href="#icon-spinner"></use></svg>
+                            <em data-w-progress-target="label">
+                                {% if is_create %}
+                                    {% trans "Create Template" %}
+                                {% else %}
+                                    {% trans "Save Template" %}
+                                {% endif %}
+                            </em>
+                        </button>
+                        <a href="{% url 'jsonld_schema_list' %}" class="button button-secondary">
+                            {% trans "Cancel" %}
+                        </a>
+                    </nav>
+                </footer>
+            </form>
+        {% endif %}
+    </div>
+
+    <script>
+    // Show copy feedback on the whole badge wrapper
+    function showCopyFeedback(wrapper) {
+        wrapper.style.backgroundColor = '#22c55e';
+        wrapper.style.borderColor = '#22c55e';
+        var mainBtn = wrapper.querySelector('.placeholder-badge-main');
+        if (mainBtn) mainBtn.style.borderColor = '#22c55e';
+        wrapper.querySelectorAll('button').forEach(function(btn) {
+            btn.style.color = 'white';
+        });
+        
+        setTimeout(function() {
+            wrapper.style.backgroundColor = '';
+            wrapper.style.borderColor = '';
+            if (mainBtn) mainBtn.style.borderColor = '';
+            wrapper.querySelectorAll('button').forEach(function(btn) {
+                btn.style.color = '';
+            });
+        }, 1000);
+    }
+
+    // Handle placeholder badge clicks (copy to clipboard)
+    document.querySelectorAll('.placeholder-badge-main').forEach(function(badge) {
+        badge.addEventListener('click', function(e) {
+            e.preventDefault();
+            const wrapper = this.closest('.placeholder-badge-wrapper');
+            const placeholder = this.getAttribute('data-placeholder');
+            const text = '{' + placeholder + '}';
+            
+            navigator.clipboard.writeText(text).then(function() {
+                showCopyFeedback(wrapper);
+            }).catch(function(err) {
+                console.error('Failed to copy:', err);
+            });
+        });
+    });
+
+    // Handle truncation button clicks (copy with truncation)
+    document.querySelectorAll('.placeholder-truncate-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const wrapper = this.closest('.placeholder-badge-wrapper');
+            const placeholder = this.getAttribute('data-placeholder');
+            
+            const length = prompt(
+                'Truncate "' + placeholder + '" to how many characters?\n\n' +
+                'Example: entering 60 will create {' + placeholder + '[:60]}'
+            );
+
+            if (length === null) return;
+
+            const parsedLength = parseInt(length, 10);
+            if (isNaN(parsedLength) || parsedLength <= 0) {
+                alert('Please enter a valid positive number');
+                return;
+            }
+
+            const text = '{' + placeholder + '[:' + parsedLength + ']}';
+
+            navigator.clipboard.writeText(text).then(function() {
+                showCopyFeedback(wrapper);
+            }).catch(function(err) {
+                console.error('Failed to copy:', err);
+            });
+        });
+    });
+    </script>
+{% endblock %}

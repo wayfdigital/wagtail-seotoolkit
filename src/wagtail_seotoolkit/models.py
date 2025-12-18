@@ -9,6 +9,7 @@ Core models (MIT License):
 
 Pro models (WAYF Proprietary License):
 - PluginEmailVerification, SubscriptionLicense, SEOMetadataTemplate
+- JSONLDSchemaTemplate, SiteWideJSONLDSchema, PageJSONLDOverride
 """
 
 # Core models (MIT License)
@@ -22,8 +23,11 @@ from wagtail_seotoolkit.core.models import (
 
 # Pro models (WAYF Proprietary License)
 from wagtail_seotoolkit.pro.models import (
+    JSONLDSchemaTemplate,
+    PageJSONLDOverride,
     PluginEmailVerification,
     SEOMetadataTemplate,
+    SiteWideJSONLDSchema,
     SubscriptionLicense,
 )
 
@@ -38,4 +42,8 @@ __all__ = [
     "PluginEmailVerification",
     "SubscriptionLicense",
     "SEOMetadataTemplate",
+    # JSON-LD Schema Editor
+    "JSONLDSchemaTemplate",
+    "SiteWideJSONLDSchema",
+    "PageJSONLDOverride",
 ]

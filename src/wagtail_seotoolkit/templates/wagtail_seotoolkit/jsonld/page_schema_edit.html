@@ -1,0 +1,280 @@
+{% extends "wagtailadmin/base.html" %}
+{% load i18n static wagtailadmin_tags wagtailcore_tags %}
+
+{% block titletag %}
+    {{ page_title }} - {% trans "SEO Toolkit" %}
+{% endblock %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/bulk_edit.css' %}">
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/jsonld_editor.css' %}">
+    {{ form.media.css }}
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script src="{% static 'wagtail_seotoolkit/js/wagtail_messages.js' %}"></script>
+    {{ form.media.js }}
+{% endblock %}
+
+{% block content %}
+    <div id="message-container"></div>
+    <header class="w-header">
+        <div class="row">
+            <div class="left">
+                <div class="col">
+                    <h1 class="w-header__title">
+                        <svg class="icon icon-code w-header__glyph" aria-hidden="true"><use href="#icon-code"></use></svg>
+                        {{ page_title }}
+                    </h1>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="nice-padding">
+        {% if error %}
+            <div class="messages">
+                <div class="message error">
+                    {{ error }}
+                </div>
+            </div>
+            <a href="{% url 'jsonld_schema_list' %}" class="button">
+                {% trans "Back to Templates" %}
+            </a>
+        {% else %}
+            <form method="post" action="{% url 'jsonld_page_edit' page.id %}">
+                {% csrf_token %}
+
+                <div class="jsonld-editor-layout">
+                    <!-- Main Column: Page Info and Schemas -->
+                    <div class="jsonld-editor-main">
+                        <!-- Page Info Panel -->
+                        <section class="w-panel" id="panel-page-info-section" aria-labelledby="panel-page-info-heading" data-panel>
+                        <div class="w-panel__header">
+                            <a class="w-panel__anchor w-panel__anchor--prefix" href="#panel-page-info-section" data-panel-anchor aria-labelledby="panel-page-info-heading">
+                                <svg class="icon icon-link w-panel__icon" aria-hidden="true"><use href="#icon-link"></use></svg>
+                            </a>
+                            <button class="w-panel__toggle" type="button" aria-label="{% trans 'Toggle section' %}" aria-describedby="panel-page-info-heading" data-panel-toggle aria-controls="panel-page-info-content" aria-expanded="true">
+                                <svg class="icon icon-doc-full w-panel__icon" aria-hidden="true"><use href="#icon-doc-full"></use></svg>
+                            </button>
+                            <h2 class="w-panel__heading w-panel__heading--label" id="panel-page-info-heading" data-panel-heading>
+                                <span data-panel-heading-text>{% trans "Page:" %} {{ page.title }}</span>
+                            </h2>
+                            <a class="w-panel__anchor w-panel__anchor--suffix" href="#panel-page-info-section" aria-labelledby="panel-page-info-heading">
+                                <svg class="icon icon-link w-panel__icon" aria-hidden="true"><use href="#icon-link"></use></svg>
+                            </a>
+                            <div class="w-panel__divider"></div>
+                        </div>
+                        <div id="panel-page-info-content" class="w-panel__content">
+                            <div class="w-field__help" data-field-help>
+                                <div class="help">
+                                    {% trans "Type:" %} {{ page.content_type.name }} | 
+                                    {% trans "URL:" %} <a href="{{ page.url }}" target="_blank">{{ page.url }}</a>
+                                </div>
+                            </div>
+
+                            <!-- Use Template Checkbox -->
+                            <div class="w-panel__wrapper">
+                                <label class="w-field__label" for="{{ form.use_template.id_for_label }}" id="id_use_template-label">
+                                    {% trans "Merge with page type template" %}
+                                </label>
+                                <div class="w-field__wrapper" data-field-wrapper>
+                                    <div class="w-field w-field--boolean_field w-field--checkbox_input" data-field>
+                                        <div class="w-field__errors" data-field-errors>
+                                            {% if form.use_template.errors %}{{ form.use_template.errors }}{% endif %}
+                                        </div>
+                                        <div class="w-field__help" id="id_use_template-helptext" data-field-help>
+                                            <div class="help">{% trans "If enabled, schemas below will be merged with the page type template (overrides take precedence)." %}</div>
+                                        </div>
+                                        <div class="w-field__input" data-field-input>
+                                            <input type="checkbox" name="use_template" aria-describedby="id_use_template-helptext" id="id_use_template" {% if form.use_template.value %}checked{% endif %}>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Active Checkbox -->
+                            <div class="w-panel__wrapper">
+                                <label class="w-field__label" for="{{ form.is_active.id_for_label }}" id="id_is_active-label">
+                                    {% trans "Enable JSON-LD for this page" %}
+                                </label>
+                                <div class="w-field__wrapper" data-field-wrapper>
+                                    <div class="w-field w-field--boolean_field w-field--checkbox_input" data-field>
+                                        <div class="w-field__errors" data-field-errors></div>
+                                        <div class="w-field__input" data-field-input>
+                                            <input type="checkbox" name="is_active" id="id_is_active" {% if form.is_active.value %}checked{% endif %}>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Schemas Panel -->
+                    <section class="w-panel w-panel--nested" id="panel-schemas-section" aria-labelledby="panel-schemas-heading" data-panel>
+                        <div class="w-panel__header">
+                            <a class="w-panel__anchor w-panel__anchor--prefix" href="#panel-schemas-section" data-panel-anchor aria-labelledby="panel-schemas-heading">
+                                <svg class="icon icon-link w-panel__icon" aria-hidden="true"><use href="#icon-link"></use></svg>
+                            </a>
+                            <button class="w-panel__toggle" type="button" aria-label="{% trans 'Toggle section' %}" aria-describedby="panel-schemas-heading" data-panel-toggle aria-controls="panel-schemas-content" aria-expanded="true">
+                                <svg class="icon icon-code w-panel__icon" aria-hidden="true"><use href="#icon-code"></use></svg>
+                            </button>
+                            <h2 class="w-panel__heading w-panel__heading--label" id="panel-schemas-heading" data-panel-heading>
+                                <span data-panel-heading-text>{% trans "Schemas" %}</span>
+                            </h2>
+                            <a class="w-panel__anchor w-panel__anchor--suffix" href="#panel-schemas-section" aria-labelledby="panel-schemas-heading">
+                                <svg class="icon icon-link w-panel__icon" aria-hidden="true"><use href="#icon-link"></use></svg>
+                            </a>
+                            <div class="w-panel__divider"></div>
+                        </div>
+                        <div id="panel-schemas-content" class="w-panel__content">
+                            <div class="w-field__wrapper" data-field-wrapper>
+                                <div class="w-field w-field--block_field w-field--block_widget" data-field>
+                                    <div class="w-field__errors" data-field-errors>
+                                        {% if form.schemas.errors %}{{ form.schemas.errors }}{% endif %}
+                                    </div>
+                                    <div class="w-field__help" data-field-help>
+                                        <div class="help">{% trans "Add schema types specific to this page. These will override or supplement the page type template." %}</div>
+                                    </div>
+                                    <div class="w-field__input" data-field-input>
+                                        {{ form.schemas }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    </div>
+
+                    <!-- Sidebar: Placeholders -->
+                    <aside class="jsonld-editor-sidebar">
+                        <section class="w-panel" id="panel-placeholders-section" aria-labelledby="panel-placeholders-heading" data-panel>
+                            <div class="w-panel__header">
+                                <a class="w-panel__anchor w-panel__anchor--prefix" href="#panel-placeholders-section" data-panel-anchor aria-labelledby="panel-placeholders-heading">
+                                    <svg class="icon icon-link w-panel__icon" aria-hidden="true"><use href="#icon-link"></use></svg>
+                                </a>
+                                <button class="w-panel__toggle" type="button" aria-label="{% trans 'Toggle section' %}" aria-describedby="panel-placeholders-heading" data-panel-toggle aria-controls="panel-placeholders-content" aria-expanded="true">
+                                    <svg class="icon icon-snippet w-panel__icon" aria-hidden="true"><use href="#icon-snippet"></use></svg>
+                                </button>
+                                <h2 class="w-panel__heading w-panel__heading--label" id="panel-placeholders-heading" data-panel-heading>
+                                    <span data-panel-heading-text>{% trans "Available Placeholders" %}</span>
+                                </h2>
+                                <a class="w-panel__anchor w-panel__anchor--suffix" href="#panel-placeholders-section" aria-labelledby="panel-placeholders-heading">
+                                    <svg class="icon icon-link w-panel__icon" aria-hidden="true"><use href="#icon-link"></use></svg>
+                                </a>
+                                <div class="w-panel__divider"></div>
+                            </div>
+                            <div id="panel-placeholders-content" class="w-panel__content">
+                                <div class="w-field__help" data-field-help>
+                                    <div class="help">{% trans "Click to copy. Use [:N] to truncate, e.g. {title[:60]}" %}</div>
+                                </div>
+                                <div class="placeholder-cloud" id="placeholder-cloud">
+                                    {% for placeholder in placeholders %}
+                                        <span class="placeholder-badge-wrapper placeholder-badge--{{ placeholder.type }}">
+                                            <button type="button" 
+                                                    class="placeholder-badge-main" 
+                                                    data-placeholder="{{ placeholder.name }}"
+                                                    title="{% trans 'Click to copy' %} {{'{'}}{{ placeholder.name }}{{'}'}}">
+                                                {{ placeholder.label }}
+                                            </button>
+                                            <button type="button" 
+                                                    class="placeholder-truncate-btn"
+                                                    data-placeholder="{{ placeholder.name }}"
+                                                    title="{% trans 'Copy with truncation' %}">
+                                                [:N]
+                                            </button>
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </section>
+                    </aside>
+                </div>
+
+                <footer class="footer w-grid md:w-grid-flow-col">
+                    <nav class="actions actions--primary footer__container" aria-label="{% trans 'Actions' %}">
+                        <button type="submit" class="button action-save button-longrunning" data-controller="w-progress" data-action="w-progress#activate" data-w-progress-active-value="{% trans 'Saving…' %}">
+                            <svg class="icon icon-draft button-longrunning__icon" aria-hidden="true"><use href="#icon-draft"></use></svg>
+                            <svg class="icon icon-spinner" aria-hidden="true"><use href="#icon-spinner"></use></svg>
+                            <em data-w-progress-target="label">{% trans "Save Page Schema" %}</em>
+                        </button>
+                        <a href="/admin/pages/{{ page.id }}/edit/#tab-promote" class="button button-secondary">
+                            {% trans "Back to Page Editor" %}
+                        </a>
+                    </nav>
+                </footer>
+            </form>
+        {% endif %}
+    </div>
+
+    <script>
+    // Show copy feedback on the whole badge wrapper
+    function showCopyFeedback(wrapper) {
+        wrapper.style.backgroundColor = '#22c55e';
+        wrapper.style.borderColor = '#22c55e';
+        var mainBtn = wrapper.querySelector('.placeholder-badge-main');
+        if (mainBtn) mainBtn.style.borderColor = '#22c55e';
+        wrapper.querySelectorAll('button').forEach(function(btn) {
+            btn.style.color = 'white';
+        });
+        
+        setTimeout(function() {
+            wrapper.style.backgroundColor = '';
+            wrapper.style.borderColor = '';
+            if (mainBtn) mainBtn.style.borderColor = '';
+            wrapper.querySelectorAll('button').forEach(function(btn) {
+                btn.style.color = '';
+            });
+        }, 1000);
+    }
+
+    // Handle placeholder badge clicks (copy to clipboard)
+    document.querySelectorAll('.placeholder-badge-main').forEach(function(badge) {
+        badge.addEventListener('click', function(e) {
+            e.preventDefault();
+            const wrapper = this.closest('.placeholder-badge-wrapper');
+            const placeholder = this.getAttribute('data-placeholder');
+            const text = '{' + placeholder + '}';
+            
+            navigator.clipboard.writeText(text).then(function() {
+                showCopyFeedback(wrapper);
+            }).catch(function(err) {
+                console.error('Failed to copy:', err);
+            });
+        });
+    });
+
+    // Handle truncation button clicks (copy with truncation)
+    document.querySelectorAll('.placeholder-truncate-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const wrapper = this.closest('.placeholder-badge-wrapper');
+            const placeholder = this.getAttribute('data-placeholder');
+            
+            const length = prompt(
+                'Truncate "' + placeholder + '" to how many characters?\n\n' +
+                'Example: entering 60 will create {' + placeholder + '[:60]}'
+            );
+
+            if (length === null) return;
+
+            const parsedLength = parseInt(length, 10);
+            if (isNaN(parsedLength) || parsedLength <= 0) {
+                alert('Please enter a valid positive number');
+                return;
+            }
+
+            const text = '{' + placeholder + '[:' + parsedLength + ']}';
+
+            navigator.clipboard.writeText(text).then(function() {
+                showCopyFeedback(wrapper);
+            }).catch(function(err) {
+                console.error('Failed to copy:', err);
+            });
+        });
+    });
+    </script>
+{% endblock %}

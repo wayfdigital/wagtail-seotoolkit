@@ -1,0 +1,112 @@
+{% load i18n %}
+
+<style>
+.jsonld-info-panel {
+    border: 1px solid var(--w-color-border-info, #bae6fd);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 0;
+}
+
+.jsonld-info-header {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.jsonld-info-header svg {
+    width: 20px;
+    height: 20px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.jsonld-info-header h4 {
+    margin: 0;
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.jsonld-info-body {
+    padding: 1rem;
+}
+
+.jsonld-info-body p {
+    margin: 0 0 0.75rem 0;
+    font-size: 0.875rem;
+    color: var(--w-color-text-meta, #666);
+    line-height: 1.5;
+}
+
+.jsonld-button-group {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.jsonld-button-group .button {
+    margin: 0;
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    transition: all 0.15s ease;
+}
+
+.jsonld-button-group .button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
+}
+
+.jsonld-button-group .button svg {
+    width: 16px;
+    height: 16px;
+}
+</style>
+
+<div class="jsonld-info-panel">
+    <div class="jsonld-info-header">
+        <svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg>
+        <h4>{% trans "Structured Data (JSON-LD)" %}</h4>
+    </div>
+    <div class="jsonld-info-body">
+        <p>{% trans "Enhance search results with structured data schemas for rich snippets:" %}</p>
+        <div class="jsonld-button-group">
+            <a class='button button-secondary' href='{% url 'jsonld_page_edit' page_id=0 %}' data-page-link="jsonld">
+                <svg class="icon icon-code" aria-hidden="true"><use href="#icon-code"></use></svg>
+                {% trans "Edit Page Schema" %}
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    // Extract page ID from the form action URL
+    const form = document.getElementById('page-edit-form');
+    if (form) {
+        const actionUrl = form.getAttribute('action');
+        // Match pattern like /admin/pages/60/edit/
+        const match = actionUrl.match(/\/pages\/(\d+)\//);
+        if (match && match[1]) {
+            const pageId = match[1];
+            // Update all links with data-page-link="jsonld" attribute
+            document.querySelectorAll('[data-page-link="jsonld"]').forEach(function(link) {
+                const currentHref = link.getAttribute('href');
+                // Replace the 0 in the URL with actual page ID
+                link.setAttribute('href', currentHref.replace('/page/0/', '/page/' + pageId + '/'));
+            });
+        }
+    }
+})();
+</script>
+
+
+
+
+

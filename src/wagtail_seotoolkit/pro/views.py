@@ -1808,3 +1808,493 @@ class SubscriptionSettingsView(TemplateView):
         )
 
         return context
+
+
+# =============================================================================
+# JSON-LD Schema Editor Views
+# =============================================================================
+
+
+class JSONLDSchemaListView(TemplateView):
+    """
+    View for listing all JSON-LD schema templates.
+    """
+
+    template_name = "wagtail_seotoolkit/jsonld/schema_list.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        from wagtail_seotoolkit.pro.models import JSONLDSchemaTemplate
+
+        # Get all schema templates
+        templates = JSONLDSchemaTemplate.objects.all().select_related(
+            "created_by", "content_type"
+        )
+
+        # Check subscription status
+        verification = PluginEmailVerification.objects.first()
+        email = verification.email if verification else None
+
+        from wagtail_seotoolkit.pro.models import SubscriptionLicense
+
+        license = SubscriptionLicense.objects.first()
+        instance_id = str(license.instance_id) if license else None
+
+        context.update(
+            {
+                "templates": templates,
+                "page_title": _("JSON-LD Schema Templates"),
+                "subscription_email": email,
+                "subscription_instance_id": instance_id,
+            }
+        )
+
+        return context
+
+
+class JSONLDSchemaCreateView(TemplateView):
+    """
+    View for creating a new JSON-LD schema template.
+    Uses Wagtail's StreamField UI for schema composition.
+    """
+
+    template_name = "wagtail_seotoolkit/jsonld/schema_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from wagtail_seotoolkit.pro.forms import JSONLDSchemaTemplateForm
+        from wagtail_seotoolkit.pro.utils.jsonld_utils import (
+            get_jsonld_placeholders_for_content_type,
+        )
+
+        # Get initial placeholders
+        initial_placeholders = get_jsonld_placeholders_for_content_type(None)
+
+        # Create the form for StreamField editing
+        form = JSONLDSchemaTemplateForm()
+
+        context.update(
+            {
+                "page_title": _("Create JSON-LD Schema Template"),
+                "is_create": True,
+                "form": form,
+                "placeholders": initial_placeholders,
+            }
+        )
+
+        return context
+
+    def post(self, request):
+        """Handle template creation"""
+        from django.shortcuts import redirect
+
+        from wagtail_seotoolkit.pro.forms import JSONLDSchemaTemplateForm
+
+        form = JSONLDSchemaTemplateForm(request.POST)
+
+        if form.is_valid():
+            template = form.save(commit=False)
+            if request.user.is_authenticated:
+                template.created_by = request.user
+            template.save()
+
+            # For AJAX requests
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "message": "Template created successfully",
+                        "template_id": template.id,
+                        "redirect_url": f"/admin/seo-toolkit/jsonld-schemas/{template.id}/edit/",
+                    }
+                )
+            return redirect("jsonld_schema_edit", template_id=template.id)
+        else:
+            # Return form with errors for re-rendering
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse(
+                    {"success": False, "error": str(form.errors)}, status=400
+                )
+            # Re-render template with form errors
+            return self.render_to_response(self.get_context_data(form=form))
+
+
+class JSONLDSchemaEditView(TemplateView):
+    """
+    View for editing an existing JSON-LD schema template.
+    Renders the StreamField editor for schema composition.
+    """
+
+    template_name = "wagtail_seotoolkit/jsonld/schema_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from wagtail_seotoolkit.pro.forms import JSONLDSchemaTemplateForm
+        from wagtail_seotoolkit.pro.models import JSONLDSchemaTemplate
+
+        template_id = kwargs.get("template_id")
+        form = kwargs.get("form")  # May be passed from post() on error
+
+        try:
+            template = JSONLDSchemaTemplate.objects.get(id=template_id)
+
+            # Create form with instance if not already provided
+            if form is None:
+                form = JSONLDSchemaTemplateForm(instance=template)
+
+            from wagtail_seotoolkit.pro.utils.jsonld_utils import (
+                get_jsonld_placeholders_for_content_type,
+            )
+
+            # Get placeholders for current content type
+            placeholders = get_jsonld_placeholders_for_content_type(
+                template.content_type_id if template.content_type else None
+            )
+
+            context.update(
+                {
+                    "page_title": _("Edit JSON-LD Schema Template"),
+                    "is_create": False,
+                    "template": template,
+                    "form": form,
+                    "placeholders": placeholders,
+                }
+            )
+        except JSONLDSchemaTemplate.DoesNotExist:
+            context.update({"error": "Template not found"})
+
+        return context
+
+    def post(self, request, template_id):
+        """Handle template update"""
+        from django.shortcuts import redirect
+
+        from wagtail_seotoolkit.pro.forms import JSONLDSchemaTemplateForm
+        from wagtail_seotoolkit.pro.models import JSONLDSchemaTemplate
+
+        try:
+            template = JSONLDSchemaTemplate.objects.get(id=template_id)
+        except JSONLDSchemaTemplate.DoesNotExist:
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse(
+                    {"success": False, "error": "Template not found"}, status=404
+                )
+            return redirect("jsonld_schema_list")
+
+        form = JSONLDSchemaTemplateForm(request.POST, instance=template)
+
+        if form.is_valid():
+            form.save()
+
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse(
+                    {"success": True, "message": "Template updated successfully"}
+                )
+            return redirect("jsonld_schema_list")
+        else:
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse(
+                    {"success": False, "error": str(form.errors)}, status=400
+                )
+            # Re-render template with form errors
+            return self.render_to_response(
+                self.get_context_data(template_id=template_id, form=form)
+            )
+
+
+class JSONLDSchemaDeleteView(View):
+    """
+    View for deleting a JSON-LD schema template.
+    """
+
+    def post(self, request, template_id):
+        """Handle template deletion"""
+        try:
+            from wagtail_seotoolkit.pro.models import JSONLDSchemaTemplate
+
+            template = JSONLDSchemaTemplate.objects.get(id=template_id)
+            template_name = template.name
+            template.delete()
+
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": f'Template "{template_name}" deleted successfully',
+                }
+            )
+
+        except JSONLDSchemaTemplate.DoesNotExist:
+            return JsonResponse(
+                {"success": False, "error": "Template not found"}, status=404
+            )
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+class SiteWideSchemaEditView(TemplateView):
+    """
+    View for editing site-wide JSON-LD schemas.
+    One schema per site with StreamField for multiple schema types.
+    Users have full control over schema construction using placeholders.
+    """
+
+    template_name = "wagtail_seotoolkit/jsonld/site_wide_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from wagtail.models import Site
+
+        from wagtail_seotoolkit.pro.forms import SiteWideJSONLDSchemaForm
+        from wagtail_seotoolkit.pro.models import SiteWideJSONLDSchema
+        from wagtail_seotoolkit.pro.utils.jsonld_utils import get_site_wide_placeholders
+
+        current_site = Site.find_for_request(self.request)
+        form = kwargs.get("form")  # May be passed from post() on error
+
+        # Get or create site-wide schema
+        schema, created = SiteWideJSONLDSchema.objects.get_or_create(
+            site=current_site,
+            defaults={"is_active": True},
+        )
+
+        # Create form with instance if not already provided
+        if form is None:
+            form = SiteWideJSONLDSchemaForm(instance=schema)
+
+        # Get placeholders for site-wide schemas
+        placeholders = get_site_wide_placeholders()
+
+        context.update(
+            {
+                "page_title": _("Site-Wide JSON-LD Schemas"),
+                "current_site": current_site,
+                "schema": schema,
+                "form": form,
+                "placeholders": placeholders,
+            }
+        )
+
+        return context
+
+    def post(self, request):
+        """Handle site-wide schema updates"""
+        from django.shortcuts import redirect
+        from wagtail.models import Site
+
+        from wagtail_seotoolkit.pro.forms import SiteWideJSONLDSchemaForm
+        from wagtail_seotoolkit.pro.models import SiteWideJSONLDSchema
+
+        current_site = Site.find_for_request(request)
+
+        # Get or create schema
+        schema, created = SiteWideJSONLDSchema.objects.get_or_create(
+            site=current_site,
+            defaults={"is_active": True},
+        )
+
+        form = SiteWideJSONLDSchemaForm(request.POST, instance=schema)
+
+        if form.is_valid():
+            form.save()
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "message": "Site-wide schemas updated successfully",
+                    }
+                )
+            return redirect("jsonld_site_wide")
+        else:
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse(
+                    {"success": False, "error": str(form.errors)}, status=400
+                )
+            # Re-render template with form errors
+            return self.render_to_response(self.get_context_data(form=form))
+
+
+class PageJSONLDEditView(TemplateView):
+    """
+    View for editing JSON-LD schema for a single page.
+    Linked from the promote tab help panel.
+    """
+
+    template_name = "wagtail_seotoolkit/jsonld/page_schema_edit.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from wagtail_seotoolkit.pro.forms import PageJSONLDOverrideForm
+        from wagtail_seotoolkit.pro.models import (
+            JSONLDSchemaTemplate,
+            PageJSONLDOverride,
+        )
+
+        page_id = kwargs.get("page_id") or self.request.GET.get("page_id")
+        form = kwargs.get("form")  # May be passed from post() on error
+
+        try:
+            page = Page.objects.get(id=page_id)
+            page = page.specific
+
+            # Get or create override for this page
+            override = None
+            try:
+                override = PageJSONLDOverride.objects.get(page=page)
+            except PageJSONLDOverride.DoesNotExist:
+                pass
+
+            # Create form with instance if not already provided
+            if form is None:
+                if override:
+                    form = PageJSONLDOverrideForm(instance=override)
+                else:
+                    form = PageJSONLDOverrideForm()
+
+            # Get available templates for this page type
+            templates = JSONLDSchemaTemplate.objects.filter(is_active=True).filter(
+                models.Q(content_type=page.content_type)
+                | models.Q(content_type__isnull=True)
+            )
+
+            from wagtail_seotoolkit.pro.utils.jsonld_utils import (
+                get_jsonld_placeholders_for_content_type,
+            )
+
+            placeholders = get_jsonld_placeholders_for_content_type(
+                page.content_type_id
+            )
+
+            context.update(
+                {
+                    "page_title": _("Edit Page JSON-LD Schema"),
+                    "page": page,
+                    "override": override,
+                    "form": form,
+                    "available_templates": templates,
+                    "placeholders": placeholders,
+                }
+            )
+        except Page.DoesNotExist:
+            context.update({"error": "Page not found"})
+
+        return context
+
+    def post(self, request, page_id):
+        """Handle page override creation/update"""
+        from django.shortcuts import redirect
+
+        from wagtail_seotoolkit.pro.forms import PageJSONLDOverrideForm
+        from wagtail_seotoolkit.pro.models import PageJSONLDOverride
+
+        try:
+            page = Page.objects.get(id=page_id)
+        except Page.DoesNotExist:
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse(
+                    {"success": False, "error": "Page not found"}, status=404
+                )
+            return redirect("jsonld_schema_list")
+
+        # Get or create override
+        try:
+            override = PageJSONLDOverride.objects.get(page=page)
+        except PageJSONLDOverride.DoesNotExist:
+            override = PageJSONLDOverride(page=page)
+
+        form = PageJSONLDOverrideForm(request.POST, instance=override)
+
+        if form.is_valid():
+            form.save()
+
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "message": "Page schema override saved successfully",
+                        "override_id": override.id,
+                    }
+                )
+            return redirect("wagtailadmin_pages:edit", page.id)
+        else:
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse(
+                    {"success": False, "error": str(form.errors)}, status=400
+                )
+            # Re-render template with form errors
+            return self.render_to_response(
+                self.get_context_data(page_id=page_id, form=form)
+            )
+
+
+def get_jsonld_schema_fields_api(request):
+    """
+    API endpoint to get available fields for a schema type.
+    """
+    from wagtail_seotoolkit.pro.utils.jsonld_schema_fields import get_schema_fields
+
+    schema_type = request.GET.get("schema_type", "")
+
+    if not schema_type:
+        return JsonResponse(
+            {"success": False, "error": "Schema type required"}, status=400
+        )
+
+    fields = get_schema_fields(schema_type)
+
+    return JsonResponse({"success": True, "fields": fields})
+
+
+def preview_jsonld_api(request):
+    """
+    API endpoint to preview generated JSON-LD for a page.
+    """
+    from wagtail_seotoolkit.pro.utils.jsonld_utils import (
+        generate_jsonld_for_page,
+        render_jsonld_script,
+    )
+
+    page_id = request.GET.get("page_id", "")
+
+    if not page_id:
+        return JsonResponse({"success": False, "error": "Page ID required"}, status=400)
+
+    try:
+        page = Page.objects.get(id=page_id)
+        schemas = generate_jsonld_for_page(page, request)
+        html = render_jsonld_script(schemas)
+
+        return JsonResponse(
+            {
+                "success": True,
+                "schemas": schemas,
+                "html": html,
+            }
+        )
+    except Page.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Page not found"}, status=404)
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+def get_jsonld_placeholders_api(request):
+    """
+    API endpoint to get available placeholders for a content type.
+    """
+    from wagtail_seotoolkit.pro.utils.jsonld_utils import (
+        get_jsonld_placeholders_for_content_type,
+    )
+
+    content_type_id = request.GET.get("content_type_id")
+
+    try:
+        if content_type_id:
+            content_type_id = int(content_type_id)
+        else:
+            content_type_id = None
+
+        placeholders = get_jsonld_placeholders_for_content_type(content_type_id)
+
+        return JsonResponse({"success": True, "placeholders": placeholders})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)

@@ -12,6 +12,12 @@ from wagtail_seotoolkit.views import (
     BulkEditView,
     DeleteEmailVerificationView,
     GetEmailVerificationView,
+    # JSON-LD Schema Editor views
+    JSONLDSchemaCreateView,
+    JSONLDSchemaDeleteView,
+    JSONLDSchemaEditView,
+    JSONLDSchemaListView,
+    PageJSONLDEditView,
     ProxyCheckSubscriptionView,
     ProxyCheckVerifiedView,
     ProxyClearActiveInstancesView,
@@ -32,13 +38,17 @@ from wagtail_seotoolkit.views import (
     SEOAuditReportsListView,
     SEODashboardView,
     SEOIssuesReportView,
+    SiteWideSchemaEditView,
     SubscriptionSettingsView,
     TemplateCreateView,
     TemplateDeleteView,
     TemplateEditView,
     TemplateListView,
     bulk_apply_metadata,
+    get_jsonld_placeholders_api,
+    get_jsonld_schema_fields_api,
     get_placeholders_api,
+    preview_jsonld_api,
     preview_metadata,
     save_as_template,
     validate_metadata_bulk,
@@ -243,6 +253,52 @@ def register_seo_admin_urls():
             get_placeholders_api,
             name="get_placeholders_api",
         ),
+        # JSON-LD Schema Editor URLs
+        path(
+            "seo-toolkit/jsonld-schemas/",
+            JSONLDSchemaListView.as_view(),
+            name="jsonld_schema_list",
+        ),
+        path(
+            "seo-toolkit/jsonld-schemas/create/",
+            JSONLDSchemaCreateView.as_view(),
+            name="jsonld_schema_create",
+        ),
+        path(
+            "seo-toolkit/jsonld-schemas/<int:template_id>/edit/",
+            JSONLDSchemaEditView.as_view(),
+            name="jsonld_schema_edit",
+        ),
+        path(
+            "seo-toolkit/jsonld-schemas/<int:template_id>/delete/",
+            JSONLDSchemaDeleteView.as_view(),
+            name="jsonld_schema_delete",
+        ),
+        path(
+            "seo-toolkit/jsonld-schemas/site-wide/",
+            SiteWideSchemaEditView.as_view(),
+            name="jsonld_site_wide",
+        ),
+        path(
+            "seo-toolkit/jsonld-schemas/page/<int:page_id>/",
+            PageJSONLDEditView.as_view(),
+            name="jsonld_page_edit",
+        ),
+        path(
+            "api/jsonld/schema-fields/",
+            get_jsonld_schema_fields_api,
+            name="jsonld_schema_fields_api",
+        ),
+        path(
+            "api/jsonld/preview/",
+            preview_jsonld_api,
+            name="jsonld_preview_api",
+        ),
+        path(
+            "api/jsonld/placeholders/",
+            get_jsonld_placeholders_api,
+            name="jsonld_placeholders_api",
+        ),
     ]
 
 
@@ -269,6 +325,19 @@ def register_bulk_edit_menu_item():
         reverse("bulk_edit"),
         icon_name="edit",
         order=1001,
+    )
+
+
+@hooks.register("register_admin_menu_item")
+def register_jsonld_editor_menu_item():
+    """
+    Add JSON-LD Editor to admin menu
+    """
+    return MenuItem(
+        _("JSON-LD Editor"),
+        reverse("jsonld_schema_list"),
+        icon_name="code",
+        order=1002,
     )
 
 

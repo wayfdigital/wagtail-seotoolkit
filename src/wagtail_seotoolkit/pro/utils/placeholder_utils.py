@@ -64,6 +64,19 @@ def process_placeholders(template, page, request=None):
                 value = site.site_name if site else ""
             else:
                 value = ""
+        elif field_name == "site_url":
+            if request:
+                site = Site.find_for_request(request)
+                value = site.root_url if site else ""
+            else:
+                value = ""
+        elif field_name == "full_url":
+            if request and hasattr(page, "url"):
+                value = request.build_absolute_uri(page.url)
+            elif hasattr(page, "url"):
+                value = page.url
+            else:
+                value = ""
         else:
             # Try to get field value from page
             try:
@@ -117,8 +130,9 @@ def get_placeholders_for_content_type(content_type_id=None):
     """
     placeholders = []
 
-    # Always include site name
+    # Always include site-level placeholders
     placeholders.append({"name": "site_name", "label": "Site Name", "type": "site"})
+    placeholders.append({"name": "site_url", "label": "Site URL", "type": "site"})
 
     # Always include base Page fields
     base_fields = [

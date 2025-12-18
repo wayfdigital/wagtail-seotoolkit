@@ -27,11 +27,18 @@ class WagtailSEOToolkitConfig(AppConfig):
         EditView.get_side_panels = get_side_panels
         CreateView.get_side_panels = get_side_panels
 
-        # Add information panel to the promote tab in the page editor
+        # Add information panels to the promote tab in the page editor
         from wagtail.admin.panels import HelpPanel
         from wagtail.models import Page
 
+        # Bulk SEO Editor panel
         Page.promote_panels.insert(
             1,
             HelpPanel(template="wagtail_seotoolkit/promote_panel_buttons.html"),
+        )
+
+        # JSON-LD Schema Editor panel
+        Page.promote_panels.insert(
+            2,
+            HelpPanel(template="wagtail_seotoolkit/jsonld_promote_panel.html"),
         )
