@@ -11,12 +11,16 @@ A comprehensive SEO auditing and optimization plugin for Wagtail CMS that helps 
   - [⚡ PageSpeed Insights Checks (Optional)](#-pagespeed-insights-checks-optional)
   - [🎯 Smart Issue Management](#-smart-issue-management)
   - [🔧 Flexible Configuration](#-flexible-configuration)
+  - [🤩 Bulk Meta Editor (Pro)](#-pro-bulk-meta-editor)
+  - [🧬 JSON-LD Schema Editor (Pro)](#-pro-json-ld-schema-editor)
+  - [🔄 Smart Redirect Management (Pro)](#-pro-smart-redirect-management)
 - [📸 Screenshots](#-screenshots)
 - [🛠 Installation](#-installation)
 - [⚙️ Configuration](#️-configuration)
 - [🚀 Usage](#-usage)
   - [Running Audits](#running-audits)
 - [🔧 Advanced Configuration](#-advanced-configuration)
+  - [Smart Redirect Management](#smart-redirect-management)
 - [✉️ Email Notifications & Reporting](#email-notifications--reporting)
 - [🛠 Development](#-development)
 - [📊 Performance Considerations](#-performance-considerations)
@@ -83,6 +87,23 @@ A comprehensive SEO auditing and optimization plugin for Wagtail CMS that helps 
 ```
 
 **Middleware:** The `SEOMetadataMiddleware` handles both meta tags and JSON-LD schemas automatically.
+
+### 🔄 **[PRO] Smart Redirect Management**
+
+Automatically prevent 404 errors and maintain SEO equity when managing pages:
+
+- **Auto-Redirect on Slug Change**: When a page's slug is changed, a redirect from the old URL to the new URL is automatically created
+- **Auto-Redirect on Page Move**: When a page is moved to a different section, redirects are created for the page and all its descendants
+- **Redirect Prompt on Delete/Unpublish**: When deleting or unpublishing a page that is referenced elsewhere on the site, you'll be prompted to select redirect targets to prevent broken links
+- **Reference Update on Delete**: When creating redirects during page deletion, internal links to the deleted page are automatically updated to point to the new target page
+- **Conflict Resolution**: When publishing a page at a URL that has an existing redirect, the redirect is automatically removed to avoid conflicts
+- **Redirect Chain Flattening**: Automatically detects and flattens redirect chains (A → B → C becomes A → C) to improve performance
+
+**How it works:**
+
+1. **Slug/Move Changes**: Redirects are created automatically - no action required
+2. **Delete/Unpublish with References**: A prompt appears showing all pages that reference the page being deleted, allowing you to select redirect targets
+3. **Publishing**: Any conflicting redirects are automatically cleaned up
 
 ## 📸 Screenshots
 
@@ -198,6 +219,10 @@ WAGTAIL_SEOTOOLKIT_PAGESPEED_API_KEY = "your-api-key-here"  # Get from Google
 WAGTAIL_SEOTOOLKIT_PAGESPEED_ENABLED = True  # Enable PageSpeed checks
 WAGTAIL_SEOTOOLKIT_PAGESPEED_DRY_RUN = False  # Use real API calls
 WAGTAIL_SEOTOOLKIT_PAGESPEED_PER_PAGE_TYPE = True  # Optimize API usage
+
+# Redirect Management Configuration (Pro Feature)
+WAGTAIL_SEOTOOLKIT_AUTO_REDIRECT_ON_SLUG_CHANGE = True  # Create redirects when slug changes (default: True)
+WAGTAIL_SEOTOOLKIT_REDIRECT_ON_DELETE = True  # Show redirect prompt when deleting referenced pages (default: True)
 ```
 
 ### Getting a PageSpeed API Key
@@ -314,6 +339,63 @@ WAGTAIL_SEOTOOLKIT_INCLUDE_DEV_FIXES = False
 ```
 
 This will hide all issues that require developer intervention, showing only content-related issues.
+
+### Smart Redirect Management
+
+The redirect management feature helps prevent 404 errors and maintain SEO equity when pages are moved, renamed, or deleted.
+
+#### Configuration Options
+
+```python
+# settings.py
+
+# Enable/disable automatic redirect creation on slug changes and page moves
+WAGTAIL_SEOTOOLKIT_AUTO_REDIRECT_ON_SLUG_CHANGE = True  # default: True
+
+# Enable/disable the redirect prompt when deleting/unpublishing referenced pages
+WAGTAIL_SEOTOOLKIT_REDIRECT_ON_DELETE = True  # default: True
+```
+
+#### `WAGTAIL_SEOTOOLKIT_AUTO_REDIRECT_ON_SLUG_CHANGE`
+
+When enabled (default), redirects are automatically created when:
+- A page's slug is changed and published
+- A page is moved to a different section of the site
+
+**Example:**
+- Page at `/blog/my-post/` has its slug changed to `my-updated-post`
+- A redirect is automatically created: `/blog/my-post/` → `/blog/my-updated-post/`
+
+#### `WAGTAIL_SEOTOOLKIT_REDIRECT_ON_DELETE`
+
+When enabled (default), a redirect selection prompt appears when:
+- Deleting a page that is referenced by other pages
+- Unpublishing a page that is referenced by other pages
+
+The prompt shows:
+- The main page being deleted/unpublished
+- Any child pages that will also be affected
+- Any translations of the page
+- Which pages reference each of these pages
+
+**For delete actions**, selecting a redirect target will:
+1. Create a redirect from the old URL to the target page
+2. Update all internal links pointing to the deleted page to point to the target page instead
+
+**For unpublish actions**, only the redirect is created (the page still exists, so internal links remain valid).
+
+#### Redirect Chain Flattening
+
+When creating new redirects, the system automatically detects and flattens redirect chains:
+- If A → B exists and you create B → C, the system updates to A → C
+- This prevents performance issues from multiple redirect hops
+
+#### Conflict Resolution
+
+When a page is published at a URL that has an existing redirect (old_path), the redirect is automatically deleted. This handles the case where:
+1. Page `/blog/old-post/` is deleted, redirect created to `/blog/archive/`
+2. Later, a new page is created with slug `old-post` under `/blog/`
+3. When published, the redirect from `/blog/old-post/` is automatically removed
 
 ### PageSpeed Optimization
 
@@ -489,6 +571,7 @@ The following features require a **paid subscription** and are licensed under th
 - 🔒 **Metadata Middleware** - Automatically apply bulk editor changes to rendered pages
 - 🔒 **Subscription Management** - License verification and instance management
 - 🔒 **Advanced Placeholder System** - Dynamic field placeholders for metadata templates
+- 🔒 **Smart Redirect Management** - Automatic redirects on slug changes, redirect prompts on delete/unpublish, and internal link updates
 
 **License:** See [LICENSE-PROPRIETARY](LICENSE-PROPRIETARY) for full proprietary license terms.
 
