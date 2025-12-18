@@ -14,6 +14,7 @@ A comprehensive SEO auditing and optimization plugin for Wagtail CMS that helps 
   - [🤩 Bulk Meta Editor (Pro)](#-pro-bulk-meta-editor)
   - [🧬 JSON-LD Schema Editor (Pro)](#-pro-json-ld-schema-editor)
   - [🔄 Smart Redirect Management (Pro)](#-pro-smart-redirect-management)
+  - [🔗 Link Health Audit (Pro)](#-pro-link-health-audit)
 - [📸 Screenshots](#-screenshots)
 - [🛠 Installation](#-installation)
 - [⚙️ Configuration](#️-configuration)
@@ -98,6 +99,16 @@ Automatically prevent 404 errors and maintain SEO equity when managing pages:
 - **Reference Update on Delete**: When creating redirects during page deletion, internal links to the deleted page are automatically updated to point to the new target page
 - **Conflict Resolution**: When publishing a page at a URL that has an existing redirect, the redirect is automatically removed to avoid conflicts
 - **Redirect Chain Flattening**: Automatically detects and flattens redirect chains (A → B → C becomes A → C) to improve performance
+
+### 🔗 **[PRO] Link Health Audit**
+
+Comprehensive link health checking integrated with the SEO audit:
+
+- **Broken Internal Links**: Detects links in page content pointing to deleted pages
+- **Links to Unpublished**: Finds links pointing to unpublished/draft pages
+- **Broken External Links**: Validates external URLs and reports unreachable targets
+- **Redirect Dashboard**: Combined health score and historical tracking for redirects and broken links
+- **One-Click Fixes**: Click any issue to jump directly to the page editor
 
 **How it works:**
 
@@ -572,6 +583,7 @@ The following features require a **paid subscription** and are licensed under th
 - 🔒 **Subscription Management** - License verification and instance management
 - 🔒 **Advanced Placeholder System** - Dynamic field placeholders for metadata templates
 - 🔒 **Smart Redirect Management** - Automatic redirects on slug changes, redirect prompts on delete/unpublish, and internal link updates
+- 🔒 **Link Health Audit** - Broken link detection in page content with dashboard and historical tracking
 
 **License:** See [LICENSE-PROPRIETARY](LICENSE-PROPRIETARY) for full proprietary license terms.
 

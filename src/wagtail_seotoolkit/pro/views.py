@@ -1811,6 +1811,238 @@ class SubscriptionSettingsView(TemplateView):
 
 
 # =============================================================================
+# Redirect Dashboard View
+# =============================================================================
+
+
+class RedirectDashboardView(TemplateView):
+    """
+    Dashboard view for redirect management and health metrics.
+
+    Displays:
+    - Total redirect count
+    - Redirect chains longer than 1 hop
+    - Circular redirect loops
+    - Redirects pointing to 404/deleted pages
+    - Redirects to unpublished pages
+    - Actions taken (chains flattened)
+    """
+
+    template_name = "wagtail_seotoolkit/redirect_dashboard.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from wagtail.contrib.redirects.models import Redirect
+
+        from wagtail_seotoolkit.core.models import SEOAuditRun
+        from wagtail_seotoolkit.pro.models import RedirectAuditResult
+
+        # Get latest redirect audit result
+        latest_audit = (
+            SEOAuditRun.objects.filter(status="completed")
+            .order_by("-created_at")
+            .first()
+        )
+
+        latest_redirect_audit = None
+        if latest_audit:
+            try:
+                latest_redirect_audit = RedirectAuditResult.objects.get(
+                    audit_run=latest_audit
+                )
+            except RedirectAuditResult.DoesNotExist:
+                pass
+
+        # Get current redirect counts (live data)
+        total_redirects = Redirect.objects.count()
+
+        if latest_redirect_audit:
+            context.update(
+                {
+                    "has_audit_data": True,
+                    "latest_audit": latest_audit,
+                    "redirect_audit": latest_redirect_audit,
+                    "total_redirects": latest_redirect_audit.total_redirects,
+                    "chains_detected": latest_redirect_audit.chains_detected,
+                    "circular_loops": latest_redirect_audit.circular_loops,
+                    "redirects_to_404": latest_redirect_audit.redirects_to_404,
+                    "redirects_to_unpublished": latest_redirect_audit.redirects_to_unpublished,
+                    "external_redirects": latest_redirect_audit.external_redirects,
+                    "chains_flattened": latest_redirect_audit.chains_flattened,
+                    "health_score": latest_redirect_audit.health_score,
+                    "has_issues": latest_redirect_audit.has_issues,
+                    # Detailed audit data
+                    "chain_details": latest_redirect_audit.audit_details.get(
+                        "chains", []
+                    )[:10],
+                    "loop_details": latest_redirect_audit.audit_details.get(
+                        "loops", []
+                    )[:10],
+                    "redirect_404_details": latest_redirect_audit.audit_details.get(
+                        "redirects_to_404", []
+                    )[:10],
+                    "redirect_unpublished_details": latest_redirect_audit.audit_details.get(
+                        "redirects_to_unpublished", []
+                    )[:10],
+                    "statistics": latest_redirect_audit.audit_details.get(
+                        "statistics", {}
+                    ),
+                }
+            )
+        else:
+            # No audit data - show current count but no health metrics
+            context.update(
+                {
+                    "has_audit_data": False,
+                    "latest_audit": None,
+                    "redirect_audit": None,
+                    "total_redirects": total_redirects,
+                    "chains_detected": 0,
+                    "circular_loops": 0,
+                    "redirects_to_404": 0,
+                    "redirects_to_unpublished": 0,
+                    "external_redirects": 0,
+                    "chains_flattened": 0,
+                    "health_score": None,
+                    "has_issues": False,
+                    "chain_details": [],
+                    "loop_details": [],
+                    "redirect_404_details": [],
+                    "redirect_unpublished_details": [],
+                    "statistics": {},
+                }
+            )
+
+        # Get broken link audit data
+        from wagtail_seotoolkit.pro.models import BrokenLinkAuditResult
+
+        # Get historical audit data for trend chart (both redirects and broken links)
+        redirect_audits = RedirectAuditResult.objects.select_related(
+            "audit_run"
+        ).order_by("-created_at")[:15]
+
+        broken_link_audits = BrokenLinkAuditResult.objects.select_related(
+            "audit_run"
+        ).order_by("-created_at")[:15]
+
+        # Create a lookup for broken link audits by audit_run_id
+        bl_audit_by_run = {bl.audit_run_id: bl for bl in broken_link_audits}
+
+        chart_data = {
+            "labels": [],
+            "redirect_health_scores": [],
+            "broken_link_health_scores": [],
+            "combined_health_scores": [],
+            "chains": [],
+            "loops": [],
+            "redirect_to_404": [],
+            "broken_internal": [],
+            "broken_external": [],
+        }
+
+        if redirect_audits:
+            for audit in reversed(redirect_audits):
+                chart_data["labels"].append(
+                    audit.audit_run.created_at.strftime("%b %d, %Y")
+                )
+                chart_data["redirect_health_scores"].append(audit.health_score)
+                chart_data["chains"].append(audit.chains_detected)
+                chart_data["loops"].append(audit.circular_loops)
+                chart_data["redirect_to_404"].append(audit.redirects_to_404)
+
+                # Get corresponding broken link audit data
+                bl_audit = bl_audit_by_run.get(audit.audit_run_id)
+                if bl_audit:
+                    chart_data["broken_link_health_scores"].append(
+                        bl_audit.health_score
+                    )
+                    chart_data["broken_internal"].append(bl_audit.broken_internal_links)
+                    chart_data["broken_external"].append(bl_audit.broken_external_links)
+                    # Combined health score (average of both)
+                    combined = (audit.health_score + bl_audit.health_score) // 2
+                    chart_data["combined_health_scores"].append(combined)
+                else:
+                    chart_data["broken_link_health_scores"].append(None)
+                    chart_data["broken_internal"].append(0)
+                    chart_data["broken_external"].append(0)
+                    chart_data["combined_health_scores"].append(audit.health_score)
+
+        context["chart_data_json"] = json.dumps(chart_data)
+
+        latest_broken_link_audit = None
+        if latest_audit:
+            try:
+                latest_broken_link_audit = BrokenLinkAuditResult.objects.get(
+                    audit_run=latest_audit
+                )
+            except BrokenLinkAuditResult.DoesNotExist:
+                pass
+
+        if latest_broken_link_audit:
+            context.update(
+                {
+                    "has_broken_link_data": True,
+                    "broken_link_audit": latest_broken_link_audit,
+                    "bl_pages_scanned": latest_broken_link_audit.total_pages_scanned,
+                    "bl_links_checked": latest_broken_link_audit.total_links_checked,
+                    "bl_broken_internal": latest_broken_link_audit.broken_internal_links,
+                    "bl_to_unpublished": latest_broken_link_audit.links_to_unpublished,
+                    "bl_broken_external": latest_broken_link_audit.broken_external_links,
+                    "bl_health_score": latest_broken_link_audit.health_score,
+                    "bl_has_issues": latest_broken_link_audit.has_issues,
+                    # Detailed broken link data
+                    "bl_broken_internal_details": latest_broken_link_audit.audit_details.get(
+                        "broken_internal_links", []
+                    )[:10],
+                    "bl_to_unpublished_details": latest_broken_link_audit.audit_details.get(
+                        "links_to_unpublished", []
+                    )[:10],
+                    "bl_broken_external_details": latest_broken_link_audit.audit_details.get(
+                        "broken_external_links", []
+                    )[:10],
+                }
+            )
+        else:
+            context.update(
+                {
+                    "has_broken_link_data": False,
+                    "broken_link_audit": None,
+                    "bl_pages_scanned": 0,
+                    "bl_links_checked": 0,
+                    "bl_broken_internal": 0,
+                    "bl_to_unpublished": 0,
+                    "bl_broken_external": 0,
+                    "bl_health_score": None,
+                    "bl_has_issues": False,
+                    "bl_broken_internal_details": [],
+                    "bl_to_unpublished_details": [],
+                    "bl_broken_external_details": [],
+                }
+            )
+
+        # Calculate combined health score
+        redirect_score = context.get("health_score")
+        bl_score = context.get("bl_health_score")
+
+        if redirect_score is not None and bl_score is not None:
+            combined_health_score = (redirect_score + bl_score) // 2
+        elif redirect_score is not None:
+            combined_health_score = redirect_score
+        elif bl_score is not None:
+            combined_health_score = bl_score
+        else:
+            combined_health_score = None
+
+        context["combined_health_score"] = combined_health_score
+
+        # Check for subscription
+        verification = PluginEmailVerification.objects.first()
+        context["stored_email"] = verification.email if verification else None
+
+        return context
+
+
+# =============================================================================
 # JSON-LD Schema Editor Views
 # =============================================================================
 

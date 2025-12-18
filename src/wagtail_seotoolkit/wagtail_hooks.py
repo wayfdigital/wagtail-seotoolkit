@@ -10,6 +10,7 @@ from wagtail import hooks
 from wagtail.admin.menu import MenuItem
 
 from wagtail_seotoolkit.pro.redirect_views import RedirectOnActionView
+from wagtail_seotoolkit.pro.views import RedirectDashboardView
 from wagtail_seotoolkit.views import (
     BulkEditActionView,
     BulkEditView,
@@ -302,6 +303,12 @@ def register_seo_admin_urls():
             get_jsonld_placeholders_api,
             name="jsonld_placeholders_api",
         ),
+        # Redirect Dashboard
+        path(
+            "seo-toolkit/redirect-dashboard/",
+            RedirectDashboardView.as_view(),
+            name="redirect_dashboard",
+        ),
         # Redirect on delete/unpublish
         path(
             "pages/<int:page_id>/redirect-on-delete/",
@@ -354,6 +361,19 @@ def register_jsonld_editor_menu_item():
         reverse("jsonld_schema_list"),
         icon_name="code",
         order=1002,
+    )
+
+
+@hooks.register("register_admin_menu_item")
+def register_redirect_dashboard_menu_item():
+    """
+    Add Redirect Dashboard to admin menu
+    """
+    return MenuItem(
+        _("Redirect Dashboard"),
+        reverse("redirect_dashboard"),
+        icon_name="redirect",
+        order=1003,
     )
 
 

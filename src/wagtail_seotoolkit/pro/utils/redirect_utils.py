@@ -57,7 +57,9 @@ def flatten_redirect_chains(site, new_redirect_old_path, target_page):
 
     for redirect in redirects_to_old_path:
         old_target = redirect.redirect_link
-        redirect.redirect_link = None
+        redirect.redirect_link = (
+            ""  # Empty string, not None (Wagtail requires non-null)
+        )
         redirect.redirect_page = target_page
         redirect.save()
         flattened_count += 1
@@ -135,7 +137,9 @@ def flatten_all_redirect_chains(site=None):
                     final_target = chain_redirect.redirect_page
                     old_target_path = target_path
                     redirect.redirect_page = final_target
-                    redirect.redirect_link = None
+                    redirect.redirect_link = (
+                        ""  # Empty string, not None (Wagtail requires non-null)
+                    )
                     redirect.save()
                     total_flattened += 1
                     logger.info(
@@ -518,8 +522,11 @@ def _update_object_references(obj, source_page, target_page, content_paths):
     if updated:
         # Save the object - handle Page objects specially for revision system
         if isinstance(obj, Page):
-            # Use save_revision to properly track changes
-            obj.save_revision()
+            # Save revision and publish if the page was already live
+            revision = obj.save_revision()
+            if obj.live:
+                revision.publish()
+                logger.debug(f"Published updated page: {obj.title} (pk={obj.pk})")
         else:
             obj.save()
 
@@ -542,6 +549,8 @@ def _update_streamfield_references(stream_value, source_pk, target_pk):
     Returns:
         Updated stream data if changes were made, None otherwise
     """
+    import json
+
     try:
         # Get the raw stream data - convert RawDataView to list if needed
         if hasattr(stream_value, "raw_data"):
@@ -553,12 +562,21 @@ def _update_streamfield_references(stream_value, source_pk, target_pk):
         else:
             return None
 
+        # Serialize to JSON to compare before/after
+        original_json = json.dumps(stream_data, sort_keys=True)
+
         # Replace page references - handles both page IDs and RichText links
         updated_data = _replace_page_refs_in_streamfield(
             stream_data, source_pk, target_pk
         )
 
-        if updated_data != stream_data:
+        # Compare serialized versions to detect actual changes
+        updated_json = json.dumps(updated_data, sort_keys=True)
+
+        if updated_json != original_json:
+            logger.debug(
+                f"StreamField references updated: source_pk={source_pk} -> target_pk={target_pk}"
+            )
             return updated_data
 
     except Exception as e:
@@ -664,23 +682,27 @@ def _update_richtext_references(text, source_pk, target_pk):
     else:
         text_str = str(text)
 
-    # Pattern to match page links: <a linktype="page" id="123">
-    # Also handle: <a id="123" linktype="page">
-    pattern = (
-        r'(<a[^>]*\slinktype=["\']page["\'][^>]*\sid=["\'])'
-        + str(source_pk)
-        + r'(["\'][^>]*>)'
-    )
-    replacement = r"\g<1>" + str(target_pk) + r"\g<2>"
-    updated = re.sub(pattern, replacement, text_str)
+    original = text_str
 
-    # Also check the reverse order of attributes
-    pattern2 = (
-        r'(<a[^>]*\sid=["\'])'
-        + str(source_pk)
-        + r'(["\'][^>]*\slinktype=["\']page["\'][^>]*>)'
-    )
-    replacement2 = r"\g<1>" + str(target_pk) + r"\g<2>"
-    updated = re.sub(pattern2, replacement2, updated)
+    # Simple and robust approach: find all page links and replace matching IDs
+    # Pattern matches id="X" within an <a> tag that has linktype="page"
+
+    def replace_in_tag(match):
+        tag = match.group(0)
+        # Check if this is a page link
+        if 'linktype="page"' in tag or "linktype='page'" in tag:
+            # Replace the specific page ID
+            tag = re.sub(
+                r'(id=["\'])' + str(source_pk) + r'(["\'])',
+                r"\g<1>" + str(target_pk) + r"\g<2>",
+                tag,
+            )
+        return tag
+
+    # Match all <a ...> tags
+    updated = re.sub(r"<a\s[^>]*>", replace_in_tag, text_str)
+
+    if updated != original:
+        logger.debug(f"RichText references updated: {source_pk} -> {target_pk}")
 
     return updated
