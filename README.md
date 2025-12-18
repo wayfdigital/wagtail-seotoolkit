@@ -66,6 +66,24 @@ A comprehensive SEO auditing and optimization plugin for Wagtail CMS that helps 
 - **Live Validation**: Real-time character counting and validation ensures your metadata meets SEO best practices
 - **Automatic Template Integration**: Enable middleware to automatically apply bulk editor changes to rendered meta tags without modifying your existing template tags across multiple pages
 
+### 🧬 **[PRO] JSON-LD Schema Editor**
+
+- **Visual Schema Builder**: Create structured data schemas without writing JSON
+- **35+ Schema Types**: Article, Product, FAQPage, HowTo, Recipe, Video, and more
+- **Smart Templates**: Define schemas per page type with placeholder support like `{title}`, `{first_published_at}`
+- **Page Overrides**: Customize schemas for specific pages
+- **Site-Wide Schemas**: Configure Organization, WebSite, and LocalBusiness for your entire site
+- **Automatic Rendering**: Use middleware or template tag to render schemas
+
+**Template Tag Usage:**
+
+```django
+{% load wagtail_seotoolkit_tags %}
+{% jsonld_schemas %}
+```
+
+**Middleware:** The `SEOMetadataMiddleware` handles both meta tags and JSON-LD schemas automatically.
+
 ## 📸 Screenshots
 
 ### SEO Dashboard

@@ -9,6 +9,7 @@ Core views (MIT License):
 
 Pro views (WAYF Proprietary License):
 - Bulk editor, subscriptions, templates, email verification views
+- JSON-LD schema editor views
 """
 
 # Core views (MIT License)
@@ -28,6 +29,12 @@ from wagtail_seotoolkit.pro.views import (
     BulkEditView,
     DeleteEmailVerificationView,
     GetEmailVerificationView,
+    # JSON-LD Schema Editor views
+    JSONLDSchemaCreateView,
+    JSONLDSchemaDeleteView,
+    JSONLDSchemaEditView,
+    JSONLDSchemaListView,
+    PageJSONLDEditView,
     ProxyCheckSubscriptionView,
     ProxyCheckVerifiedView,
     ProxyClearActiveInstancesView,
@@ -43,13 +50,17 @@ from wagtail_seotoolkit.pro.views import (
     ProxySendVerificationView,
     ProxySetActiveInstancesView,
     SaveEmailVerificationView,
+    SiteWideSchemaEditView,
     SubscriptionSettingsView,
     TemplateCreateView,
     TemplateDeleteView,
     TemplateEditView,
     TemplateListView,
     bulk_apply_metadata,
+    get_jsonld_placeholders_api,
+    get_jsonld_schema_fields_api,
     get_placeholders_api,
+    preview_jsonld_api,
     preview_metadata,
     save_as_template,
     validate_metadata_bulk,
@@ -94,4 +105,14 @@ __all__ = [
     "bulk_apply_metadata",
     "save_as_template",
     "get_placeholders_api",
+    # JSON-LD Schema Editor
+    "JSONLDSchemaListView",
+    "JSONLDSchemaCreateView",
+    "JSONLDSchemaEditView",
+    "JSONLDSchemaDeleteView",
+    "SiteWideSchemaEditView",
+    "PageJSONLDEditView",
+    "get_jsonld_schema_fields_api",
+    "preview_jsonld_api",
+    "get_jsonld_placeholders_api",
 ]

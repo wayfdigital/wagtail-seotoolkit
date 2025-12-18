@@ -1,0 +1,436 @@
+/**
+ * JSON-LD Schema Editor Styles
+ * 
+ * Styles for the JSON-LD schema template editor views.
+ */
+
+/* Schema list page */
+.schema-card {
+  border: 1px solid var(--w-color-border, #ddd);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  background: var(--w-color-surface-page, #fff);
+}
+
+.schema-card h2 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Status tags */
+.status-tag {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: var(--w-color-surface-menus, #e5e5e5);
+  color: var(--w-color-text-meta, #666);
+}
+
+.status-tag.primary {
+  background: var(--w-color-primary, #007d7e);
+  color: white;
+}
+
+/* Badge variants */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: var(--w-color-primary, #007d7e);
+  color: white;
+  margin-right: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.badge-secondary {
+  background: var(--w-color-surface-menus, #e5e5e5);
+  color: var(--w-color-text-context, #333);
+}
+
+.badge-outline {
+  background: transparent;
+  border: 1px solid var(--w-color-border, #ddd);
+  color: var(--w-color-text-context, #333);
+}
+
+/* Placeholder cloud styling */
+.placeholder-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.placeholder-badge-wrapper {
+  display: inline-flex;
+  align-items: stretch;
+  border-radius: 1rem;
+  border: 1px solid;
+  overflow: hidden;
+  background: transparent;
+  transition: all 0.15s ease;
+}
+
+.placeholder-badge-main {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: transparent;
+  border: none;
+  border-right: 1px solid;
+  border-color: inherit;
+}
+
+/* Truncation button styling */
+.placeholder-truncate-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: transparent;
+  border: none;
+  font-family: "Monaco", "Consolas", monospace;
+  opacity: 0.7;
+}
+
+.placeholder-truncate-btn:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Truncate button color inheritance for each badge type */
+.placeholder-badge-wrapper.placeholder-badge--site .placeholder-truncate-btn {
+  color: #7c3aed;
+}
+
+.placeholder-badge-wrapper.placeholder-badge--site:hover
+  .placeholder-truncate-btn {
+  color: white;
+}
+
+.placeholder-badge-wrapper.placeholder-badge--page .placeholder-truncate-btn {
+  color: #007d7e;
+}
+
+.placeholder-badge-wrapper.placeholder-badge--page:hover
+  .placeholder-truncate-btn {
+  color: white;
+}
+
+.placeholder-badge-wrapper.placeholder-badge--specific
+  .placeholder-truncate-btn {
+  color: #f59e0b;
+}
+
+.placeholder-badge-wrapper.placeholder-badge--specific:hover
+  .placeholder-truncate-btn {
+  color: white;
+}
+
+/* Badge color variations */
+.placeholder-badge-wrapper.placeholder-badge--site {
+  border-color: #7c3aed;
+}
+
+.placeholder-badge-wrapper.placeholder-badge--site .placeholder-badge-main {
+  color: #7c3aed;
+}
+
+.placeholder-badge-wrapper.placeholder-badge--site:hover {
+  background: #7c3aed;
+}
+
+.placeholder-badge-wrapper.placeholder-badge--site:hover
+  .placeholder-badge-main {
+  color: white;
+}
+
+.placeholder-badge-wrapper.placeholder-badge--page {
+  border-color: #007d7e;
+}
+
+.placeholder-badge-wrapper.placeholder-badge--page .placeholder-badge-main {
+  color: #007d7e;
+}
+
+.placeholder-badge-wrapper.placeholder-badge--page:hover {
+  background: #007d7e;
+}
+
+.placeholder-badge-wrapper.placeholder-badge--page:hover
+  .placeholder-badge-main {
+  color: white;
+}
+
+.placeholder-badge-wrapper.placeholder-badge--specific {
+  border-color: #f59e0b;
+}
+
+.placeholder-badge-wrapper.placeholder-badge--specific .placeholder-badge-main {
+  color: #f59e0b;
+}
+
+.placeholder-badge-wrapper.placeholder-badge--specific:hover {
+  background: #f59e0b;
+}
+
+.placeholder-badge-wrapper.placeholder-badge--specific:hover
+  .placeholder-badge-main {
+  color: white;
+}
+
+/* Auto-populated fields display */
+.auto-populated-fields {
+  background: var(--w-color-surface-menus, #f5f5f5);
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.auto-populated-fields h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--w-color-text-label, #333);
+}
+
+.auto-populated-fields ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.auto-populated-fields li {
+  font-size: 0.875rem;
+  color: var(--w-color-text-meta, #666);
+  margin-bottom: 0.25rem;
+}
+
+/* Help blocks - use Wagtail's w-field__help styling where possible */
+.help-info {
+  background: var(--w-color-surface-menus, #e0f2fe);
+  border: 1px solid var(--w-color-border-info, #7dd3fc);
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+.help-info p {
+  margin: 0;
+}
+
+/* Ensure help text inside panels has proper styling */
+.w-panel__content > .w-field__help {
+  margin-bottom: 1rem;
+}
+
+.w-panel__content > .w-field__help .help ul {
+  margin: 0.5rem 0 0 0;
+  padding-left: 1.5rem;
+}
+
+.w-panel__content > .w-field__help .help ul li {
+  margin-bottom: 0.25rem;
+}
+
+/* Form actions - rely on Wagtail's built-in footer styling */
+/* .actions class is handled by Wagtail's footer__container */
+
+/* ==========================================================================
+   Two-column layout for JSON-LD editor
+   Main content on left, sticky placeholder sidebar on right
+   ========================================================================== */
+
+/* Ensure sticky works by preventing overflow clipping on ancestors */
+.nice-padding:has(.jsonld-editor-layout),
+.content:has(.jsonld-editor-layout),
+.content-wrapper:has(.jsonld-editor-layout) {
+  overflow: visible !important;
+}
+
+.jsonld-editor-layout {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+/* Main column - takes most of the space */
+.jsonld-editor-main {
+  flex: 1;
+  min-width: 0; /* Prevent flex item from overflowing */
+  max-width: 800px;
+}
+
+/* Full-width layout (no sidebar) */
+.jsonld-editor-layout--full-width .jsonld-editor-main {
+  max-width: 100%;
+}
+
+/* Sidebar column - fixed width with CSS sticky */
+.jsonld-editor-sidebar {
+  flex-shrink: 0;
+  width: 260px;
+  position: sticky;
+  top: 120px; /* Account for Wagtail's sticky header */
+  align-self: flex-start;
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+}
+
+/* Ensure panels in sidebar fit nicely */
+.jsonld-editor-sidebar .w-panel {
+  margin-bottom: 0;
+}
+
+/* Placeholder cloud in sidebar - stack vertically for better fit */
+.jsonld-editor-sidebar .placeholder-cloud {
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Narrower badges in sidebar */
+.jsonld-editor-sidebar .placeholder-badge-wrapper {
+  width: 100%;
+}
+
+.jsonld-editor-sidebar .placeholder-badge-main {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
+  flex: 1;
+  text-align: center;
+  justify-content: center;
+}
+
+.jsonld-editor-sidebar .placeholder-truncate-btn {
+  padding: 0.25rem 0.375rem;
+  font-size: 0.5625rem;
+}
+
+/* Responsive: Stack layout on smaller screens */
+@media (max-width: 1200px) {
+  .jsonld-editor-layout {
+    flex-direction: column;
+  }
+
+  .jsonld-editor-main {
+    max-width: 100%;
+  }
+
+  .jsonld-editor-sidebar {
+    width: 100%;
+    order: 1; /* Move to bottom */
+    position: static;
+    max-height: none;
+  }
+
+  /* Back to horizontal flow on mobile */
+  .jsonld-editor-sidebar .placeholder-cloud {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .jsonld-editor-sidebar .placeholder-badge-wrapper {
+    width: auto;
+  }
+
+  .jsonld-editor-sidebar .placeholder-badge-main {
+    width: auto;
+    flex: none;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .jsonld-editor-sidebar .placeholder-truncate-btn {
+    padding: 0 0.5rem;
+    font-size: 0.625rem;
+  }
+}
+
+/* Panel spacing adjustments */
+.w-panel__wrapper {
+  margin-bottom: 1.5rem;
+}
+
+.w-panel__wrapper:last-child {
+  margin-bottom: 0;
+}
+
+/* StreamField container styling */
+.field-content .w-panel {
+  margin-top: 0.5rem;
+}
+
+/* Placeholder cloud inside panels */
+.w-panel__content .placeholder-cloud {
+  margin-top: 0.75rem;
+}
+
+/* Table improvements */
+.listing tbody tr:hover {
+  background: var(--w-color-surface-menus, #f5f5f5);
+}
+
+.listing .actions {
+  margin-top: 0;
+  justify-content: flex-end;
+}
+
+/* Badge styling */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--w-color-surface-menus, #e5e5e5);
+  color: var(--w-color-text-label, #333);
+}
+
+/* Optgroup styling in selects */
+select optgroup {
+  font-weight: 600;
+  font-style: normal;
+  color: var(--w-color-text-label, #333);
+}
+
+select option {
+  font-weight: normal;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Subscription gate styling */
+#subscription-gate-jsonld-editor .email-verification-overlay {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+}
+
+#jsonld-editor-protected-content {
+  display: block;
+}
+
+/* Loading state */
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.loading-spinner p {
+  color: var(--w-color-text-meta, #666);
+}
