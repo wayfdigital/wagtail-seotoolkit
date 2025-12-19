@@ -42,3 +42,8 @@ class WagtailSEOToolkitConfig(AppConfig):
             2,
             HelpPanel(template="wagtail_seotoolkit/jsonld_promote_panel.html"),
         )
+
+        # Register signal handlers for automatic redirect creation
+        from .signals import register_signals
+
+        register_signals()

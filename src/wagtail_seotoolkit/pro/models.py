@@ -275,3 +275,178 @@ class PageJSONLDOverride(models.Model):
 
     def __str__(self):
         return f"{self.page.title} - JSON-LD Override"
+
+
+class RedirectAuditResult(models.Model):
+    """
+    Stores redirect audit results linked to an SEO audit run.
+
+    Captures metrics about redirect health including chains, loops, and 404 targets.
+    The audit_details JSONField stores detailed information about problematic redirects.
+    """
+
+    audit_run = models.OneToOneField(
+        "wagtail_seotoolkit.SEOAuditRun",
+        on_delete=models.CASCADE,
+        related_name="redirect_audit",
+        help_text="The SEO audit run this redirect audit belongs to",
+    )
+    total_redirects = models.IntegerField(
+        default=0,
+        help_text="Total number of redirects in the system",
+    )
+    chains_detected = models.IntegerField(
+        default=0,
+        help_text="Number of redirect chains longer than 1 hop",
+    )
+    circular_loops = models.IntegerField(
+        default=0,
+        help_text="Number of circular redirect loops detected",
+    )
+    redirects_to_404 = models.IntegerField(
+        default=0,
+        help_text="Number of redirects pointing to 404/deleted pages",
+    )
+    redirects_to_unpublished = models.IntegerField(
+        default=0,
+        help_text="Number of redirects pointing to unpublished pages",
+    )
+    external_redirects = models.IntegerField(
+        default=0,
+        help_text="Number of redirects to external URLs",
+    )
+    chains_flattened = models.IntegerField(
+        default=0,
+        help_text="Number of redirect chains flattened during this audit",
+    )
+    audit_details = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Detailed information about problematic redirects (chains, loops, 404s)",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Redirect Audit Result"
+        verbose_name_plural = "Redirect Audit Results"
+
+    def __str__(self):
+        return (
+            f"Redirect Audit - {self.audit_run.created_at.strftime('%Y-%m-%d %H:%M')}"
+        )
+
+    @property
+    def has_issues(self):
+        """Check if there are any redirect issues."""
+        return (
+            self.chains_detected > 0
+            or self.circular_loops > 0
+            or self.redirects_to_404 > 0
+            or self.redirects_to_unpublished > 0
+        )
+
+    @property
+    def health_score(self):
+        """
+        Calculate a health score for redirects (0-100).
+        100 = no issues, lower scores indicate more problems.
+        """
+        if self.total_redirects == 0:
+            return 100
+
+        # Calculate penalty based on issues
+        issue_count = (
+            self.chains_detected
+            + (self.circular_loops * 3)  # Loops are more serious
+            + (self.redirects_to_404 * 2)  # 404s are serious
+            + self.redirects_to_unpublished
+        )
+
+        # Calculate percentage of problematic redirects
+        penalty = min(100, (issue_count / self.total_redirects) * 100)
+        return max(0, int(100 - penalty))
+
+
+class BrokenLinkAuditResult(models.Model):
+    """
+    Stores broken link audit results linked to an SEO audit run.
+
+    Captures metrics about broken links found in page content,
+    including internal links to deleted/unpublished pages and external broken links.
+    """
+
+    audit_run = models.OneToOneField(
+        "wagtail_seotoolkit.SEOAuditRun",
+        on_delete=models.CASCADE,
+        related_name="broken_link_audit",
+        help_text="The SEO audit run this broken link audit belongs to",
+    )
+    total_pages_scanned = models.IntegerField(
+        default=0,
+        help_text="Total number of pages scanned for broken links",
+    )
+    total_links_checked = models.IntegerField(
+        default=0,
+        help_text="Total number of links checked",
+    )
+    broken_internal_links = models.IntegerField(
+        default=0,
+        help_text="Number of internal links pointing to deleted pages",
+    )
+    links_to_unpublished = models.IntegerField(
+        default=0,
+        help_text="Number of internal links pointing to unpublished pages",
+    )
+    broken_external_links = models.IntegerField(
+        default=0,
+        help_text="Number of external links that return errors",
+    )
+    audit_details = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Detailed information about broken links found",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Broken Link Audit Result"
+        verbose_name_plural = "Broken Link Audit Results"
+
+    def __str__(self):
+        return f"Broken Link Audit - {self.audit_run.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+    @property
+    def total_broken(self):
+        """Total number of broken links found."""
+        return (
+            self.broken_internal_links
+            + self.links_to_unpublished
+            + self.broken_external_links
+        )
+
+    @property
+    def has_issues(self):
+        """Check if there are any broken link issues."""
+        return self.total_broken > 0
+
+    @property
+    def health_score(self):
+        """
+        Calculate a health score for links (0-100).
+        100 = no issues, lower scores indicate more problems.
+        """
+        if self.total_links_checked == 0:
+            return 100
+
+        # Calculate penalty based on issues
+        issue_count = (
+            (self.broken_internal_links * 3)  # Deleted pages are serious
+            + (self.links_to_unpublished * 2)  # Unpublished is moderate
+            + self.broken_external_links  # External is less critical
+        )
+
+        # Calculate percentage of problematic links
+        penalty = min(100, (issue_count / max(1, self.total_links_checked)) * 100)
+        return max(0, int(100 - penalty))

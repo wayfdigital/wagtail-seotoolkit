@@ -49,6 +49,51 @@ def issue_type_filters(issue_type):
     return urlencode(params)
 
 
+@register.filter
+def getattr_filter(obj, attr):
+    """
+    Get an attribute from an object by name.
+
+    Usage: {{ form|getattr:"field_name" }}
+    """
+    try:
+        return getattr(obj, attr)
+    except (AttributeError, TypeError):
+        return None
+
+
+# Register with the name 'getattr' for use in templates
+register.filter("getattr", getattr_filter)
+
+
+@register.simple_tag
+def render_redirect_field(form, page_id):
+    """
+    Render a redirect form field for a given page ID.
+
+    Usage: {% render_redirect_field form page_id %}
+    """
+    field_name = f"redirect_{page_id}"
+    if field_name in form.fields:
+        bound_field = form[field_name]
+        # Return the widget HTML directly
+        return mark_safe(str(bound_field))
+    return ""
+
+
+@register.simple_tag
+def get_redirect_field_errors(form, page_id):
+    """
+    Get errors for a redirect form field.
+
+    Usage: {% get_redirect_field_errors form page_id as errors %}
+    """
+    field_name = f"redirect_{page_id}"
+    if field_name in form.fields:
+        return form[field_name].errors
+    return []
+
+
 @register.simple_tag(takes_context=True)
 def jsonld_schemas(context):
     """

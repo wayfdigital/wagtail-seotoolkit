@@ -23,9 +23,11 @@ from wagtail_seotoolkit.core.models import (
 
 # Pro models (WAYF Proprietary License)
 from wagtail_seotoolkit.pro.models import (
+    BrokenLinkAuditResult,
     JSONLDSchemaTemplate,
     PageJSONLDOverride,
     PluginEmailVerification,
+    RedirectAuditResult,
     SEOMetadataTemplate,
     SiteWideJSONLDSchema,
     SubscriptionLicense,
@@ -42,6 +44,8 @@ __all__ = [
     "PluginEmailVerification",
     "SubscriptionLicense",
     "SEOMetadataTemplate",
+    "RedirectAuditResult",
+    "BrokenLinkAuditResult",
     # JSON-LD Schema Editor
     "JSONLDSchemaTemplate",
     "SiteWideJSONLDSchema",

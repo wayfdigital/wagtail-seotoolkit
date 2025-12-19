@@ -246,6 +246,9 @@ WAGTAIL_SEOTOOLKIT_REPORT_INTERVAL = "14d"
 
 WAGTAIL_SEOTOOLKIT_REPORT_EMAIL_RECIPIENTS = ["test@example.com"]
 
+# Automatic redirect creation when page URLs change (slug change or page move)
+WAGTAIL_SEOTOOLKIT_AUTO_REDIRECT_ON_SLUG_CHANGE = True
+
 # Content Security policy settings
 # http://django-csp.readthedocs.io/en/latest/configuration.html
 

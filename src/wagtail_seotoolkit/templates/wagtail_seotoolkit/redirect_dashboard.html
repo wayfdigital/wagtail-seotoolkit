@@ -1,0 +1,544 @@
+{% extends "wagtailadmin/base.html" %}
+{% load i18n static wagtailadmin_tags %}
+
+{% block titletag %}{% trans "Redirect Dashboard" %}{% endblock %}
+{% block bodyclass %}redirect-dashboard{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/seo_dashboard.css' %}?v=2">
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/redirect_dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/email_verification.css' %}">
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/subscription_banner.css' %}">
+{% endblock %}
+
+{% block content %}
+    {% trans "Redirect Dashboard" as title_str %}
+    {% include "wagtailadmin/shared/header.html" with title=title_str icon="redirect" %}
+    
+    {% csrf_token %}
+    
+    <!-- Subscription Badge -->
+    <div id="subscription-status-badge" class="nice-padding" style="padding-bottom: 0;"></div>
+    
+    <!-- Email Verification Gate -->
+    <div id="verification-gate"></div>
+    
+    <!-- Protected Content -->
+    <div id="protected-content" style="display: none;">
+    <div class="redirect-dashboard nice-padding">
+        {% if has_audit_data %}
+            <!-- Main Health Score Card -->
+            <div class="redirect-dashboard__main-card">
+                <!-- Header Section -->
+                <div class="redirect-dashboard__header">
+                    <div class="redirect-dashboard__score-section">
+                        <h2 class="redirect-dashboard__title">{% trans "Link Health Score" %}</h2>
+                        <div class="redirect-dashboard__score {% if combined_health_score >= 80 %}redirect-dashboard__score--good{% elif combined_health_score >= 50 %}redirect-dashboard__score--warning{% else %}redirect-dashboard__score--critical{% endif %}">
+                            {{ combined_health_score|default:health_score }}/100
+                        </div>
+                        <div class="redirect-dashboard__meta">
+                            <div>
+                                <strong>{% trans "Last audit:" %}</strong> 
+                                {{ latest_audit.created_at|timesince }} {% trans "ago" %}
+                            </div>
+                            <div>
+                                <strong>{% trans "Redirects:" %}</strong> {{ total_redirects }} |
+                                <strong>{% trans "Pages scanned:" %}</strong> {{ bl_pages_scanned|default:0 }}
+                            </div>
+                        </div>
+                        <div class="redirect-dashboard__sub-scores">
+                            <div class="redirect-dashboard__sub-score">
+                                <span class="redirect-dashboard__sub-score-label">{% trans "Redirects" %}</span>
+                                <span class="redirect-dashboard__sub-score-value {% if health_score >= 80 %}redirect-dashboard__sub-score-value--good{% elif health_score >= 50 %}redirect-dashboard__sub-score-value--warning{% else %}redirect-dashboard__sub-score-value--critical{% endif %}">{{ health_score }}</span>
+                            </div>
+                            {% if bl_health_score %}
+                            <div class="redirect-dashboard__sub-score">
+                                <span class="redirect-dashboard__sub-score-label">{% trans "Links" %}</span>
+                                <span class="redirect-dashboard__sub-score-value {% if bl_health_score >= 80 %}redirect-dashboard__sub-score-value--good{% elif bl_health_score >= 50 %}redirect-dashboard__sub-score-value--warning{% else %}redirect-dashboard__sub-score-value--critical{% endif %}">{{ bl_health_score }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Issues Breakdown -->
+                    <div class="redirect-dashboard__breakdown">
+                        <h3 class="redirect-dashboard__breakdown-title">{% trans "Issues Breakdown" %}</h3>
+                        <div class="redirect-dashboard__stats">
+                            <div class="redirect-dashboard__stat {% if circular_loops > 0 %}redirect-dashboard__stat--critical{% else %}redirect-dashboard__stat--good{% endif %}">
+                                <span class="redirect-dashboard__stat-label">{% trans "Circular Loops" %}</span>
+                                <span class="redirect-dashboard__stat-value">{{ circular_loops }}</span>
+                            </div>
+                            <div class="redirect-dashboard__stat {% if redirects_to_404 > 0 %}redirect-dashboard__stat--critical{% else %}redirect-dashboard__stat--good{% endif %}">
+                                <span class="redirect-dashboard__stat-label">{% trans "Redirects to 404" %}</span>
+                                <span class="redirect-dashboard__stat-value">{{ redirects_to_404 }}</span>
+                            </div>
+                            <div class="redirect-dashboard__stat {% if chains_detected > 0 %}redirect-dashboard__stat--warning{% else %}redirect-dashboard__stat--good{% endif %}">
+                                <span class="redirect-dashboard__stat-label">{% trans "Redirect Chains" %}</span>
+                                <span class="redirect-dashboard__stat-value">{{ chains_detected }}</span>
+                            </div>
+                            <div class="redirect-dashboard__stat {% if redirects_to_unpublished > 0 %}redirect-dashboard__stat--warning{% else %}redirect-dashboard__stat--good{% endif %}">
+                                <span class="redirect-dashboard__stat-label">{% trans "To Unpublished" %}</span>
+                                <span class="redirect-dashboard__stat-value">{{ redirects_to_unpublished }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Actions Summary -->
+                {% if chains_flattened > 0 %}
+                <div class="redirect-dashboard__actions-summary">
+                    <div class="redirect-dashboard__action-taken">
+                        <svg class="redirect-dashboard__action-icon" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                        <span>{% blocktrans count count=chains_flattened %}{{ count }} redirect chain flattened in last audit{% plural %}{{ count }} redirect chains flattened in last audit{% endblocktrans %}</span>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Circular Loops Section -->
+                {% if loop_details %}
+                <hr class="redirect-dashboard__divider">
+                <h3 class="redirect-dashboard__section-title">{% trans "Circular Loops" %} <span class="redirect-dashboard__badge redirect-dashboard__badge--critical">{{ circular_loops }}</span></h3>
+                <p class="redirect-dashboard__section-desc">{% trans "Circular redirect loops cause infinite redirect cycles and must be fixed." %}</p>
+                <div class="redirect-dashboard__issues-list">
+                    {% for loop in loop_details %}
+                    <div class="redirect-dashboard__issue-card redirect-dashboard__issue-card--critical">
+                        <div class="redirect-dashboard__issue-content">
+                            <div class="redirect-dashboard__chain-path">
+                                {% for path in loop.loop_path %}
+                                    <span class="redirect-dashboard__path-item">{{ path }}</span>
+                                    {% if not forloop.last %}<span class="redirect-dashboard__path-arrow">→</span>{% endif %}
+                                {% endfor %}
+                            </div>
+                            <div class="redirect-dashboard__issue-meta">
+                                <span class="redirect-dashboard__site-name">{{ loop.site_name }}</span>
+                                {% if loop.redirect_ids %}
+                                <span class="redirect-dashboard__edit-links">
+                                    {% for rid in loop.redirect_ids %}
+                                    <a href="{% url 'wagtailredirects:edit' rid %}" class="redirect-dashboard__edit-link" title="{% trans 'Edit redirect' %}">
+                                        <svg class="redirect-dashboard__edit-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                                    </a>
+                                    {% endfor %}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Redirects to 404 Section -->
+                {% if redirect_404_details %}
+                <hr class="redirect-dashboard__divider">
+                <h3 class="redirect-dashboard__section-title">{% trans "Redirects to 404" %} <span class="redirect-dashboard__badge redirect-dashboard__badge--critical">{{ redirects_to_404 }}</span></h3>
+                <p class="redirect-dashboard__section-desc">{% trans "These redirects point to pages that no longer exist or return 404 errors." %}</p>
+                <div class="redirect-dashboard__issues-list">
+                    {% for r404 in redirect_404_details %}
+                    <a href="{% url 'wagtailredirects:edit' r404.redirect_id %}" class="redirect-dashboard__issue-card redirect-dashboard__issue-card--critical redirect-dashboard__issue-card--clickable">
+                        <div class="redirect-dashboard__issue-content">
+                            <div class="redirect-dashboard__redirect-path">
+                                <span class="redirect-dashboard__path-item">{{ r404.old_path }}</span>
+                                <span class="redirect-dashboard__path-arrow">→</span>
+                                <span class="redirect-dashboard__path-item redirect-dashboard__path-item--broken">{{ r404.target }}</span>
+                            </div>
+                            <div class="redirect-dashboard__issue-meta">
+                                <span class="redirect-dashboard__site-name">{{ r404.site_name }}</span>
+                                <span class="redirect-dashboard__reason">{{ r404.reason }}</span>
+                            </div>
+                        </div>
+                        <div class="redirect-dashboard__issue-action">
+                            <svg class="redirect-dashboard__edit-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                            <span>{% trans "Fix" %}</span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Redirect Chains Section -->
+                {% if chain_details %}
+                <hr class="redirect-dashboard__divider">
+                <h3 class="redirect-dashboard__section-title">{% trans "Redirect Chains" %} <span class="redirect-dashboard__badge redirect-dashboard__badge--warning">{{ chains_detected }}</span></h3>
+                <p class="redirect-dashboard__section-desc">{% trans "Multi-hop redirects slow down page loads. These are automatically flattened during audits." %}</p>
+                <div class="redirect-dashboard__issues-list">
+                    {% for chain in chain_details %}
+                    <a href="{% url 'wagtailredirects:edit' chain.start_redirect_id %}" class="redirect-dashboard__issue-card redirect-dashboard__issue-card--warning redirect-dashboard__issue-card--clickable">
+                        <div class="redirect-dashboard__issue-content">
+                            <div class="redirect-dashboard__chain-path">
+                                {% for path in chain.chain_path %}
+                                    <span class="redirect-dashboard__path-item">{{ path }}</span>
+                                    {% if not forloop.last %}<span class="redirect-dashboard__path-arrow">→</span>{% endif %}
+                                {% endfor %}
+                            </div>
+                            <div class="redirect-dashboard__issue-meta">
+                                <span class="redirect-dashboard__site-name">{{ chain.site_name }}</span>
+                                <span class="redirect-dashboard__hops">{{ chain.hops }} {% trans "hops" %}</span>
+                            </div>
+                        </div>
+                        <div class="redirect-dashboard__issue-action">
+                            <svg class="redirect-dashboard__edit-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                            <span>{% trans "Edit" %}</span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Redirects to Unpublished Section -->
+                {% if redirect_unpublished_details %}
+                <hr class="redirect-dashboard__divider">
+                <h3 class="redirect-dashboard__section-title">{% trans "Redirects to Unpublished Pages" %} <span class="redirect-dashboard__badge redirect-dashboard__badge--warning">{{ redirects_to_unpublished }}</span></h3>
+                <p class="redirect-dashboard__section-desc">{% trans "These redirects point to pages that are unpublished and may not be accessible." %}</p>
+                <div class="redirect-dashboard__issues-list">
+                    {% for unpub in redirect_unpublished_details %}
+                    <a href="{% url 'wagtailredirects:edit' unpub.redirect_id %}" class="redirect-dashboard__issue-card redirect-dashboard__issue-card--warning redirect-dashboard__issue-card--clickable">
+                        <div class="redirect-dashboard__issue-content">
+                            <div class="redirect-dashboard__redirect-path">
+                                <span class="redirect-dashboard__path-item">{{ unpub.old_path }}</span>
+                                <span class="redirect-dashboard__path-arrow">→</span>
+                                <span class="redirect-dashboard__path-item redirect-dashboard__path-item--unpublished">{{ unpub.target_page_title }}</span>
+                            </div>
+                            <div class="redirect-dashboard__issue-meta">
+                                <span class="redirect-dashboard__site-name">{{ unpub.site_name }}</span>
+                                <span class="redirect-dashboard__reason">{{ unpub.reason }}</span>
+                            </div>
+                        </div>
+                        <div class="redirect-dashboard__issue-action">
+                            <svg class="redirect-dashboard__edit-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                            <span>{% trans "Fix" %}</span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Broken Links Section -->
+                {% if has_broken_link_data %}
+                <hr class="redirect-dashboard__divider">
+                <h2 class="redirect-dashboard__section-title" style="font-size: 1.25rem;">
+                    {% trans "Broken Links in Page Content" %}
+                    {% if bl_has_issues %}
+                    <span class="redirect-dashboard__badge redirect-dashboard__badge--critical">{{ bl_broken_internal|add:bl_to_unpublished|add:bl_broken_external }}</span>
+                    {% else %}
+                    <span class="redirect-dashboard__badge redirect-dashboard__badge--good">0</span>
+                    {% endif %}
+                </h2>
+                <p class="redirect-dashboard__section-desc">{% trans "Links found in page content that point to deleted, unpublished, or unreachable targets." %}</p>
+                
+                <div class="redirect-dashboard__stats" style="margin-bottom: 1.5rem;">
+                    <div class="redirect-dashboard__stat {% if bl_broken_internal > 0 %}redirect-dashboard__stat--critical{% else %}redirect-dashboard__stat--good{% endif %}">
+                        <span class="redirect-dashboard__stat-label">{% trans "Broken Internal" %}</span>
+                        <span class="redirect-dashboard__stat-value">{{ bl_broken_internal }}</span>
+                    </div>
+                    <div class="redirect-dashboard__stat {% if bl_to_unpublished > 0 %}redirect-dashboard__stat--warning{% else %}redirect-dashboard__stat--good{% endif %}">
+                        <span class="redirect-dashboard__stat-label">{% trans "To Unpublished" %}</span>
+                        <span class="redirect-dashboard__stat-value">{{ bl_to_unpublished }}</span>
+                    </div>
+                    <div class="redirect-dashboard__stat {% if bl_broken_external > 0 %}redirect-dashboard__stat--warning{% else %}redirect-dashboard__stat--good{% endif %}">
+                        <span class="redirect-dashboard__stat-label">{% trans "Broken External" %}</span>
+                        <span class="redirect-dashboard__stat-value">{{ bl_broken_external }}</span>
+                    </div>
+                    <div class="redirect-dashboard__stat redirect-dashboard__stat--good">
+                        <span class="redirect-dashboard__stat-label">{% trans "Pages Scanned" %}</span>
+                        <span class="redirect-dashboard__stat-value">{{ bl_pages_scanned }}</span>
+                    </div>
+                </div>
+                
+                <!-- Broken Internal Links Details -->
+                {% if bl_broken_internal_details %}
+                <h3 class="redirect-dashboard__section-title">{% trans "Broken Internal Links" %} <span class="redirect-dashboard__badge redirect-dashboard__badge--critical">{{ bl_broken_internal }}</span></h3>
+                <p class="redirect-dashboard__section-desc">{% trans "These links point to pages that have been deleted." %}</p>
+                <div class="redirect-dashboard__issues-list">
+                    {% for link in bl_broken_internal_details %}
+                    <a href="{{ link.source_edit_url }}" class="redirect-dashboard__issue-card redirect-dashboard__issue-card--critical redirect-dashboard__issue-card--clickable">
+                        <div class="redirect-dashboard__issue-content">
+                            <div class="redirect-dashboard__redirect-path">
+                                <span class="redirect-dashboard__path-item">{{ link.source_page_title }}</span>
+                                <span class="redirect-dashboard__path-arrow">→</span>
+                                <span class="redirect-dashboard__path-item redirect-dashboard__path-item--broken">{{ link.target_title }}</span>
+                            </div>
+                            <div class="redirect-dashboard__issue-meta">
+                                <span class="redirect-dashboard__site-name">{{ link.field_path }}</span>
+                                <span class="redirect-dashboard__reason">{{ link.reason }}</span>
+                            </div>
+                        </div>
+                        <div class="redirect-dashboard__issue-action">
+                            <svg class="redirect-dashboard__edit-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                            <span>{% trans "Edit Page" %}</span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Links to Unpublished Pages Details -->
+                {% if bl_to_unpublished_details %}
+                <h3 class="redirect-dashboard__section-title" style="margin-top: 1.5rem;">{% trans "Links to Unpublished Pages" %} <span class="redirect-dashboard__badge redirect-dashboard__badge--warning">{{ bl_to_unpublished }}</span></h3>
+                <p class="redirect-dashboard__section-desc">{% trans "These links point to pages that are currently unpublished." %}</p>
+                <div class="redirect-dashboard__issues-list">
+                    {% for link in bl_to_unpublished_details %}
+                    <a href="{{ link.source_edit_url }}" class="redirect-dashboard__issue-card redirect-dashboard__issue-card--warning redirect-dashboard__issue-card--clickable">
+                        <div class="redirect-dashboard__issue-content">
+                            <div class="redirect-dashboard__redirect-path">
+                                <span class="redirect-dashboard__path-item">{{ link.source_page_title }}</span>
+                                <span class="redirect-dashboard__path-arrow">→</span>
+                                <span class="redirect-dashboard__path-item redirect-dashboard__path-item--unpublished">{{ link.target_title }}</span>
+                            </div>
+                            <div class="redirect-dashboard__issue-meta">
+                                <span class="redirect-dashboard__site-name">{{ link.field_path }}</span>
+                                <span class="redirect-dashboard__reason">{{ link.reason }}</span>
+                            </div>
+                        </div>
+                        <div class="redirect-dashboard__issue-action">
+                            <svg class="redirect-dashboard__edit-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                            <span>{% trans "Edit Page" %}</span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Broken External Links Details -->
+                {% if bl_broken_external_details %}
+                <h3 class="redirect-dashboard__section-title" style="margin-top: 1.5rem;">{% trans "Broken External Links" %} <span class="redirect-dashboard__badge redirect-dashboard__badge--warning">{{ bl_broken_external }}</span></h3>
+                <p class="redirect-dashboard__section-desc">{% trans "These external links return errors or are unreachable." %}</p>
+                <p class="redirect-dashboard__tip">
+                    <span>{% trans "Note: External link validation may result in false positives due to bot protection, rate limiting, or temporary server issues. Verify links manually before removing them." %}</span>
+                </p>
+                <div class="redirect-dashboard__issues-list">
+                    {% for link in bl_broken_external_details %}
+                    <a href="{{ link.source_edit_url }}" class="redirect-dashboard__issue-card redirect-dashboard__issue-card--warning redirect-dashboard__issue-card--clickable">
+                        <div class="redirect-dashboard__issue-content">
+                            <div class="redirect-dashboard__redirect-path">
+                                <span class="redirect-dashboard__path-item">{{ link.source_page_title }}</span>
+                                <span class="redirect-dashboard__path-arrow">→</span>
+                                <span class="redirect-dashboard__path-item redirect-dashboard__path-item--broken" style="max-width: 300px;">{{ link.target_url|truncatechars:50 }}</span>
+                            </div>
+                            <div class="redirect-dashboard__issue-meta">
+                                <span class="redirect-dashboard__site-name">{{ link.field_path }}</span>
+                                <span class="redirect-dashboard__reason">{{ link.reason }}</span>
+                            </div>
+                        </div>
+                        <div class="redirect-dashboard__issue-action">
+                            <svg class="redirect-dashboard__edit-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
+                            <span>{% trans "Edit Page" %}</span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endif %}
+                
+                <!-- Historical Performance Chart -->
+                {% if chart_data_json %}
+                <hr class="redirect-dashboard__divider">
+                <h3 class="redirect-dashboard__section-title">{% trans "Historical Performance" %}</h3>
+                <div class="redirect-dashboard__chart-container">
+                    <canvas id="redirectHealthChart"></canvas>
+                </div>
+                {% endif %}
+                
+                <!-- Statistics Section -->
+                {% if statistics %}
+                <hr class="redirect-dashboard__divider">
+                <h3 class="redirect-dashboard__section-title">{% trans "Statistics" %}</h3>
+                <div class="redirect-dashboard__statistics">
+                    <div class="redirect-dashboard__stat-group">
+                        <h4 class="redirect-dashboard__stat-group-title">{% trans "Redirect Type" %}</h4>
+                        <div class="redirect-dashboard__stat-row">
+                            <span class="redirect-dashboard__stat-label">{% trans "Permanent (301)" %}</span>
+                            <span class="redirect-dashboard__stat-value">{{ statistics.permanent_vs_temporary.permanent|default:0 }}</span>
+                        </div>
+                        <div class="redirect-dashboard__stat-row">
+                            <span class="redirect-dashboard__stat-label">{% trans "Temporary (302)" %}</span>
+                            <span class="redirect-dashboard__stat-value">{{ statistics.permanent_vs_temporary.temporary|default:0 }}</span>
+                        </div>
+                    </div>
+                    <div class="redirect-dashboard__stat-group">
+                        <h4 class="redirect-dashboard__stat-group-title">{% trans "External Redirects" %}</h4>
+                        <div class="redirect-dashboard__stat-row">
+                            <span class="redirect-dashboard__stat-label">{% trans "External URLs" %}</span>
+                            <span class="redirect-dashboard__stat-value">{{ external_redirects }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Action Buttons -->
+                <div class="redirect-dashboard__actions">
+                    <a href="{% url 'wagtailredirects:index' %}" class="button button-primary">
+                        {% trans "Manage Redirects" %}
+                    </a>
+                    <a href="{% url 'seo_dashboard' %}" class="button button-secondary">
+                        {% trans "SEO Dashboard" %}
+                    </a>
+                </div>
+            </div>
+        {% else %}
+            <!-- No Audit Data Available -->
+            <div class="redirect-dashboard__no-data">
+                <h2 class="redirect-dashboard__no-data-title">
+                    {% trans "No redirect audit data available" %}
+                </h2>
+                <p class="redirect-dashboard__no-data-text">
+                    {% trans "Run an SEO audit to analyze your redirects for chains, loops, and 404 targets." %}
+                </p>
+                <p class="redirect-dashboard__no-data-text">
+                    {% trans "To run an audit with redirect analysis, use the following management command:" %}
+                </p>
+                <pre class="redirect-dashboard__code">python manage.py seoaudit</pre>
+                <p class="redirect-dashboard__no-data-stats">
+                    {% trans "Current redirects in system:" %} <strong>{{ total_redirects }}</strong>
+                </p>
+                <div class="redirect-dashboard__actions">
+                    <a href="{% url 'wagtailredirects:index' %}" class="button button-primary">
+                        {% trans "Manage Redirects" %}
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    </div>
+    <!-- End Protected Content -->
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'wagtail_seotoolkit/js/email_verification.js' %}"></script>
+    <script src="{% static 'wagtail_seotoolkit/js/subscription_status.js' %}"></script>
+    <script>
+        // Display subscription status badge using shared module
+        document.addEventListener('DOMContentLoaded', function() {
+            // Only show badge if email is configured
+            const storedEmail = '{{ stored_email }}';
+            if (storedEmail && storedEmail !== 'None') {
+                SubscriptionStatus.displayBadge('subscription-status-badge', {
+                    showManageLink: true,
+                    inline: true
+                });
+            }
+        });
+    </script>
+    
+    <!-- Chart.js for Health Score Chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chartData = {{ chart_data_json|safe }};
+            
+            if (chartData && chartData.labels && chartData.labels.length > 0) {
+                const ctx = document.getElementById('redirectHealthChart');
+                if (ctx) {
+                    new Chart(ctx.getContext('2d'), {
+                        type: 'line',
+                        data: {
+                            labels: chartData.labels,
+                            datasets: [{
+                                label: '{% trans "Combined Health" %}',
+                                data: chartData.combined_health_scores,
+                                borderColor: 'rgb(0, 125, 126)',
+                                backgroundColor: 'rgba(0, 125, 126, 0.1)',
+                                tension: 0.3,
+                                fill: true,
+                                yAxisID: 'y',
+                                borderWidth: 3,
+                            }, {
+                                label: '{% trans "Redirect Health" %}',
+                                data: chartData.redirect_health_scores,
+                                borderColor: 'rgb(59, 130, 246)',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                tension: 0.3,
+                                fill: false,
+                                yAxisID: 'y',
+                                borderDash: [5, 5],
+                                borderWidth: 2,
+                            }, {
+                                label: '{% trans "Broken Link Health" %}',
+                                data: chartData.broken_link_health_scores,
+                                borderColor: 'rgb(168, 85, 247)',
+                                backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                                tension: 0.3,
+                                fill: false,
+                                yAxisID: 'y',
+                                borderDash: [5, 5],
+                                borderWidth: 2,
+                            }, {
+                                label: '{% trans "Redirect Issues" %}',
+                                data: chartData.redirect_to_404.map((v, i) => v + chartData.chains[i] + chartData.loops[i]),
+                                borderColor: 'rgb(245, 158, 11)',
+                                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                                tension: 0.3,
+                                fill: false,
+                                yAxisID: 'y1',
+                            }, {
+                                label: '{% trans "Broken Links" %}',
+                                data: chartData.broken_internal.map((v, i) => v + chartData.broken_external[i]),
+                                borderColor: 'rgb(239, 68, 68)',
+                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                tension: 0.3,
+                                fill: false,
+                                yAxisID: 'y1',
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            interaction: {
+                                mode: 'index',
+                                intersect: false,
+                            },
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                },
+                                tooltip: {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    padding: 12,
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'left',
+                                    beginAtZero: true,
+                                    max: 100,
+                                    title: {
+                                        display: true,
+                                        text: '{% trans "Health Score" %}'
+                                    },
+                                    grid: {
+                                        color: 'rgba(0, 0, 0, 0.05)'
+                                    }
+                                },
+                                y1: {
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'right',
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: '{% trans "Issue Count" %}'
+                                    },
+                                    grid: {
+                                        drawOnChartArea: false,
+                                    },
+                                },
+                                x: {
+                                    grid: {
+                                        display: false
+                                    },
+                                    ticks: {
+                                        maxRotation: 45,
+                                        minRotation: 45
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    </script>
+{% endblock %}

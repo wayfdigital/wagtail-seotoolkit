@@ -27,6 +27,26 @@ class Command(BaseCommand):
             help="Skip PageSpeed Insights checks",
         )
         parser.add_argument(
+            "--skip-redirects",
+            action="store_true",
+            help="Skip redirect audit and chain flattening",
+        )
+        parser.add_argument(
+            "--skip-external-check",
+            action="store_true",
+            help="Skip checking external redirect URLs (faster audit)",
+        )
+        parser.add_argument(
+            "--skip-broken-links",
+            action="store_true",
+            help="Skip broken link audit (checking page content for broken links)",
+        )
+        parser.add_argument(
+            "--skip-external-links",
+            action="store_true",
+            help="Skip checking external links in page content (faster audit)",
+        )
+        parser.add_argument(
             "--debug",
             action="store_true",
             help="Enable debug output showing API calls and responses",
@@ -95,6 +115,28 @@ class Command(BaseCommand):
 
             # Display summary
             self.display_summary(results)
+
+            # Run redirect audit (unless skipped)
+            skip_redirects = options.get("skip_redirects", False)
+            skip_external_check = options.get("skip_external_check", False)
+
+            if not skip_redirects:
+                self.run_redirect_audit(
+                    audit_run,
+                    debug=debug,
+                    check_external=not skip_external_check,
+                )
+
+            # Run broken link audit (unless skipped)
+            skip_broken_links = options.get("skip_broken_links", False)
+            skip_external_links = options.get("skip_external_links", False)
+
+            if not skip_broken_links:
+                self.run_broken_link_audit(
+                    audit_run,
+                    debug=debug,
+                    check_external=not skip_external_links,
+                )
 
             # Generate historical report if interval condition is met
             self.generate_report_if_needed(audit_run)
@@ -267,3 +309,264 @@ class Command(BaseCommand):
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"Error generating report: {str(e)}"))
             self.stdout.write("=" * 60)
+
+    def run_redirect_audit(self, audit_run, debug=False, check_external=True):
+        """Run redirect audit and flatten chains."""
+        import logging
+
+        from wagtail_seotoolkit.pro.models import RedirectAuditResult
+        from wagtail_seotoolkit.pro.utils.redirect_audit import audit_redirects
+        from wagtail_seotoolkit.pro.utils.redirect_utils import (
+            flatten_all_redirect_chains,
+        )
+
+        self.stdout.write("\n" + "=" * 60)
+        self.stdout.write("REDIRECT AUDIT")
+        self.stdout.write("=" * 60)
+
+        # Configure logging to output to console when debug is enabled
+        redirect_audit_logger = logging.getLogger(
+            "wagtail_seotoolkit.pro.utils.redirect_audit"
+        )
+        handler = None
+        if debug:
+            handler = logging.StreamHandler(self.stdout)
+            handler.setFormatter(logging.Formatter("  [%(levelname)s] %(message)s"))
+            redirect_audit_logger.addHandler(handler)
+            redirect_audit_logger.setLevel(logging.DEBUG)
+
+        try:
+            # Run the audit
+            if debug:
+                self.stdout.write("Running redirect audit...")
+                if not check_external:
+                    self.stdout.write(
+                        self.style.WARNING("  Skipping external URL checks")
+                    )
+                else:
+                    self.stdout.write("  External URL checks: enabled")
+
+            audit_results = audit_redirects(
+                check_external=check_external,
+            )
+
+            # Display results
+            total = audit_results["total_redirects"]
+            chains = len(audit_results["chains"])
+            loops = len(audit_results["loops"])
+            to_404 = len(audit_results["redirects_to_404"])
+            to_unpublished = len(audit_results["redirects_to_unpublished"])
+            external = audit_results["external_redirects"]
+
+            self.stdout.write(f"Total redirects: {total}")
+
+            if chains > 0:
+                self.stdout.write(
+                    self.style.WARNING(f"  Redirect chains (>1 hop): {chains}")
+                )
+                if debug:
+                    for chain in audit_results["chains"][:5]:  # Show first 5
+                        path_str = " → ".join(chain["chain_path"])
+                        self.stdout.write(f"    Chain: {path_str}")
+            else:
+                self.stdout.write(self.style.SUCCESS("  Redirect chains: 0"))
+
+            if loops > 0:
+                self.stdout.write(self.style.ERROR(f"  Circular loops: {loops}"))
+                if debug:
+                    for loop in audit_results["loops"][:5]:  # Show first 5
+                        path_str = " → ".join(loop["loop_path"])
+                        self.stdout.write(f"    Loop: {path_str}")
+            else:
+                self.stdout.write(self.style.SUCCESS("  Circular loops: 0"))
+
+            if to_404 > 0:
+                self.stdout.write(self.style.ERROR(f"  Redirects to 404: {to_404}"))
+                if debug:
+                    for r404 in audit_results["redirects_to_404"][:5]:
+                        self.stdout.write(
+                            f"    {r404['old_path']} → {r404['target']} ({r404['reason']})"
+                        )
+            else:
+                self.stdout.write(self.style.SUCCESS("  Redirects to 404: 0"))
+
+            if to_unpublished > 0:
+                self.stdout.write(
+                    self.style.WARNING(f"  Redirects to unpublished: {to_unpublished}")
+                )
+            else:
+                self.stdout.write(self.style.SUCCESS("  Redirects to unpublished: 0"))
+
+            self.stdout.write(f"  External redirects: {external}")
+
+            # Flatten chains
+            self.stdout.write("\nFlattening redirect chains...")
+            chains_flattened = flatten_all_redirect_chains()
+
+            if chains_flattened > 0:
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f"✅ Flattened {chains_flattened} redirect chain(s)"
+                    )
+                )
+            else:
+                self.stdout.write("No chains to flatten")
+
+            # Store results
+            RedirectAuditResult.objects.create(
+                audit_run=audit_run,
+                total_redirects=total,
+                chains_detected=chains,
+                circular_loops=loops,
+                redirects_to_404=to_404,
+                redirects_to_unpublished=to_unpublished,
+                external_redirects=external,
+                chains_flattened=chains_flattened,
+                audit_details={
+                    "chains": audit_results["chains"],
+                    "loops": audit_results["loops"],
+                    "redirects_to_404": audit_results["redirects_to_404"],
+                    "redirects_to_unpublished": audit_results[
+                        "redirects_to_unpublished"
+                    ],
+                    "statistics": audit_results["statistics"],
+                },
+            )
+
+            self.stdout.write(self.style.SUCCESS("\n✅ Redirect audit completed"))
+            self.stdout.write("=" * 60)
+
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f"Error during redirect audit: {str(e)}")
+            )
+            if debug:
+                import traceback
+
+                self.stdout.write(traceback.format_exc())
+            self.stdout.write("=" * 60)
+
+        finally:
+            # Clean up the logging handler
+            if handler:
+                redirect_audit_logger.removeHandler(handler)
+                handler.close()
+
+    def run_broken_link_audit(self, audit_run, debug=False, check_external=False):
+        """Run broken link audit on page content."""
+        import logging
+
+        from wagtail_seotoolkit.pro.models import BrokenLinkAuditResult
+        from wagtail_seotoolkit.pro.utils.broken_link_audit import audit_broken_links
+
+        self.stdout.write("\n" + "=" * 60)
+        self.stdout.write("BROKEN LINK AUDIT")
+        self.stdout.write("=" * 60)
+
+        # Configure logging to output to console when debug is enabled
+        broken_link_logger = logging.getLogger(
+            "wagtail_seotoolkit.pro.utils.broken_link_audit"
+        )
+        handler = None
+        if debug:
+            handler = logging.StreamHandler(self.stdout)
+            handler.setFormatter(logging.Formatter("  [%(levelname)s] %(message)s"))
+            broken_link_logger.addHandler(handler)
+            broken_link_logger.setLevel(logging.DEBUG)
+
+        try:
+            if debug:
+                self.stdout.write("Scanning pages for broken links...")
+                if check_external:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            "  External link checks: enabled (this may be slow)"
+                        )
+                    )
+                else:
+                    self.stdout.write("  External link checks: disabled")
+
+            audit_results = audit_broken_links(check_external=check_external)
+
+            # Display results
+            pages_scanned = audit_results["total_pages_scanned"]
+            links_checked = audit_results["total_links_checked"]
+            broken_internal = len(audit_results["broken_internal_links"])
+            to_unpublished = len(audit_results["links_to_unpublished"])
+            broken_external = len(audit_results["broken_external_links"])
+
+            self.stdout.write(f"Pages scanned: {pages_scanned}")
+            self.stdout.write(f"Links checked: {links_checked}")
+
+            if broken_internal > 0:
+                self.stdout.write(
+                    self.style.ERROR(f"  Broken internal links: {broken_internal}")
+                )
+                if debug:
+                    for link in audit_results["broken_internal_links"][:5]:
+                        self.stdout.write(
+                            f"    {link['source_page_title']}: {link['target_title']} ({link['reason']})"
+                        )
+            else:
+                self.stdout.write(self.style.SUCCESS("  Broken internal links: 0"))
+
+            if to_unpublished > 0:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  Links to unpublished pages: {to_unpublished}"
+                    )
+                )
+                if debug:
+                    for link in audit_results["links_to_unpublished"][:5]:
+                        self.stdout.write(
+                            f"    {link['source_page_title']}: {link['target_title']}"
+                        )
+            else:
+                self.stdout.write(self.style.SUCCESS("  Links to unpublished pages: 0"))
+
+            if check_external:
+                if broken_external > 0:
+                    self.stdout.write(
+                        self.style.ERROR(f"  Broken external links: {broken_external}")
+                    )
+                    if debug:
+                        for link in audit_results["broken_external_links"][:5]:
+                            self.stdout.write(
+                                f"    {link['source_page_title']}: {link['target_url']}"
+                            )
+                else:
+                    self.stdout.write(self.style.SUCCESS("  Broken external links: 0"))
+
+            # Store results
+            BrokenLinkAuditResult.objects.create(
+                audit_run=audit_run,
+                total_pages_scanned=pages_scanned,
+                total_links_checked=links_checked,
+                broken_internal_links=broken_internal,
+                links_to_unpublished=to_unpublished,
+                broken_external_links=broken_external,
+                audit_details={
+                    "broken_internal_links": audit_results["broken_internal_links"],
+                    "links_to_unpublished": audit_results["links_to_unpublished"],
+                    "broken_external_links": audit_results["broken_external_links"],
+                },
+            )
+
+            self.stdout.write(self.style.SUCCESS("\n✅ Broken link audit completed"))
+            self.stdout.write("=" * 60)
+
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f"Error during broken link audit: {str(e)}")
+            )
+            if debug:
+                import traceback
+
+                self.stdout.write(traceback.format_exc())
+            self.stdout.write("=" * 60)
+
+        finally:
+            # Clean up the logging handler
+            if handler:
+                broken_link_logger.removeHandler(handler)
+                handler.close()
