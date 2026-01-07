@@ -162,36 +162,141 @@
         const container = document.getElementById('plans-display-container');
         if (!container) return;
 
-        fetch('/admin/api/proxy/get-plans/')
+        const csrfToken = getCSRFToken();
+
+        fetch('/admin/api/proxy/get-plans/', {
+            headers: csrfToken ? { 'X-CSRFToken': csrfToken } : {}
+        })
             .then(function (response) {
                 return response.json();
             })
             .then(function (data) {
-                if (data.success && data.plans) {
-                    container.innerHTML = renderPlans(data.plans);
+                if (data.success && data.tiers) {
+                    displayPlans(data, container);
                 } else {
-                    container.innerHTML = '<p>Unable to load pricing plans. Please try again later.</p>';
+                    container.innerHTML = '<p style="text-align: center;">Unable to load plans. Please visit <a href="/admin/settings/subscription-settings/">Subscription Settings</a> to purchase.</p>';
                 }
             })
             .catch(function (error) {
-                container.innerHTML = '<p>Unable to load pricing plans. Please try again later.</p>';
+                console.error('Error loading plans:', error);
+                container.innerHTML = '<p style="text-align: center;">Unable to load plans. Please visit <a href="/admin/settings/subscription-settings/">Subscription Settings</a> to purchase.</p>';
             });
     }
 
-    function renderPlans(plans) {
-        let html = '<div class="plans-grid" style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">';
+    /**
+     * Display subscription tiers with interval toggle (matches bulk editor)
+     */
+    function displayPlans(data, plansContainer) {
+        if (!data || !data.tiers || data.tiers.length === 0) {
+            plansContainer.innerHTML = '<p style="text-align: center;">No plans available at this time.</p>';
+            return;
+        }
 
-        plans.forEach(function (plan) {
-            html += '<div class="plan-card" style="border: 1px solid #ddd; border-radius: 8px; padding: 1.5rem; text-align: center; min-width: 200px;">';
-            html += '<h3 style="margin: 0 0 0.5rem 0;">' + plan.name + '</h3>';
-            html += '<p style="font-size: 1.5rem; font-weight: bold; margin: 0.5rem 0;">$' + (plan.price / 100).toFixed(2) + '</p>';
-            html += '<p style="color: #666; margin: 0 0 1rem 0;">' + plan.interval + '</p>';
-            html += '<button class="button" onclick="window.open(\'/admin/settings/subscription-settings/\', \'_self\')">Subscribe</button>';
-            html += '</div>';
+        let plansHtml = '<div class="plans-flex-centered">';
+
+        // Display each tier as a card
+        data.tiers.forEach(function (tier) {
+            const monthlyPlan = tier.pricing.find(function (p) { return p.interval === 'month'; });
+            const yearlyPlan = tier.pricing.find(function (p) { return p.interval === 'year'; });
+
+            if (!monthlyPlan && !yearlyPlan) return; // Skip if no pricing
+
+            // Use monthly as default
+            const defaultPlan = monthlyPlan || yearlyPlan;
+
+            plansHtml += '\
+                <div class="plan-card" data-tier-id="' + tier.id + '">\
+                    <div class="plan-header">\
+                        <h4>' + tier.name + '</h4>\
+                        <p class="tier-description">' + (tier.description || '') + '</p>\
+                        \
+                        <div class="plan-pricing" data-monthly-price="' + (monthlyPlan ? monthlyPlan.amountFormatted : '') + '" data-monthly-price-id="' + (monthlyPlan ? monthlyPlan.priceId : '') + '" data-yearly-price="' + (yearlyPlan ? yearlyPlan.amountFormatted : '') + '" data-yearly-price-id="' + (yearlyPlan ? yearlyPlan.priceId : '') + '" data-yearly-savings="' + (yearlyPlan && yearlyPlan.savingsFormatted ? yearlyPlan.savingsFormatted : '') + '">\
+                            <div class="plan-price">' + defaultPlan.amountFormatted + '</div>\
+                            <div class="plan-interval">per ' + defaultPlan.interval + '</div>\
+                            ' + (yearlyPlan && yearlyPlan.savingsFormatted && defaultPlan.interval === 'year' ? '<span class="plan-savings">Save ' + yearlyPlan.savingsFormatted + '</span>' : '') + '\
+                        </div>\
+                        \
+                        ' + (monthlyPlan && yearlyPlan ? '\
+                            <div class="interval-toggle">\
+                                <button class="interval-btn interval-btn-active" data-interval="month">Monthly</button>\
+                                <button class="interval-btn" data-interval="year">Yearly</button>\
+                            </div>\
+                        ' : '') + '\
+                    </div>\
+                    <div class="plan-features">\
+                        <ul class="email-verification-benefits-list">\
+                            ' + tier.features.map(function (feature) { return '<li>✓ ' + feature + '</li>'; }).join('') + '\
+                        </ul>\
+                    </div>\
+                    <button class="button button-primary purchase-plan-btn" data-price-id="' + defaultPlan.priceId + '">\
+                        Purchase Now\
+                    </button>\
+                </div>\
+            ';
         });
 
-        html += '</div>';
-        return html;
+        plansHtml += '</div>';
+
+        plansContainer.innerHTML = plansHtml;
+
+        // Add click handlers to interval toggle buttons
+        document.querySelectorAll('.interval-btn').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                const card = e.target.closest('.plan-card');
+                const interval = e.target.dataset.interval;
+                const pricingDiv = card.querySelector('.plan-pricing');
+                const priceDisplay = card.querySelector('.plan-price');
+                const intervalDisplay = card.querySelector('.plan-interval');
+                const savingsDisplay = card.querySelector('.plan-savings');
+                const purchaseBtn = card.querySelector('.purchase-plan-btn');
+
+                // Toggle active class
+                card.querySelectorAll('.interval-btn').forEach(function (b) { b.classList.remove('interval-btn-active'); });
+                e.target.classList.add('interval-btn-active');
+
+                // Update pricing display
+                if (interval === 'month') {
+                    priceDisplay.textContent = pricingDiv.dataset.monthlyPrice;
+                    intervalDisplay.textContent = 'per month';
+                    if (savingsDisplay) savingsDisplay.remove();
+                    purchaseBtn.dataset.priceId = pricingDiv.dataset.monthlyPriceId;
+                } else {
+                    priceDisplay.textContent = pricingDiv.dataset.yearlyPrice;
+                    intervalDisplay.textContent = 'per year';
+                    if (pricingDiv.dataset.yearlySavings && !savingsDisplay) {
+                        const savings = document.createElement('span');
+                        savings.className = 'plan-savings';
+                        savings.textContent = 'Save ' + pricingDiv.dataset.yearlySavings;
+                        pricingDiv.appendChild(savings);
+                    }
+                    purchaseBtn.dataset.priceId = pricingDiv.dataset.yearlyPriceId;
+                }
+            });
+        });
+
+        // Add click handlers to purchase buttons
+        document.querySelectorAll('.purchase-plan-btn').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                const priceId = e.target.dataset.priceId;
+                handlePurchase(priceId);
+            });
+        });
+    }
+
+    /**
+     * Handle purchase button click
+     */
+    function handlePurchase(priceId) {
+        const context = window.django && window.django.subscriptionContext;
+        // Redirect to settings page with plan pre-selected
+        if (context && context.email) {
+            // We have email, can proceed to checkout
+            window.location.href = '/admin/settings/subscription-settings/?purchase=' + priceId;
+        } else {
+            // Need to configure email first
+            alert('Please configure your email in Subscription Settings first.');
+            window.location.href = '/admin/settings/subscription-settings/';
+        }
     }
 
     // Utility function to show messages

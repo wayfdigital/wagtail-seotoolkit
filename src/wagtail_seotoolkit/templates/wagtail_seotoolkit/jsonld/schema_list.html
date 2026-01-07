@@ -9,6 +9,7 @@
     {{ block.super }}
     <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/seo_issues_report.css' %}">
     <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/subscription_banner.css' %}">
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/email_verification.css' %}">
     <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/jsonld_editor.css' %}">
 {% endblock %}
 
@@ -34,7 +35,7 @@
     
     <!-- Subscription Gate -->
     <div id="subscription-gate-jsonld-editor">
-        <!-- Email Verification Required Banner -->
+        <!-- Email Verification Required Banner (Matches SEO Dashboard style) -->
         <div id="no-email-banner" class="email-verification-overlay" style="display: none;">
             <div class="email-verification-card">
                 <div class="email-verification-header">
@@ -45,6 +46,14 @@
                     <p class="email-verification-subtitle">
                         The JSON-LD Editor requires email verification and an active Pro subscription
                     </p>
+                </div>
+                
+                <div class="email-verification-benefits">
+                    <p class="email-verification-benefits-title">Required to access:</p>
+                    <ul class="email-verification-benefits-list">
+                        <li>✓ Verified email address</li>
+                        <li>✓ Active Pro subscription</li>
+                    </ul>
                 </div>
                 
                 <div class="email-verification-text">
