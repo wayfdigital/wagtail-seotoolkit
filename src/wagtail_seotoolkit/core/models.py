@@ -61,6 +61,16 @@ class SEOAuditIssueType(models.TextChoices):
     SCHEMA_NO_ARTICLE = "schema_no_article", "Schema No Article/BlogPosting"
     SCHEMA_INVALID = "schema_invalid", "Schema Invalid"
 
+    # Schema Rich Results issues
+    SCHEMA_RICH_RESULT_MISSING_REQUIRED = (
+        "schema_rich_missing_required",
+        "Schema Missing Required Properties",
+    )
+    SCHEMA_RICH_RESULT_DEPRECATED = (
+        "schema_rich_deprecated",
+        "Schema Type Deprecated",
+    )
+
     # Mobile issues
     MOBILE_NO_VIEWPORT = "mobile_no_viewport", "Mobile No Viewport"
     MOBILE_FIXED_WIDTH = "mobile_fixed_width", "Mobile Fixed Width"
@@ -146,10 +156,12 @@ class SEOAuditIssueType(models.TextChoices):
             cls.IMAGE_NO_ALT: "{count} image(s) are missing alt text. Alt text is critical for accessibility and helps images rank in Google Images.",
             cls.IMAGE_ALT_GENERIC: 'Image has generic alt text: "{alt_text}". Alt text should be descriptive and meaningful.',
             cls.IMAGE_ALT_TOO_LONG: "Image alt text is too long ({length} chars). Recommended: under {max_length} characters.",
-            cls.SCHEMA_MISSING: "Page has no Schema markup (JSON-LD). AI Overviews and Google rely on structured data to understand content.",
-            cls.SCHEMA_NO_ORGANIZATION: "Page is missing Organization/Person schema. This helps establish entity relationships and trust signals.",
-            cls.SCHEMA_NO_ARTICLE: "Content page is missing Article/BlogPosting schema. This helps with rich results and AI Overview citations.",
-            cls.SCHEMA_INVALID: "Page has invalid JSON-LD structured data. Fix syntax errors to ensure search engines can parse your schema.",
+            cls.SCHEMA_MISSING: 'Page has no Schema markup (JSON-LD). AI Overviews and Google rely on structured data to understand content. <a href="/admin/seo-toolkit/jsonld-schemas/">Add schema via JSON-LD Editor</a>',
+            cls.SCHEMA_NO_ORGANIZATION: 'Page is missing Organization/Person schema. This helps establish entity relationships and trust signals. <a href="/admin/seo-toolkit/jsonld-schemas/">Edit in JSON-LD Editor</a>',
+            cls.SCHEMA_NO_ARTICLE: 'Content page is missing Article/BlogPosting schema. This helps with rich results and AI Overview citations. <a href="/admin/seo-toolkit/jsonld-schemas/">Edit in JSON-LD Editor</a>',
+            cls.SCHEMA_INVALID: 'Page has invalid JSON-LD structured data. Fix syntax errors to ensure search engines can parse your schema. <a href="/admin/seo-toolkit/jsonld-schemas/">Edit in JSON-LD Editor</a>',
+            cls.SCHEMA_RICH_RESULT_MISSING_REQUIRED: '{schema_type} schema is missing required properties: {missing_props}. <a href="/admin/seo-toolkit/jsonld-schemas/">Edit in JSON-LD Editor</a>',
+            cls.SCHEMA_RICH_RESULT_DEPRECATED: '{schema_type} schema is deprecated and no longer shown in Google Search. <a href="/admin/seo-toolkit/jsonld-schemas/">Edit in JSON-LD Editor</a>',
             cls.MOBILE_NO_VIEWPORT: 'Page is missing viewport meta tag. This is essential for mobile-first indexing. Add: <meta name="viewport" content="width=device-width, initial-scale=1">',
             cls.MOBILE_FIXED_WIDTH: "Page appears to use fixed-width layout. Use responsive design with relative units (%, em, rem) for better mobile experience.",
             cls.INTERNAL_LINKS_NONE: "Page has no internal links. Internal linking is critical for topical authority and helping users navigate your site.",
@@ -177,13 +189,11 @@ class SEOAuditIssueType(models.TextChoices):
     def requires_dev_fix(cls, issue_type):
         """Check if an issue type requires developer attention"""
         dev_required_issues = {
-            cls.SCHEMA_MISSING,
-            cls.SCHEMA_NO_ORGANIZATION,
-            cls.SCHEMA_NO_ARTICLE,
-            cls.SCHEMA_INVALID,
+            # Mobile issues require template/CSS changes
             cls.MOBILE_NO_VIEWPORT,
             cls.MOBILE_FIXED_WIDTH,
             cls.MOBILE_TEXT_SMALL,
+            # Date metadata requires template changes
             cls.CONTENT_NO_PUBLISH_DATE,
             cls.CONTENT_NO_MODIFIED_DATE,
             # PageSpeed Insights issues require dev fixes
@@ -196,6 +206,8 @@ class SEOAuditIssueType(models.TextChoices):
             cls.PAGESPEED_SEO_SCORE_LOW,
             cls.PAGESPEED_SEO_SCORE_CRITICAL,
             cls.PAGESPEED_LIGHTHOUSE_AUDIT_FAILED,
+            # Note: Schema issues are NOT dev-required since they can be
+            # fixed via the JSON-LD Editor (jsonld_schema_list)
         }
         return issue_type in dev_required_issues
 
@@ -231,6 +243,8 @@ class SEOAuditIssueType(models.TextChoices):
             cls.SCHEMA_NO_ORGANIZATION: SEOAuditIssueSeverity.MEDIUM,
             cls.SCHEMA_NO_ARTICLE: SEOAuditIssueSeverity.MEDIUM,
             cls.SCHEMA_INVALID: SEOAuditIssueSeverity.HIGH,
+            cls.SCHEMA_RICH_RESULT_MISSING_REQUIRED: SEOAuditIssueSeverity.MEDIUM,
+            cls.SCHEMA_RICH_RESULT_DEPRECATED: SEOAuditIssueSeverity.LOW,
             # Mobile issues
             cls.MOBILE_NO_VIEWPORT: SEOAuditIssueSeverity.HIGH,
             cls.MOBILE_FIXED_WIDTH: SEOAuditIssueSeverity.MEDIUM,

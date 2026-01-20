@@ -68,6 +68,9 @@ class CustomChecksSidePanel(ChecksSidePanel):
         dev_warnings = [i for i in dev_issues if i["severity"] == SEOAuditIssueSeverity.MEDIUM]
         dev_suggestions = [i for i in dev_issues if i["severity"] == SEOAuditIssueSeverity.LOW]
 
+        # Get schema validation data
+        schema_data = check_details.get("schema", {})
+
         return {
             "audited_at": draft_audit.audited_at,
             # Content checks data for widgets
@@ -81,6 +84,15 @@ class CustomChecksSidePanel(ChecksSidePanel):
             "min_internal_links": check_details.get("min_internal_links", 3),
             "external_links": check_details.get("external_links", []),
             "external_links_count": check_details.get("external_links_count", 0),
+            # Schema / Rich Results data
+            "schema": schema_data,
+            "has_schema": schema_data.get("has_schema", False),
+            "schema_schemas": schema_data.get("schemas", []),
+            "schema_basic_types": schema_data.get("basic_types", []),
+            "schema_syntax_errors": schema_data.get("syntax_errors", []),
+            "schema_eligible_count": schema_data.get("eligible_count", 0),
+            "schema_total_count": schema_data.get("total_schemas", 0),
+            "schema_has_issues": schema_data.get("has_issues", True),
             # Dev-required issues
             "dev_issues": dev_issues,
             "dev_critical": dev_critical,

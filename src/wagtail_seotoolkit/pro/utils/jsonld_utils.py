@@ -820,10 +820,17 @@ def _convert_product_schema(block_value, page, request):
             schema["image"] = image_data
 
     if block_value.get("brand"):
-        schema["brand"] = {
-            "@type": "Brand",
-            "name": process_placeholders(block_value["brand"], page, request),
-        }
+        brand_value = block_value["brand"]
+        # Handle both string format and dict format (with "name" key)
+        if isinstance(brand_value, dict):
+            brand_name = brand_value.get("name", "")
+        else:
+            brand_name = brand_value
+        if brand_name:
+            schema["brand"] = {
+                "@type": "Brand",
+                "name": process_placeholders(brand_name, page, request),
+            }
 
     if block_value.get("sku"):
         schema["sku"] = block_value["sku"]

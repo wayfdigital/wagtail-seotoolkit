@@ -244,6 +244,108 @@
                     {% endif %}
                 </div>
 
+                <!-- Schema / Rich Results Section -->
+                <div class="seo-sidepanel__section seo-sidepanel__section--schema">
+                    <h2 class="seo-sidepanel__section-title">{% trans "Schema / Rich Results" %}</h2>
+                    
+                    {% if not seo_insights.has_schema %}
+                        <!-- No Schema Found -->
+                        <div class="seo-schema-empty">
+                            <span class="seo-schema-empty__icon">
+                                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                            </span>
+                            <span class="seo-schema-empty__text">{% trans "No JSON-LD structured data found" %}</span>
+                            <a href="{% url 'jsonld_schema_list' %}" class="seo-schema-empty__button">
+                                {% trans "Add Schema" %} &rarr;
+                            </a>
+                        </div>
+                    {% else %}
+                        <!-- Syntax Errors -->
+                        {% if seo_insights.schema_syntax_errors %}
+                            <div class="seo-schema-errors">
+                                {% for error in seo_insights.schema_syntax_errors %}
+                                    <div class="seo-schema-error">
+                                        <span class="seo-schema-error__icon">
+                                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                                        </span>
+                                        <span class="seo-schema-error__text">{{ error }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <!-- Schema Types Found -->
+                        {% if seo_insights.schema_schemas %}
+                            <div class="seo-schema-list">
+                                {% for schema in seo_insights.schema_schemas %}
+                                    <div class="seo-schema-card seo-schema-card--{{ schema.status }}">
+                                        <div class="seo-schema-card__header">
+                                            <span class="seo-schema-card__icon">
+                                                {% if schema.status == 'valid' %}
+                                                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                                {% elif schema.status == 'deprecated' %}
+                                                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                                                {% else %}
+                                                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                                                {% endif %}
+                                            </span>
+                                            <span class="seo-schema-card__type">{{ schema.type }}</span>
+                                            <span class="seo-schema-card__badge seo-schema-card__badge--{{ schema.status }}">
+                                                {% if schema.status == 'valid' %}
+                                                    {% trans "Eligible" %}
+                                                {% elif schema.status == 'deprecated' %}
+                                                    {% trans "Deprecated" %}
+                                                {% elif schema.status == 'missing_required' %}
+                                                    {% trans "Missing Fields" %}
+                                                {% else %}
+                                                    {{ schema.status }}
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                        
+                                        {% if schema.description %}
+                                            <div class="seo-schema-card__description">{{ schema.description }}</div>
+                                        {% endif %}
+                                        
+                                        {% if schema.missing_required %}
+                                            <div class="seo-schema-card__missing">
+                                                <span class="seo-schema-card__missing-label">{% trans "Missing required:" %}</span>
+                                                <span class="seo-schema-card__missing-list">{{ schema.missing_required|join:", " }}</span>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        {% if schema.missing_recommended %}
+                                            <div class="seo-schema-card__recommended">
+                                                <span class="seo-schema-card__recommended-label">{% trans "Consider adding:" %}</span>
+                                                <span class="seo-schema-card__recommended-list">{{ schema.missing_recommended|join:", " }}</span>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        {% if schema.note %}
+                                            <div class="seo-schema-card__note">{{ schema.note }}</div>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <!-- Basic Types -->
+                        {% if seo_insights.schema_basic_types %}
+                            <div class="seo-schema-basic">
+                                <span class="seo-schema-basic__label">{% trans "Basic types found:" %}</span>
+                                <span class="seo-schema-basic__list">{{ seo_insights.schema_basic_types|join:", " }}</span>
+                            </div>
+                        {% endif %}
+
+                        <!-- Edit Schema Button -->
+                        <div class="seo-schema-actions">
+                            <a href="{% url 'jsonld_schema_list' %}" class="seo-schema-actions__button">
+                                {% trans "Edit Schemas" %} &rarr;
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+
                 <!-- Dev-Required Issues Section -->
                 {% if seo_insights.has_dev_issues %}
                 <div class="seo-sidepanel__section seo-sidepanel__section--dev">

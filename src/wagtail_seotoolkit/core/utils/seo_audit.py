@@ -182,6 +182,50 @@ class SEOAuditor:
 # ==================== Page Rendering ====================
 
 
+def _inject_jsonld_schemas(html: str, page, request) -> str:
+    """
+    Inject JSON-LD schemas into HTML content.
+
+    Replicates the middleware's JSON-LD injection so audits can detect
+    schemas from templates even when middleware doesn't run.
+
+    Args:
+        html: The HTML content
+        page: The Wagtail page instance
+        request: The request object
+
+    Returns:
+        HTML with JSON-LD schemas injected before </head>
+    """
+    import re
+
+    try:
+        from wagtail_seotoolkit.pro.utils.jsonld_utils import (
+            generate_jsonld_for_page,
+            render_jsonld_script,
+        )
+
+        schemas = generate_jsonld_for_page(page, request)
+
+        if schemas:
+            jsonld_html = render_jsonld_script(schemas)
+
+            # Inject before </head> tag (case-insensitive)
+            head_close_pattern = re.compile(r"</head>", re.IGNORECASE)
+
+            if head_close_pattern.search(html):
+                html = head_close_pattern.sub(f"{jsonld_html}\n</head>", html, count=1)
+
+    except ImportError:
+        # Pro package not available, skip JSON-LD injection
+        pass
+    except Exception:
+        # Don't break audits if JSON-LD generation fails
+        pass
+
+    return html
+
+
 def get_page_html(page) -> str:
     """
     Get HTML content for a Wagtail page.
@@ -231,6 +275,9 @@ def get_page_html(page) -> str:
                 # Pro package not available, skip placeholder processing
                 pass
 
+        # Inject JSON-LD schemas (same as middleware does)
+        html = _inject_jsonld_schemas(html, page.specific, request)
+
         return html
     except Exception as e:
         # Last resort: return empty HTML to continue with the audit
@@ -250,15 +297,18 @@ def extract_check_details(html: str, base_domain: str = "") -> dict:
         base_domain: The base domain to classify internal/external links
 
     Returns:
-        Dictionary with structured data for title, meta, images, and links
+        Dictionary with structured data for title, meta, images, links, and schema
     """
+    from wagtail_seotoolkit.core.utils.checkers.link_checker import MIN_INTERNAL_LINKS
+    from wagtail_seotoolkit.core.utils.schema_validator import (
+        get_schema_validation_details,
+    )
     from wagtail_seotoolkit.core.utils.seo_validators import (
         META_DESC_MAX_LENGTH,
         META_DESC_MIN_LENGTH,
         TITLE_MAX_LENGTH,
         TITLE_MIN_LENGTH,
     )
-    from wagtail_seotoolkit.core.utils.checkers.link_checker import MIN_INTERNAL_LINKS
 
     soup = BeautifulSoup(html, "html.parser")
 
@@ -331,6 +381,9 @@ def extract_check_details(html: str, base_domain: str = "") -> dict:
             # Relative link - consider internal
             internal_links.append(link_data)
 
+    # Get schema validation details
+    schema_details = get_schema_validation_details(html)
+
     return {
         "title": {
             "present": bool(title_text),
@@ -356,6 +409,7 @@ def extract_check_details(html: str, base_domain: str = "") -> dict:
         "min_internal_links": MIN_INTERNAL_LINKS,
         "external_links": external_links[:50],  # Limit to 50 links
         "external_links_count": len(external_links),
+        "schema": schema_details,
     }
 
 
@@ -420,6 +474,9 @@ def get_page_html_from_revision(page, debug=False) -> str:
                 html = process_html_with_placeholders(html, page_instance, request)
             except ImportError:
                 pass
+
+        # Inject JSON-LD schemas (same as middleware does)
+        html = _inject_jsonld_schemas(html, page_instance, request)
 
         return html
     except Exception as e:
