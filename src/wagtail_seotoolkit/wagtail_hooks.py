@@ -470,3 +470,38 @@ def prompt_redirect_on_unpublish(request, page):
         return redirect("redirect_on_unpublish", page_id=page.id)
 
     return None
+
+
+@hooks.register("after_edit_page")
+def audit_draft_on_save(request, page):
+    """
+    Run SEO audit on page draft after save.
+
+    Saves results to DraftSEOAudit and DraftSEOAuditIssue tables,
+    replacing any previous draft audit.
+    """
+    from wagtail.models import Page
+
+    from wagtail_seotoolkit.core.utils.seo_audit import audit_and_save_draft
+
+    # Check if draft audits are enabled (default: True)
+    if not getattr(settings, "WAGTAIL_SEOTOOLKIT_AUDIT_DRAFTS", True):
+        return
+
+    try:
+        # Re-fetch the page from database to ensure we have the latest revision
+        fresh_page = Page.objects.get(pk=page.pk).specific
+
+        # Run draft audit and save to database
+        result = audit_and_save_draft(fresh_page, debug=settings.DEBUG)
+
+        if settings.DEBUG:
+            print(
+                f"✓ Draft audit saved for '{fresh_page.title}' "
+                f"(Score: {result['score']}, Issues: {result['total_issues']})"
+            )
+
+    except Exception as e:
+        # Don't break the save flow if audit fails
+        if settings.DEBUG:
+            print(f"✗ Draft audit failed for '{page.title}': {e}")

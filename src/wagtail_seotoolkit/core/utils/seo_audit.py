@@ -238,6 +238,294 @@ def get_page_html(page) -> str:
         return "<html></html>"
 
 
+# ==================== Draft Audit Functions ====================
+
+
+def extract_check_details(html: str, base_domain: str = "") -> dict:
+    """
+    Extract detailed check data from HTML for UI widgets.
+
+    Args:
+        html: The HTML content to analyze
+        base_domain: The base domain to classify internal/external links
+
+    Returns:
+        Dictionary with structured data for title, meta, images, and links
+    """
+    from wagtail_seotoolkit.core.utils.seo_validators import (
+        META_DESC_MAX_LENGTH,
+        META_DESC_MIN_LENGTH,
+        TITLE_MAX_LENGTH,
+        TITLE_MIN_LENGTH,
+    )
+    from wagtail_seotoolkit.core.utils.checkers.link_checker import MIN_INTERNAL_LINKS
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    # Extract title
+    title_tag = soup.find("title")
+    title_text = ""
+    if title_tag and title_tag.string:
+        title_text = " ".join(title_tag.string.strip().split())
+
+    title_length = len(title_text)
+    title_status = "ok"
+    if not title_text:
+        title_status = "missing"
+    elif title_length < TITLE_MIN_LENGTH:
+        title_status = "too_short"
+    elif title_length > TITLE_MAX_LENGTH:
+        title_status = "too_long"
+
+    # Extract meta description
+    meta_desc = soup.find("meta", attrs={"name": "description"})
+    meta_text = meta_desc.get("content", "").strip() if meta_desc else ""
+    meta_length = len(meta_text)
+    meta_status = "ok"
+    if not meta_text:
+        meta_status = "missing"
+    elif meta_length < META_DESC_MIN_LENGTH:
+        meta_status = "too_short"
+    elif meta_length > META_DESC_MAX_LENGTH:
+        meta_status = "too_long"
+
+    # Extract images
+    images = []
+    for img in soup.find_all("img"):
+        src = img.get("src", "")
+        alt = img.get("alt", "")
+        # Skip tiny tracking pixels and icons
+        if src and not any(skip in src.lower() for skip in ["pixel", "tracking", "1x1"]):
+            has_alt = bool(alt and alt.strip())
+            images.append({
+                "src": src[:200],  # Truncate long URLs
+                "alt": alt[:100] if alt else "",  # Truncate long alt text
+                "has_alt": has_alt,
+            })
+
+    # Extract and categorize links
+    internal_links = []
+    external_links = []
+
+    for link in soup.find_all("a", href=True):
+        href = link.get("href", "").strip()
+        text = link.get_text(strip=True)[:100]  # Truncate long text
+
+        # Skip empty, anchor, and javascript links
+        if not href or href.startswith("#") or href.startswith("javascript:"):
+            continue
+        if href.startswith("mailto:") or href.startswith("tel:"):
+            continue
+
+        link_data = {
+            "href": href[:200],  # Truncate long URLs
+            "text": text or href[:50],
+        }
+
+        # Determine if internal or external
+        if href.startswith("/") or (base_domain and base_domain in href):
+            internal_links.append(link_data)
+        elif href.startswith("http"):
+            external_links.append(link_data)
+        else:
+            # Relative link - consider internal
+            internal_links.append(link_data)
+
+    return {
+        "title": {
+            "present": bool(title_text),
+            "value": title_text[:100],  # Truncate for display
+            "length": title_length,
+            "min_length": TITLE_MIN_LENGTH,
+            "max_length": TITLE_MAX_LENGTH,
+            "status": title_status,
+        },
+        "meta_description": {
+            "present": bool(meta_text),
+            "value": meta_text[:200],  # Truncate for display
+            "length": meta_length,
+            "min_length": META_DESC_MIN_LENGTH,
+            "max_length": META_DESC_MAX_LENGTH,
+            "status": meta_status,
+        },
+        "images": images[:50],  # Limit to 50 images
+        "images_count": len(images),
+        "images_missing_alt": sum(1 for img in images if not img["has_alt"]),
+        "internal_links": internal_links[:50],  # Limit to 50 links
+        "internal_links_count": len(internal_links),
+        "min_internal_links": MIN_INTERNAL_LINKS,
+        "external_links": external_links[:50],  # Limit to 50 links
+        "external_links_count": len(external_links),
+    }
+
+
+def get_page_html_from_revision(page, debug=False) -> str:
+    """
+    Get HTML content from the latest page revision (draft or published).
+
+    Used for draft audits to ensure we're checking the current edited version.
+
+    Args:
+        page: The Wagtail page to get HTML from
+        debug: Enable debug output
+
+    Returns:
+        HTML string from the latest revision
+    """
+    from django.conf import settings
+
+    try:
+        # Get the latest revision (draft or published)
+        latest_revision = page.get_latest_revision()
+        if latest_revision:
+            page_instance = latest_revision.as_object()
+            if debug:
+                print(
+                    f"[DEBUG] Using revision {latest_revision.id} "
+                    f"(title: {page_instance.title}, seo_title: {page_instance.seo_title})"
+                )
+        else:
+            page_instance = page.specific
+            if debug:
+                print(f"[DEBUG] No revision found, using page.specific")
+
+        request = HttpRequest()
+        site = page.get_site()
+        request.META = {"SERVER_NAME": site.hostname, "SERVER_PORT": site.port}
+        request.path = page.url
+        request.user = AnonymousUser()
+
+        # Try to render via serve() which should use page_instance as context
+        response = page_instance.serve(request)
+        if hasattr(response, "render"):
+            response = response.render()
+            if isinstance(response.content, bytes):
+                html = response.content.decode("utf-8")
+            else:
+                html = str(response.content)
+        else:
+            html = str(response)
+
+        # Process placeholders if enabled
+        process_placeholders_enabled = getattr(
+            settings, "WAGTAIL_SEOTOOLKIT_PROCESS_PLACEHOLDERS", True
+        )
+
+        if process_placeholders_enabled:
+            try:
+                from wagtail_seotoolkit.pro.utils.placeholder_utils import (
+                    process_html_with_placeholders,
+                )
+
+                html = process_html_with_placeholders(html, page_instance, request)
+            except ImportError:
+                pass
+
+        return html
+    except Exception as e:
+        if debug:
+            print(f"[DEBUG] Error rendering page: {e}")
+        return "<html></html>"
+
+
+def audit_and_save_draft(page, debug=False):
+    """
+    Audit a page draft and save results to database.
+
+    Deletes any existing draft audit for this page before saving new results.
+    Used for real-time feedback in the editor after save.
+
+    Args:
+        page: The Wagtail page to audit (uses latest revision)
+        debug: Enable debug output
+
+    Returns:
+        Dictionary with 'score', 'total_issues', 'high_count', 'medium_count', 'low_count'
+    """
+    from wagtail_seotoolkit.core.models import (
+        DraftSEOAudit,
+        DraftSEOAuditIssue,
+        SEOAuditIssueType,
+    )
+    from wagtail_seotoolkit.core.utils.checkers import PlaceholderChecker
+
+    # Delete old draft audit for this page (CASCADE will delete related issues)
+    DraftSEOAudit.objects.filter(page=page).delete()
+
+    # Get HTML content from the latest revision
+    html = get_page_html_from_revision(page, debug=debug)
+
+    # Get page URL and base domain
+    url = page.get_full_url() if hasattr(page, "get_full_url") else page.url
+    base_domain = extract_base_domain(url)
+
+    # Extract detailed check data for UI widgets
+    check_details = extract_check_details(html, base_domain)
+
+    # Run audit (skip PageSpeed for drafts - too expensive and slow)
+    auditor = SEOAuditor(
+        html,
+        url=url,
+        base_domain=base_domain,
+        debug=debug,
+        skip_pagespeed=True,
+    )
+    issues = auditor.run_all_checks()
+
+    # Check for unprocessed placeholders (database field check)
+    placeholder_checker = PlaceholderChecker(page)
+    placeholder_issues = placeholder_checker.check()
+    issues.extend(placeholder_issues)
+
+    # Count issues by severity
+    high_count = sum(
+        1 for i in issues if i["issue_severity"] == SEOAuditIssueSeverity.HIGH
+    )
+    medium_count = sum(
+        1 for i in issues if i["issue_severity"] == SEOAuditIssueSeverity.MEDIUM
+    )
+    low_count = sum(
+        1 for i in issues if i["issue_severity"] == SEOAuditIssueSeverity.LOW
+    )
+
+    # Calculate score
+    score = calculate_audit_score(high_count, medium_count, low_count, 1)
+
+    # Create draft audit record with check details
+    draft_audit = DraftSEOAudit.objects.create(
+        page=page,
+        score=score,
+        check_details=check_details,
+    )
+
+    # Save issues to database
+    if issues:
+        draft_issues = []
+        for issue in issues:
+            draft_issues.append(
+                DraftSEOAuditIssue(
+                    draft_audit=draft_audit,
+                    issue_type=issue["issue_type"],
+                    issue_severity=issue["issue_severity"],
+                    description=issue["description"],
+                    requires_dev_fix=SEOAuditIssueType.requires_dev_fix(
+                        issue["issue_type"]
+                    ),
+                )
+            )
+
+        # Bulk create all issues
+        DraftSEOAuditIssue.objects.bulk_create(draft_issues)
+
+    return {
+        "score": score,
+        "total_issues": len(issues),
+        "high_count": high_count,
+        "medium_count": medium_count,
+        "low_count": low_count,
+    }
+
+
 # ==================== Audit Execution ====================
 
 

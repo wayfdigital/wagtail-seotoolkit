@@ -59,8 +59,6 @@
             </div>
         {% endblock %}
 
-        <!-- SEO Insights Section -->
-        
         <!-- Email Verification Gate -->
         <div id="verification-gate"></div>
         
@@ -68,137 +66,250 @@
         <div id="protected-content" style="display: none;">
         {% if seo_insights %}
             <div class="seo-sidepanel">
-                <div class="seo-sidepanel__header">
-                    <h2 class="seo-sidepanel__title">
-                        {% trans "SEO Insights" %}
-                    </h2>
-                    <p class="seo-sidepanel__subtitle">
-                        <a href="{% url 'seo_dashboard' %}" class="seo-sidepanel__audit-link">
-                            {% trans "Last audit:" %} {{ seo_insights.latest_audit.created_at|timesince }} {% trans "ago" %}
-                        </a>
-                    </p>
-                </div>
+                <!-- Content Checks Section -->
+                <div class="seo-sidepanel__section">
+                    <h2 class="seo-sidepanel__section-title">{% trans "Content Checks" %}</h2>
+                    <p class="seo-sidepanel__section-hint">{% trans "Save draft to update checks" %}</p>
+                    <p class="seo-sidepanel__section-subtitle">{% trans "Last checked:" %} {{ seo_insights.audited_at|timesince }} {% trans "ago" %}</p>
 
-                <div class="seo-sidepanel__summary">
-                    <div class="seo-sidepanel__summary-item">
-                        <span class="seo-sidepanel__summary-label">{% trans "Issues Found" %}</span>
-                        <span class="seo-sidepanel__summary-value">{{ seo_insights.total_issues }}</span>
+                    <!-- Title Check Widget -->
+                    <div class="seo-check-widget">
+                        <div class="seo-check-widget__header">
+                            <span class="seo-check-widget__icon {% if seo_insights.title.status == 'ok' %}seo-check-widget__icon--success{% elif seo_insights.title.status == 'missing' %}seo-check-widget__icon--error{% else %}seo-check-widget__icon--warning{% endif %}">
+                                {% if seo_insights.title.status == 'ok' %}
+                                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                {% else %}
+                                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                                {% endif %}
+                            </span>
+                            <span class="seo-check-widget__label">{% trans "Title" %}</span>
+                            <span class="seo-check-widget__count">{{ seo_insights.title.length }} {% trans "chars" %}</span>
+                        </div>
+                        {% if seo_insights.title.present %}
+                            <div class="seo-check-widget__value" title="{{ seo_insights.title.value }}">"{{ seo_insights.title.value|truncatechars:60 }}"</div>
+                        {% else %}
+                            <div class="seo-check-widget__value seo-check-widget__value--missing">{% trans "Missing" %}</div>
+                        {% endif %}
+                        <div class="seo-range-bar" 
+                             style="--current: {{ seo_insights.title.length }}; --min: {{ seo_insights.title.min_length }}; --max: {{ seo_insights.title.max_length }}; --range-max: 80;">
+                            <div class="seo-range-bar__track">
+                                <div class="seo-range-bar__optimal"></div>
+                                <div class="seo-range-bar__marker"></div>
+                            </div>
+                            <div class="seo-range-bar__labels">
+                                <span>0</span>
+                                <span>{{ seo_insights.title.min_length }}</span>
+                                <span>{{ seo_insights.title.max_length }}</span>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Meta Description Check Widget -->
+                    <div class="seo-check-widget">
+                        <div class="seo-check-widget__header">
+                            <span class="seo-check-widget__icon {% if seo_insights.meta_description.status == 'ok' %}seo-check-widget__icon--success{% elif seo_insights.meta_description.status == 'missing' %}seo-check-widget__icon--error{% else %}seo-check-widget__icon--warning{% endif %}">
+                                {% if seo_insights.meta_description.status == 'ok' %}
+                                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                {% else %}
+                                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                                {% endif %}
+                            </span>
+                            <span class="seo-check-widget__label">{% trans "Meta Description" %}</span>
+                            <span class="seo-check-widget__count">{{ seo_insights.meta_description.length }} {% trans "chars" %}</span>
+                        </div>
+                        {% if seo_insights.meta_description.present %}
+                            <div class="seo-check-widget__value" title="{{ seo_insights.meta_description.value }}">"{{ seo_insights.meta_description.value|truncatechars:80 }}"</div>
+                        {% else %}
+                            <div class="seo-check-widget__value seo-check-widget__value--missing">{% trans "Missing" %}</div>
+                        {% endif %}
+                        <div class="seo-range-bar" 
+                             style="--current: {{ seo_insights.meta_description.length }}; --min: {{ seo_insights.meta_description.min_length }}; --max: {{ seo_insights.meta_description.max_length }}; --range-max: 200;">
+                            <div class="seo-range-bar__track">
+                                <div class="seo-range-bar__optimal"></div>
+                                <div class="seo-range-bar__marker"></div>
+                            </div>
+                            <div class="seo-range-bar__labels">
+                                <span>0</span>
+                                <span>{{ seo_insights.meta_description.min_length }}</span>
+                                <span>{{ seo_insights.meta_description.max_length }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Images Check Widget -->
+                    <details class="seo-check-widget seo-check-widget--collapsible" {% if seo_insights.images_missing_alt > 0 %}open{% endif %}>
+                        <summary class="seo-check-widget__header">
+                            <span class="seo-check-widget__icon {% if seo_insights.images_missing_alt == 0 %}seo-check-widget__icon--success{% else %}seo-check-widget__icon--warning{% endif %}">
+                                {% if seo_insights.images_missing_alt == 0 %}
+                                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                {% else %}
+                                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                                {% endif %}
+                            </span>
+                            <span class="seo-check-widget__label">{% trans "Images" %}</span>
+                            <span class="seo-check-widget__count">
+                                {% if seo_insights.images_missing_alt > 0 %}
+                                    {{ seo_insights.images_missing_alt }}/{{ seo_insights.images_count }} {% trans "missing alt" %}
+                                {% else %}
+                                    {{ seo_insights.images_count }} {% trans "total" %}
+                                {% endif %}
+                            </span>
+                            <span class="seo-check-widget__chevron">
+                                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                            </span>
+                        </summary>
+                        <div class="seo-check-widget__list">
+                            {% if seo_insights.images %}
+                                {% for image in seo_insights.images %}
+                                    <div class="seo-list-item {% if image.has_alt %}seo-list-item--ok{% else %}seo-list-item--error{% endif %}">
+                                        <span class="seo-list-item__icon">
+                                            {% if image.has_alt %}
+                                                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                            {% else %}
+                                                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                                            {% endif %}
+                                        </span>
+                                        <span class="seo-list-item__text" title="{{ image.src }}">
+                                            {{ image.src|slice:"-30:" }}
+                                        </span>
+                                        <span class="seo-list-item__detail">
+                                            {% if image.has_alt %}"{{ image.alt|truncatechars:25 }}"{% else %}{% trans "No alt text" %}{% endif %}
+                                        </span>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="seo-check-widget__empty">{% trans "No images found" %}</div>
+                            {% endif %}
+                        </div>
+                    </details>
+
+                    <!-- Internal Links Check Widget -->
+                    <details class="seo-check-widget seo-check-widget--collapsible" {% if seo_insights.internal_links_count < seo_insights.min_internal_links %}open{% endif %}>
+                        <summary class="seo-check-widget__header">
+                            <span class="seo-check-widget__icon {% if seo_insights.internal_links_count >= seo_insights.min_internal_links %}seo-check-widget__icon--success{% else %}seo-check-widget__icon--warning{% endif %}">
+                                {% if seo_insights.internal_links_count >= seo_insights.min_internal_links %}
+                                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                {% else %}
+                                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                                {% endif %}
+                            </span>
+                            <span class="seo-check-widget__label">{% trans "Internal Links" %}</span>
+                            <span class="seo-check-widget__count">{{ seo_insights.internal_links_count }} ({% trans "min" %} {{ seo_insights.min_internal_links }})</span>
+                            <span class="seo-check-widget__chevron">
+                                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                            </span>
+                        </summary>
+                        <div class="seo-check-widget__list">
+                            {% if seo_insights.internal_links %}
+                                {% for link in seo_insights.internal_links %}
+                                    <div class="seo-list-item seo-list-item--ok">
+                                        <span class="seo-list-item__icon">
+                                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clip-rule="evenodd"/></svg>
+                                        </span>
+                                        <span class="seo-list-item__text" title="{{ link.href }}">{{ link.href|truncatechars:30 }}</span>
+                                        <span class="seo-list-item__detail">"{{ link.text|truncatechars:20 }}"</span>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="seo-check-widget__empty">{% trans "No internal links found" %}</div>
+                            {% endif %}
+                        </div>
+                    </details>
+
+                    <!-- External Links Check Widget -->
+                    {% if seo_insights.external_links_count > 0 %}
+                    <details class="seo-check-widget seo-check-widget--collapsible">
+                        <summary class="seo-check-widget__header">
+                            <span class="seo-check-widget__icon seo-check-widget__icon--neutral">
+                                <svg viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/><path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/></svg>
+                            </span>
+                            <span class="seo-check-widget__label">{% trans "External Links" %}</span>
+                            <span class="seo-check-widget__count">{{ seo_insights.external_links_count }} {% trans "total" %}</span>
+                            <span class="seo-check-widget__chevron">
+                                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                            </span>
+                        </summary>
+                        <div class="seo-check-widget__list">
+                            {% for link in seo_insights.external_links %}
+                                <div class="seo-list-item seo-list-item--neutral">
+                                    <span class="seo-list-item__icon">
+                                        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/><path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/></svg>
+                                    </span>
+                                    <span class="seo-list-item__text" title="{{ link.href }}">{{ link.href|truncatechars:30 }}</span>
+                                    <span class="seo-list-item__detail">"{{ link.text|truncatechars:20 }}"</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </details>
+                    {% endif %}
                 </div>
 
-                {% if seo_insights.total_issues > 0 %}
-                    <!-- Critical Issues -->
-                    {% if seo_insights.critical_issues %}
+                <!-- Dev-Required Issues Section -->
+                {% if seo_insights.has_dev_issues %}
+                <div class="seo-sidepanel__section seo-sidepanel__section--dev">
+                    <h2 class="seo-sidepanel__section-title">
+                        {% trans "Technical Issues" %}
+                        <span class="seo-sidepanel__dev-badge">{% trans "Dev required" %}</span>
+                    </h2>
+
+                    {% if seo_insights.dev_critical %}
                         <details class="seo-sidepanel__issues-group" open>
                             <summary class="seo-sidepanel__severity-header seo-sidepanel__severity-header--critical">
                                 <span class="seo-sidepanel__severity-label">{% trans "CRITICAL" %}</span>
-                                <span class="seo-sidepanel__severity-count">{{ seo_insights.critical_issues|length }}</span>
+                                <span class="seo-sidepanel__severity-count">{{ seo_insights.dev_critical|length }}</span>
                             </summary>
                             <div class="seo-sidepanel__issues-list">
-                                {% for issue in seo_insights.critical_issues %}
+                                {% for issue in seo_insights.dev_critical %}
                                     <div class="seo-sidepanel__issue-card seo-sidepanel__issue-card--critical">
-                                        <div class="seo-sidepanel__issue-type">
-                                            {{ issue.type }}
-                                            {% if issue.requires_dev_fix %}
-                                                <span class="dev-badge">
-                                                    <svg class="dev-badge__icon" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
-                                                    </svg>
-                                                    Dev needed
-                                                    <span class="dev-badge__tooltip">This issue requires code changes</span>
-                                                </span>
-                                            {% endif %}
-                                        </div>
-                                        <div class="seo-sidepanel__issue-description">
-                                            {{ issue.description|safe }}
-                                        </div>
+                                        <div class="seo-sidepanel__issue-type">{{ issue.type }}</div>
+                                        <div class="seo-sidepanel__issue-description">{{ issue.description|safe }}</div>
                                     </div>
                                 {% endfor %}
                             </div>
                         </details>
                     {% endif %}
 
-                    <!-- Warning Issues -->
-                    {% if seo_insights.warning_issues %}
+                    {% if seo_insights.dev_warnings %}
                         <details class="seo-sidepanel__issues-group" open>
                             <summary class="seo-sidepanel__severity-header seo-sidepanel__severity-header--warning">
                                 <span class="seo-sidepanel__severity-label">{% trans "WARNINGS" %}</span>
-                                <span class="seo-sidepanel__severity-count">{{ seo_insights.warning_issues|length }}</span>
+                                <span class="seo-sidepanel__severity-count">{{ seo_insights.dev_warnings|length }}</span>
                             </summary>
                             <div class="seo-sidepanel__issues-list">
-                                {% for issue in seo_insights.warning_issues %}
+                                {% for issue in seo_insights.dev_warnings %}
                                     <div class="seo-sidepanel__issue-card seo-sidepanel__issue-card--warning">
-                                        <div class="seo-sidepanel__issue-type">
-                                            {{ issue.type }}
-                                            {% if issue.requires_dev_fix %}
-                                                <span class="dev-badge">
-                                                    <svg class="dev-badge__icon" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
-                                                    </svg>
-                                                    Dev needed
-                                                    <span class="dev-badge__tooltip">This issue requires code changes</span>
-                                                </span>
-                                            {% endif %}
-                                        </div>
-                                        <div class="seo-sidepanel__issue-description">
-                                            {{ issue.description|safe }}
-                                        </div>
+                                        <div class="seo-sidepanel__issue-type">{{ issue.type }}</div>
+                                        <div class="seo-sidepanel__issue-description">{{ issue.description|safe }}</div>
                                     </div>
                                 {% endfor %}
                             </div>
                         </details>
                     {% endif %}
 
-                    <!-- Suggestion Issues -->
-                    {% if seo_insights.suggestion_issues %}
-                        <details class="seo-sidepanel__issues-group" open>
+                    {% if seo_insights.dev_suggestions %}
+                        <details class="seo-sidepanel__issues-group">
                             <summary class="seo-sidepanel__severity-header seo-sidepanel__severity-header--suggestion">
                                 <span class="seo-sidepanel__severity-label">{% trans "SUGGESTIONS" %}</span>
-                                <span class="seo-sidepanel__severity-count">{{ seo_insights.suggestion_issues|length }}</span>
+                                <span class="seo-sidepanel__severity-count">{{ seo_insights.dev_suggestions|length }}</span>
                             </summary>
                             <div class="seo-sidepanel__issues-list">
-                                {% for issue in seo_insights.suggestion_issues %}
+                                {% for issue in seo_insights.dev_suggestions %}
                                     <div class="seo-sidepanel__issue-card seo-sidepanel__issue-card--suggestion">
-                                        <div class="seo-sidepanel__issue-type">
-                                            {{ issue.type }}
-                                            {% if issue.requires_dev_fix %}
-                                                <span class="dev-badge">
-                                                    <svg class="dev-badge__icon" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
-                                                    </svg>
-                                                    Dev needed
-                                                    <span class="dev-badge__tooltip">This issue requires code changes</span>
-                                                </span>
-                                            {% endif %}
-                                        </div>
-                                        <div class="seo-sidepanel__issue-description">
-                                            {{ issue.description|safe }}
-                                        </div>
+                                        <div class="seo-sidepanel__issue-type">{{ issue.type }}</div>
+                                        <div class="seo-sidepanel__issue-description">{{ issue.description|safe }}</div>
                                     </div>
                                 {% endfor %}
                             </div>
                         </details>
                     {% endif %}
-                {% else %}
-                    <div class="seo-sidepanel__no-issues">
-                        <p class="seo-sidepanel__no-issues-text">
-                            {% trans "Great! No SEO issues found for this page." %}
-                        </p>
-                    </div>
+                </div>
                 {% endif %}
             </div>
         {% else %}
             <div class="seo-sidepanel">
-                <div class="seo-sidepanel__header">
-                    <h2 class="seo-sidepanel__title">
-                        {% trans "SEO Insights" %}
-                    </h2>
-                </div>
                 <div class="seo-sidepanel__no-data">
-                    <p class="seo-sidepanel__no-data-text">
-                        {% trans "No audit data available. Run an SEO audit to see insights for this page." %}
-                    </p>
-                    <pre class="seo-sidepanel__no-data-code">python manage.py seoaudit</pre>
+                    <h2 class="seo-sidepanel__section-title">{% trans "Content Checks" %}</h2>
+                    <p class="seo-sidepanel__no-data-text">{% trans "Save this page to see SEO content checks." %}</p>
                 </div>
             </div>
         {% endif %}

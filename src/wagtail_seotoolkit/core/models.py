@@ -411,3 +411,75 @@ class SEOAuditReport(models.Model):
 
     def __str__(self):
         return f"Report: {self.previous_audit.created_at.strftime('%Y-%m-%d')} → {self.current_audit.created_at.strftime('%Y-%m-%d')}"
+
+
+class DraftSEOAudit(models.Model):
+    """
+    Draft audit metadata for a single page.
+
+    Stores the score, timestamp, and detailed check data for the latest draft audit.
+    Only one draft audit per page is kept - older ones are deleted when a new one is saved.
+
+    The check_details JSONField stores structured data for UI widgets:
+    {
+        "title": {"present": bool, "value": str, "length": int, "min_length": int, "max_length": int, "status": str},
+        "meta_description": {"present": bool, "value": str, "length": int, "min_length": int, "max_length": int, "status": str},
+        "images": [{"src": str, "alt": str, "has_alt": bool}],
+        "internal_links": [{"href": str, "text": str}],
+        "internal_links_count": int,
+        "min_internal_links": int,
+        "external_links": [{"href": str, "text": str}]
+    }
+    """
+
+    page = models.OneToOneField(
+        "wagtailcore.Page",
+        on_delete=models.CASCADE,
+        related_name="draft_seo_audit",
+        help_text="The page this draft audit relates to",
+    )
+    score = models.IntegerField(help_text="SEO score for this draft (0-100)")
+    audited_at = models.DateTimeField(
+        auto_now=True, help_text="When this draft was last audited"
+    )
+    check_details = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Detailed check data for UI widgets (title, meta, images, links)",
+    )
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["page", "audited_at"]),
+        ]
+
+    def __str__(self):
+        return f"Draft Audit: {self.page.title} (Score: {self.score})"
+
+
+class DraftSEOAuditIssue(models.Model):
+    """
+    Individual SEO issues found in page drafts.
+
+    Related to a DraftSEOAudit which stores the overall score and metadata.
+    Issues are deleted when their parent DraftSEOAudit is deleted.
+    """
+
+    draft_audit = models.ForeignKey(
+        DraftSEOAudit,
+        on_delete=models.CASCADE,
+        related_name="issues",
+        help_text="The draft audit this issue belongs to",
+    )
+    issue_type = models.CharField(max_length=255, choices=SEOAuditIssueType.choices)
+    issue_severity = models.IntegerField(choices=SEOAuditIssueSeverity.choices)
+    description = models.TextField(blank=True)
+    requires_dev_fix = models.BooleanField(
+        default=False, help_text="Whether this issue requires developer attention"
+    )
+
+    class Meta:
+        ordering = ["-issue_severity", "issue_type"]
+
+    def __str__(self):
+        return f"Draft: {self.get_issue_type_display()} - {self.draft_audit.page.title}"

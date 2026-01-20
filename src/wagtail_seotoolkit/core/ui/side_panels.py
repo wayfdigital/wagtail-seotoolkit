@@ -2,10 +2,9 @@ from wagtail.admin.ui.side_panels import ChecksSidePanel
 from wagtail.models import Page
 
 from wagtail_seotoolkit.models import (
+    DraftSEOAudit,
     PluginEmailVerification,
-    SEOAuditIssue,
     SEOAuditIssueSeverity,
-    SEOAuditRun,
 )
 
 
@@ -21,52 +20,73 @@ class CustomChecksSidePanel(ChecksSidePanel):
         }
 
     def get_seo_insights(self):
-        """Get SEO issues for the current page from the latest audit"""
+        """
+        Get SEO data for the current page from draft audit.
 
+        Returns structured data for:
+        - Content checks (title, meta, images, links) with widget data
+        - Dev-required audit issues (schema, mobile, etc.)
+        """
         # Get the current page
         page = self.object if issubclass(self.model, Page) else None
         if not page or not page.id:
             return None
 
-        # Get the latest completed audit
-        latest_audit = (
-            SEOAuditRun.objects.filter(status="completed")
-            .order_by("-created_at")
-            .first()
-        )
-        if not latest_audit:
+        # Get draft audit from database
+        try:
+            draft_audit = (
+                DraftSEOAudit.objects.select_related("page")
+                .prefetch_related("issues")
+                .get(page=page)
+            )
+        except DraftSEOAudit.DoesNotExist:
             return None
 
-        # Get issues for this page
-        issues = SEOAuditIssue.objects.filter(
-            audit_run=latest_audit, page=page
-        ).order_by("-issue_severity", "issue_type")
+        # Get check_details for content checks widgets
+        check_details = draft_audit.check_details or {}
 
-        # Group issues by severity
-        critical_issues = []
-        warning_issues = []
-        suggestion_issues = []
+        # Separate issues into editor-fixable and dev-required
+        editor_issues = []
+        dev_issues = []
 
-        for issue in issues:
+        for issue in draft_audit.issues.all():
             issue_data = {
                 "type": issue.get_issue_type_display(),
+                "issue_type": issue.issue_type,
                 "description": issue.description,
-                "requires_dev_fix": issue.requires_dev_fix,
+                "severity": issue.issue_severity,
+                "severity_label": issue.get_issue_severity_display(),
             }
 
-            if issue.issue_severity == SEOAuditIssueSeverity.HIGH:
-                critical_issues.append(issue_data)
-            elif issue.issue_severity == SEOAuditIssueSeverity.MEDIUM:
-                warning_issues.append(issue_data)
+            if issue.requires_dev_fix:
+                dev_issues.append(issue_data)
             else:
-                suggestion_issues.append(issue_data)
+                editor_issues.append(issue_data)
+
+        # Group dev issues by severity for display
+        dev_critical = [i for i in dev_issues if i["severity"] == SEOAuditIssueSeverity.HIGH]
+        dev_warnings = [i for i in dev_issues if i["severity"] == SEOAuditIssueSeverity.MEDIUM]
+        dev_suggestions = [i for i in dev_issues if i["severity"] == SEOAuditIssueSeverity.LOW]
 
         return {
-            "latest_audit": latest_audit,
-            "total_issues": issues.count(),
-            "critical_issues": critical_issues,
-            "warning_issues": warning_issues,
-            "suggestion_issues": suggestion_issues,
+            "audited_at": draft_audit.audited_at,
+            # Content checks data for widgets
+            "title": check_details.get("title", {}),
+            "meta_description": check_details.get("meta_description", {}),
+            "images": check_details.get("images", []),
+            "images_count": check_details.get("images_count", 0),
+            "images_missing_alt": check_details.get("images_missing_alt", 0),
+            "internal_links": check_details.get("internal_links", []),
+            "internal_links_count": check_details.get("internal_links_count", 0),
+            "min_internal_links": check_details.get("min_internal_links", 3),
+            "external_links": check_details.get("external_links", []),
+            "external_links_count": check_details.get("external_links_count", 0),
+            # Dev-required issues
+            "dev_issues": dev_issues,
+            "dev_critical": dev_critical,
+            "dev_warnings": dev_warnings,
+            "dev_suggestions": dev_suggestions,
+            "has_dev_issues": len(dev_issues) > 0,
         }
 
     def get_context_data(self, parent_context):

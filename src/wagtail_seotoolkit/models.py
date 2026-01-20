@@ -6,6 +6,7 @@ for backward compatibility with existing code.
 
 Core models (MIT License):
 - SEOAuditRun, SEOAuditIssue, SEOAuditIssueSeverity, SEOAuditIssueType
+- DraftSEOAudit, DraftSEOAuditIssue
 
 Pro models (WAYF Proprietary License):
 - PluginEmailVerification, SubscriptionLicense, SEOMetadataTemplate
@@ -15,6 +16,8 @@ Pro models (WAYF Proprietary License):
 # Core models (MIT License)
 from wagtail_seotoolkit.core.models import (
     SEO_AUDIT_RUN_STATUSES,
+    DraftSEOAudit,
+    DraftSEOAuditIssue,
     SEOAuditIssue,
     SEOAuditIssueSeverity,
     SEOAuditIssueType,
@@ -40,6 +43,8 @@ __all__ = [
     "SEOAuditIssue",
     "SEOAuditIssueSeverity",
     "SEOAuditIssueType",
+    "DraftSEOAudit",
+    "DraftSEOAuditIssue",
     # Pro
     "PluginEmailVerification",
     "SubscriptionLicense",
