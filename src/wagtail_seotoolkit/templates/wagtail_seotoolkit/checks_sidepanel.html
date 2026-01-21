@@ -2,6 +2,7 @@
 
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/email_verification.css' %}">
+    <link rel="stylesheet" href="{% static 'wagtail_seotoolkit/css/dev_badge.css' %}">
 {% endblock %}
 
 {% block result_template %}
@@ -64,6 +65,37 @@
         
         <!-- Protected Content -->
         <div id="protected-content" style="display: none;">
+        {% if page_id %}
+            <!-- Target Keywords Section (always visible when page exists) -->
+            <div class="seo-sidepanel">
+                <div class="seo-sidepanel__section seo-sidepanel__section--keywords">
+                    <h2 class="seo-sidepanel__section-title">
+                        <svg class="seo-keyword-icon" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
+                        </svg>
+                        {% trans "Target Keywords" %}
+                    </h2>
+                    <p class="seo-sidepanel__section-hint">{% trans "Add keywords for content optimization" %}</p>
+                    <div class="seo-keyword-widget" data-page-id="{{ page_id }}" data-keywords="{{ keywords_data.keywords }}">
+                        <!-- Keyword bubbles container -->
+                        <div class="seo-keyword-bubbles"></div>
+                        <!-- Input row -->
+                        <div class="seo-keyword-input-row">
+                            <input
+                                type="text"
+                                class="seo-keyword-input"
+                                placeholder="{% trans 'Add keyword...' %}"
+                            />
+                            <button type="button" class="seo-keyword-add" title="{% trans 'Add keyword' %}">
+                                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+                            </button>
+                        </div>
+                        <div class="seo-keyword-feedback" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
         {% if seo_insights %}
             <div class="seo-sidepanel">
                 <!-- Content Checks Section -->
@@ -339,7 +371,7 @@
 
                         <!-- Edit Schema Button -->
                         <div class="seo-schema-actions">
-                            <a href="{% url 'jsonld_schema_list' %}" class="seo-schema-actions__button">
+                            <a href="{% url 'jsonld_schema_list' %}" class="button button-secondary button-small">
                                 {% trans "Edit Schemas" %} &rarr;
                             </a>
                         </div>
@@ -351,7 +383,12 @@
                 <div class="seo-sidepanel__section seo-sidepanel__section--dev">
                     <h2 class="seo-sidepanel__section-title">
                         {% trans "Technical Issues" %}
-                        <span class="seo-sidepanel__dev-badge">{% trans "Dev required" %}</span>
+                        <span class="dev-badge dev-badge--dashboard">
+                            <svg class="dev-badge__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                            </svg>
+                            {% trans "Dev required" %}
+                        </span>
                     </h2>
 
                     {% if seo_insights.dev_critical %}

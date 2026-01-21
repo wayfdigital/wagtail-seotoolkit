@@ -59,10 +59,13 @@ from wagtail_seotoolkit.pro.views import (
     bulk_apply_metadata,
     get_jsonld_placeholders_api,
     get_jsonld_schema_fields_api,
+    # Target Keyword API views
+    get_page_keywords_api,
     get_placeholders_api,
     preview_jsonld_api,
     preview_metadata,
     save_as_template,
+    save_page_keywords_api,
     validate_metadata_bulk,
 )
 
@@ -115,4 +118,7 @@ __all__ = [
     "get_jsonld_schema_fields_api",
     "preview_jsonld_api",
     "get_jsonld_placeholders_api",
+    # Target Keyword API
+    "get_page_keywords_api",
+    "save_page_keywords_api",
 ]

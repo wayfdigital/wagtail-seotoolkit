@@ -29,6 +29,7 @@ from wagtail_seotoolkit.pro.models import (
     BrokenLinkAuditResult,
     JSONLDSchemaTemplate,
     PageJSONLDOverride,
+    PageTargetKeyword,
     PluginEmailVerification,
     RedirectAuditResult,
     SEOMetadataTemplate,
@@ -55,4 +56,6 @@ __all__ = [
     "JSONLDSchemaTemplate",
     "SiteWideJSONLDSchema",
     "PageJSONLDOverride",
+    # Target Keyword Management
+    "PageTargetKeyword",
 ]

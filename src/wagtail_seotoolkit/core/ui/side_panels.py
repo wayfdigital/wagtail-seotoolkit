@@ -3,6 +3,7 @@ from wagtail.models import Page
 
 from wagtail_seotoolkit.models import (
     DraftSEOAudit,
+    PageTargetKeyword,
     PluginEmailVerification,
     SEOAuditIssueSeverity,
 )
@@ -18,6 +19,9 @@ class CustomChecksSidePanel(ChecksSidePanel):
                 "wagtail_seotoolkit/css/dev_badge.css",
             ]
         }
+        js = [
+            "wagtail_seotoolkit/js/keyword_manager.js",
+        ]
 
     def get_seo_insights(self):
         """
@@ -101,6 +105,23 @@ class CustomChecksSidePanel(ChecksSidePanel):
             "has_dev_issues": len(dev_issues) > 0,
         }
 
+    def get_keywords_data(self):
+        """
+        Get target keywords for the current page.
+        Returns comma-separated string for display in UI.
+        """
+        page = self.object if issubclass(self.model, Page) else None
+        if not page or not page.id:
+            return {"keywords": "", "keywords_list": []}
+
+        keywords = PageTargetKeyword.objects.filter(page=page).order_by("position")
+        keyword_list = [kw.keyword for kw in keywords]
+
+        return {
+            "keywords": ", ".join(keyword_list),
+            "keywords_list": keyword_list,
+        }
+
     def get_context_data(self, parent_context):
         context = super().get_context_data(parent_context)
         context["seo_insights"] = self.get_seo_insights()
@@ -108,5 +129,12 @@ class CustomChecksSidePanel(ChecksSidePanel):
         # Add stored email for verification
         verification = PluginEmailVerification.objects.first()
         context["stored_email"] = verification.email if verification else None
+
+        # Add page ID for keyword management
+        page = self.object if issubclass(self.model, Page) else None
+        context["page_id"] = page.id if page else None
+
+        # Add keywords data
+        context["keywords_data"] = self.get_keywords_data()
 
         return context

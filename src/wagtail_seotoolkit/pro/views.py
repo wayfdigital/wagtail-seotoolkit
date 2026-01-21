@@ -2530,3 +2530,114 @@ def get_jsonld_placeholders_api(request):
         return JsonResponse({"success": True, "placeholders": placeholders})
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+# =============================================================================
+# Target Keyword Management API
+# =============================================================================
+
+
+def get_page_keywords_api(request, page_id):
+    """
+    API endpoint to get target keywords for a page.
+    Returns keywords as comma-separated string for UI display.
+    """
+    from wagtail_seotoolkit.pro.models import PageTargetKeyword
+
+    try:
+        # Verify page exists
+        page = Page.objects.get(pk=page_id)
+
+        # Get keywords ordered by position
+        keywords = PageTargetKeyword.objects.filter(page_id=page_id).order_by(
+            "position"
+        )
+        keyword_list = [kw.keyword for kw in keywords]
+
+        return JsonResponse(
+            {
+                "success": True,
+                "keywords": ", ".join(keyword_list),  # Comma-separated for UI
+                "keywords_list": keyword_list,  # Also as list for flexibility
+            }
+        )
+    except Page.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Page not found"}, status=404)
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+@require_POST
+def save_page_keywords_api(request, page_id):
+    """
+    API endpoint to save target keywords for a page.
+    Accepts comma-separated keywords string, parses and saves as individual rows.
+    Handles deduplication (case-insensitive) and trimming.
+    """
+    from django.db import IntegrityError, transaction
+
+    from wagtail_seotoolkit.pro.models import PageTargetKeyword
+
+    try:
+        # Verify page exists
+        page = Page.objects.get(pk=page_id)
+
+        # Get keywords from request
+        keywords_string = request.POST.get("keywords", "")
+
+        # Parse, clean, and deduplicate keywords
+        # 1. Split by comma and strip whitespace
+        raw_keywords = [k.strip() for k in keywords_string.split(",")]
+        # 2. Remove empty strings
+        raw_keywords = [k for k in raw_keywords if k]
+        # 3. Deduplicate case-insensitively while preserving original case and order
+        seen_lower = set()
+        keywords = []
+        for kw in raw_keywords:
+            kw_lower = kw.lower()
+            if kw_lower not in seen_lower:
+                seen_lower.add(kw_lower)
+                keywords.append(kw)
+
+        # Replace all keywords for this page atomically
+        with transaction.atomic():
+            PageTargetKeyword.objects.filter(page_id=page_id).delete()
+            for i, keyword in enumerate(keywords):
+                PageTargetKeyword.objects.create(
+                    page_id=page_id,
+                    keyword=keyword,
+                    position=i,
+                )
+
+        return JsonResponse(
+            {
+                "success": True,
+                "count": len(keywords),
+                "keywords": ", ".join(keywords),
+            }
+        )
+    except Page.DoesNotExist:
+        return JsonResponse(
+            {"success": False, "error": "Page not found"},
+            status=404,
+        )
+    except IntegrityError:
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "Could not save keywords. Please try again.",
+            },
+            status=400,
+        )
+    except Exception as e:
+        # Log the actual error for debugging but return user-friendly message
+        import logging
+
+        logging.getLogger(__name__).error(f"Error saving keywords: {e}")
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "An error occurred while saving keywords. Please try again.",
+            },
+            status=500,
+        )

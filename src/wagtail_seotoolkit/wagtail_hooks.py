@@ -51,10 +51,13 @@ from wagtail_seotoolkit.views import (
     bulk_apply_metadata,
     get_jsonld_placeholders_api,
     get_jsonld_schema_fields_api,
+    # Target Keyword API views
+    get_page_keywords_api,
     get_placeholders_api,
     preview_jsonld_api,
     preview_metadata,
     save_as_template,
+    save_page_keywords_api,
     validate_metadata_bulk,
 )
 
@@ -302,6 +305,17 @@ def register_seo_admin_urls():
             "api/jsonld/placeholders/",
             get_jsonld_placeholders_api,
             name="jsonld_placeholders_api",
+        ),
+        # Target Keyword API endpoints
+        path(
+            "api/keywords/<int:page_id>/",
+            get_page_keywords_api,
+            name="get_page_keywords",
+        ),
+        path(
+            "api/keywords/<int:page_id>/save/",
+            save_page_keywords_api,
+            name="save_page_keywords",
         ),
         # Redirect Dashboard
         path(

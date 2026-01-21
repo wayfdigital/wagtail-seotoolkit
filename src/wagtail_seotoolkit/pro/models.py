@@ -450,3 +450,37 @@ class BrokenLinkAuditResult(models.Model):
         # Calculate percentage of problematic links
         penalty = min(100, (issue_count / max(1, self.total_links_checked)) * 100)
         return max(0, int(100 - penalty))
+
+
+class PageTargetKeyword(models.Model):
+    """
+    Individual target keyword for a page.
+    Multiple keywords per page stored as separate rows.
+    UI presents comma-separated input, API handles parsing.
+    """
+
+    page = models.ForeignKey(
+        "wagtailcore.Page",
+        on_delete=models.CASCADE,
+        related_name="target_keywords",
+        help_text="The page this keyword is associated with",
+    )
+    keyword = models.CharField(
+        max_length=255,
+        help_text="Single target keyword",
+    )
+    position = models.PositiveIntegerField(
+        default=0,
+        help_text="Order position (first keyword = primary)",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["position", "id"]
+        unique_together = [["page", "keyword"]]
+        verbose_name = "Page Target Keyword"
+        verbose_name_plural = "Page Target Keywords"
+
+    def __str__(self):
+        return f"{self.page.title} - {self.keyword}"
